@@ -12,6 +12,8 @@
 - Ability to choose folders instead of files
 - Slightly optimized (reuses inactive file templates but does not recycle them while scrolling)
 
+**IMPORTANT: After importing the unitypackage, sometimes the references between the plugin's components are lost. After running the game once, the references are restored, strangely. Just make sure that nothing in the Project view is selected while running the game the first time after importing the package.**
+
 -- *Documentation soon; you can inspect the example code below for now to have an idea...*
 
 ##Example Code##

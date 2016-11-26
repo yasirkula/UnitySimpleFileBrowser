@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 using System;
@@ -632,7 +632,7 @@ public class SimpleFileBrowser : MonoBehaviour
 					if( ( fileInfo.Attributes & ignoredFileAttributes ) != 0 )
 						continue;
 
-					string extension = Path.GetExtension( paths[i] );
+					string extension = Path.GetExtension( paths[i] ).ToLower();
 					if( excludedExtensionsSet.Contains( extension ) ||
 						( filtersDropdown.value != 0 && extension != filters[filtersDropdown.value] ) )
 						continue;
@@ -681,7 +681,7 @@ public class SimpleFileBrowser : MonoBehaviour
 		Sprite icon;
 		if( isDirectory )
 			icon = folderIcon;
-		else if( !filetypeToIcon.TryGetValue( Path.GetExtension( path ), out icon ) )
+		else if( !filetypeToIcon.TryGetValue( Path.GetExtension( path ).ToLower(), out icon ) )
 			icon = defaultIcon;
 
 		items[activeItemCount].SetFile( icon, Path.GetFileName( path ), isDirectory );
@@ -725,7 +725,7 @@ public class SimpleFileBrowser : MonoBehaviour
 			return false;
 		}
 		
-		if( initialPath == null || !Directory.Exists( initialPath ) )
+		if( ( initialPath == null || !Directory.Exists( initialPath ) ) && instance.m_currentPath.Length == 0 )
 			initialPath = instance.DEFAULT_PATH;
 
 		instance.onSuccess = onSuccess;
@@ -752,8 +752,8 @@ public class SimpleFileBrowser : MonoBehaviour
 			Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 			return false;
 		}
-		
-		if( initialPath == null || !Directory.Exists( initialPath ) )
+
+		if( ( initialPath == null || !Directory.Exists( initialPath ) ) && instance.m_currentPath.Length == 0 )
 			initialPath = instance.DEFAULT_PATH;
 
 		instance.onSuccess = onSuccess;
@@ -829,7 +829,7 @@ public class SimpleFileBrowser : MonoBehaviour
 		{
 			for( int i = 0; i < excludedExtensions.Length; i++ )
 			{
-				instance.excludedExtensionsSet.Add( excludedExtensions[i] );
+				instance.excludedExtensionsSet.Add( excludedExtensions[i].ToLower() );
 			}
 		}
 	}
@@ -839,8 +839,11 @@ public class SimpleFileBrowser : MonoBehaviour
 		if( filters == null )
 			filters = new List<string>();
 
-		filters.Insert( 0, ALL_FILES_FILTER_TEXT );
+		for( int i = 0; i < filters.Count; i++ )
+			filters[i] = filters[i].ToLower();
 
+		filters.Insert( 0, ALL_FILES_FILTER_TEXT );
+		
 		instance.filtersDropdown.ClearOptions();
 		instance.filtersDropdown.AddOptions( filters );
 
@@ -861,7 +864,7 @@ public class SimpleFileBrowser : MonoBehaviour
 		{
 			for( int i = 0; i < filters.Length; i++ )
 			{
-				filtersList.Add( filters[i] );
+				filtersList.Add( filters[i].ToLower() );
 			}
 		}
 
@@ -873,6 +876,8 @@ public class SimpleFileBrowser : MonoBehaviour
 
 	public static bool SetDefaultFilter( string defaultFilter )
 	{
+		defaultFilter = defaultFilter.ToLower();
+
 		for( int i = 0; i < instance.filters.Count; i++ )
 		{
 			if( instance.filters[i] == defaultFilter )

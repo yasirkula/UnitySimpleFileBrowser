@@ -31,6 +31,8 @@ public class SimpleFileBrowser : MonoBehaviour
 	#endregion
 
 	#region Static Variables
+	public static bool IsOpen = false;
+
 	public static bool Success = false;
 	public static string Result = null;
 
@@ -569,6 +571,7 @@ public class SimpleFileBrowser : MonoBehaviour
 
 		filenameImage.color = Color.white;
 
+		IsOpen = true;
 		Success = false;
 		Result = null;
 
@@ -577,6 +580,8 @@ public class SimpleFileBrowser : MonoBehaviour
 
 	public void Hide()
 	{
+		IsOpen = false;
+
 		gameObject.SetActive( false );
 	}
 
@@ -738,7 +743,9 @@ public class SimpleFileBrowser : MonoBehaviour
 		instance.AcceptNonExistingFilename = !folderMode;
 
 		instance.Show();
+
 		instance.CurrentPath = initialPath;
+		instance.RefreshFiles();
 
 		return true;
 	}
@@ -766,7 +773,9 @@ public class SimpleFileBrowser : MonoBehaviour
 		instance.AcceptNonExistingFilename = false;
 		
 		instance.Show();
+
 		instance.CurrentPath = initialPath;
+		instance.RefreshFiles();
 
 		return true;
 	}

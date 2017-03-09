@@ -801,6 +801,9 @@ namespace SimpleFileBrowser
 
 		private void AddQuickLink( Sprite icon, string name, string path, ref Vector2 anchoredPos )
 		{
+			if (!Directory.Exists(path))
+				return;
+			
 			FileBrowserQuickLink quickLink = Instantiate( quickLinkPrefab, quickLinksContainer, false );
 			quickLink.SetFileBrowser( this );
 

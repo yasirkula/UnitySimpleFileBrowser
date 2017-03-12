@@ -207,11 +207,12 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private string[] excludeExtensions;
 
-		private HashSet<string> excludedExtensionsSet;
-
 		[SerializeField]
 		private QuickLink[] quickLinks;
 
+		private HashSet<string> excludedExtensionsSet;
+		private HashSet<string> addedQuickLinksSet;
+		
 		[SerializeField]
 		private bool generateQuickLinksForDrives = true;
 
@@ -500,6 +501,8 @@ namespace SimpleFileBrowser
 
 		private void InitializeQuickLinks()
 		{
+			addedQuickLinksSet = new HashSet<string>();
+
 			Vector2 anchoredPos = new Vector2( 0f, -quickLinksContainer.sizeDelta.y );
 
 			if( generateQuickLinksForDrives )
@@ -516,9 +519,6 @@ namespace SimpleFileBrowser
 			{
 				QuickLink quickLink = quickLinks[i];
 				string quickLinkPath = Environment.GetFolderPath( quickLink.target );
-
-				if( !Directory.Exists( quickLinkPath ) )
-					continue;
 
 				AddQuickLink( quickLink.icon, quickLink.name, quickLinkPath, ref anchoredPos );
 			}
@@ -799,8 +799,31 @@ namespace SimpleFileBrowser
 			filesScrollRect.OnScroll( nullPointerEventData );
 		}
 
-		private void AddQuickLink( Sprite icon, string name, string path, ref Vector2 anchoredPos )
+		private bool AddQuickLink( Sprite icon, string name, string path, ref Vector2 anchoredPos )
 		{
+			if( path == null || path.Length == 0 )
+				return false;
+
+			try
+			{
+				path = GetPathWithoutTrailingDirectorySeparator( path );
+			}
+			catch( ArgumentException )
+			{
+				return false;
+			}
+			catch( PathTooLongException )
+			{
+				return false;
+			}
+
+			if( !Directory.Exists( path ) )
+				return false;
+
+			// Don't add quick link if it already exists
+			if( addedQuickLinksSet.Contains( path ) )
+				return false;
+
 			FileBrowserQuickLink quickLink = Instantiate( quickLinkPrefab, quickLinksContainer, false );
 			quickLink.SetFileBrowser( this );
 
@@ -812,6 +835,10 @@ namespace SimpleFileBrowser
 			quickLink.transformComponent.anchoredPosition = anchoredPos;
 
 			anchoredPos.y -= itemHeight;
+
+			addedQuickLinksSet.Add( path );
+
+			return true;
 		}
 
 		private string GetPathWithoutTrailingDirectorySeparator( string path )
@@ -946,15 +973,11 @@ namespace SimpleFileBrowser
 
 		public static bool AddQuickLink( Sprite icon, string name, string path )
 		{
-			if( Directory.Exists( path ) )
+			Vector2 anchoredPos = new Vector2( 0f, -instance.quickLinksContainer.sizeDelta.y );
+			
+			if( instance.AddQuickLink( icon, name, path, ref anchoredPos ) )
 			{
-				Vector2 anchoredPos = new Vector2( 0f, -instance.quickLinksContainer.sizeDelta.y );
-
-				path = instance.GetPathWithoutTrailingDirectorySeparator( path );
-				instance.AddQuickLink( icon, name, path, ref anchoredPos );
-
 				instance.quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
-
 				return true;
 			}
 

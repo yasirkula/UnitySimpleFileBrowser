@@ -39,16 +39,16 @@ public class FileBrowserTest : MonoBehaviour
 		// In this case, set Images filter as the default filter
 		FileBrowser.SetDefaultFilter( ".jpg" );
 
-		// Set excluded file extensions (by default, .lnk and .tmp extensions are excluded)
+		// Set excluded file extensions (optional) (by default, .lnk and .tmp extensions are excluded)
 		// Note that when you use this function, .lnk and .tmp extensions will no longer be
-		// excluded unless you add them as parameters to the function
+		// excluded unless you explicitly add them as parameters to the function
 		FileBrowser.SetExcludedExtensions( ".lnk", ".tmp", ".zip", ".rar", ".exe" );
 
-		// Add a new quick link to the browser (returns true if quick link is added successfully)
+		// Add a new quick link to the browser (optional) (returns true if quick link is added successfully)
+		// It is sufficient to add a quick link just once
 		// Icon: default (folder icon)
 		// Name: Users
 		// Path: C:\Users
-		// Warning: it is sufficient to add a quick link just once, otherwise there may be duplicates
 		FileBrowser.AddQuickLink( null, "Users", "C:\\Users" );
 
 		// Show a save file dialog 
@@ -73,7 +73,7 @@ public class FileBrowserTest : MonoBehaviour
 	{
 		// Show a load file dialog and wait for a response from user
 		// Load file/folder: file, Initial path: default (Documents), Title: "Load File", submit button text: "Load"
-		yield return StartCoroutine( FileBrowser.WaitForLoadDialog( false, null, "Load File", "Load" ) );
+		yield return FileBrowser.WaitForLoadDialog( false, null, "Load File", "Load" );
 
 		// Dialog is closed
 		// Print whether a file is chosen (FileBrowser.Success)

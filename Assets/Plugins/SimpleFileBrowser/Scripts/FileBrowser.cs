@@ -557,12 +557,15 @@ namespace SimpleFileBrowser
 		public void OnSubmitButtonClicked()
 		{
 			string path = m_currentPath;
-			if( filenameInputField.text.Length > 0 )
-				path = Path.Combine( path, filenameInputField.text );
-			else
-				path = GetPathWithoutTrailingDirectorySeparator( path );
+			if (!m_folderSelectMode)
+			{
+				if (filenameInputField.text.Length > 0)
+					path = Path.Combine(path, filenameInputField.text);
+				else
+					path = GetPathWithoutTrailingDirectorySeparator(path);
+			}
 
-			if( File.Exists( path ) )
+			if ( File.Exists( path ) )
 			{
 				if( !m_folderSelectMode )
 				{

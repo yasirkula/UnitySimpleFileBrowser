@@ -100,10 +100,10 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Static Variables
-		public static bool IsOpen = false;
+		public static bool IsOpen { get; private set; }
 
-		public static bool Success = false;
-		public static string Result = null;
+		public static bool Success { get; private set; }
+		public static string Result { get; private set; }
 
 		private static FileBrowser m_instance = null;
 		private static FileBrowser Instance
@@ -303,13 +303,13 @@ namespace SimpleFileBrowser
 		public int SelectedFilePosition { get { return m_selectedFilePosition; } }
 
 		private FileBrowserItem m_selectedFile;
-		public FileBrowserItem SelectedFile
+		private FileBrowserItem SelectedFile
 		{
 			get
 			{
 				return m_selectedFile;
 			}
-			private set
+			set
 			{
 				if( value == null )
 				{
@@ -336,7 +336,7 @@ namespace SimpleFileBrowser
 		}
 
 		private bool m_acceptNonExistingFilename = false;
-		public bool AcceptNonExistingFilename
+		private bool AcceptNonExistingFilename
 		{
 			get
 			{
@@ -352,7 +352,7 @@ namespace SimpleFileBrowser
 		}
 
 		private bool m_folderSelectMode = false;
-		public bool FolderSelectMode
+		private bool FolderSelectMode
 		{
 			get
 			{
@@ -380,7 +380,7 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		public string Title
+		private string Title
 		{
 			get
 			{
@@ -392,7 +392,7 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		public string SubmitButtonText
+		private string SubmitButtonText
 		{
 			get
 			{
@@ -1015,7 +1015,7 @@ namespace SimpleFileBrowser
 				yield return null;
 		}
 
-		public static bool AddQuickLink( Sprite icon, string name, string path )
+		public static bool AddQuickLink( string name, string path, Sprite icon = null )
 		{
 			Vector2 anchoredPos = new Vector2( 0f, -Instance.quickLinksContainer.sizeDelta.y );
 			

@@ -2,21 +2,72 @@
 
 ![screenshot](https://yasirkula.files.wordpress.com/2016/11/simplefileexplorer.png)
 
-##Features##
-- Costs ~13 draw calls and 3 SetPass calls
+## FEATURES
+- Behaves similar to Windows file chooser
+- Costs 3 SetPass calls and ~13 draw calls
 - Ability to search by name or filter by type
 - Quick links
 - Simple user interface
 - Draggable and resizable
-- Behaves similar to Windows file chooser
 - Ability to choose folders instead of files
-- Optimized using a recycled list view (makes Instantiate calls sparingly)
+- Optimized using a recycled list view (makes *Instantiate* calls sparingly)
 
-**IMPORTANT: After importing the unitypackage, sometimes the references between the plugin's components are lost. After running the game once, the references are restored, strangely. Just make sure that nothing in the Project view is selected while running the game the first time after importing the package.**
+## HOW TO
+Simply import **SimpleFileBrowser.unitypackage** to your project. Afterwards, you should add `using SimpleFileBrowser;` to the top of the script that will call the file browser.
 
--- *Documentation soon; you can inspect the example code below for now to have an idea...*
+The file browser can be shown either as a **save dialog** or a **load dialog**. In load mode, the returned path always leads to an existing file or folder. In save mode, the returned path can point to a non-existing file, as well. You can use the following functions to show the file browser:
 
-##Example Code##
+```csharp
+public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
+public static bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+
+public delegate void OnSuccess( string path );
+public delegate void OnCancel();
+```
+
+There can only be one dialog active at a time. These functions will return *true* if the dialog is shown successfully (if no other dialog is active), *false* otherwise. You can query the **FileBrowser.IsOpen** property to see if there is an active dialog at the moment.
+
+If user presses the *Cancel* button, **onCancel** callback is called. Otherwise, **onSuccess** callback is called with the path of the selected file/folder as parameter. When **folderMode** is set to *true*, the file browser will show only folders and the user will pick a folder instead of a file.
+
+There are also coroutine variants of these functions that will yield while the dialog is active:
+
+```csharp
+public static IEnumerator WaitForSaveDialog( bool folderMode = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );									 
+public static IEnumerator WaitForLoadDialog( bool folderMode = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+```
+
+After the dialog is closed, you can check the **FileBrowser.Success** property to see whether the user selected a file/folder or cancelled the operation and if FileBrowser.Success was set to *true*, you can use the **FileBrowser.Result** property to get the path of the selected file/folder.
+
+To add a quick link to the browser, you can use the following function:
+
+```csharp
+public static bool AddQuickLink( string name, string path, Sprite icon = null );
+```
+
+When **icon** parameter is left *null*, the quick link will have a folder icon.
+
+By default, the file browser doesn't show files with *.lnk* or *.tmp* extensions. You can extend this list or remove this restriction altogether using the following function:
+
+```csharp
+public static void SetExcludedExtensions( params string[] excludedExtensions );
+```
+
+Lastly, you can use the following functions to set the file filters:
+
+```csharp
+public static void SetFilters( bool showAllFilesFilter, IEnumerable<string> filters );
+public static void SetFilters( bool showAllFilesFilter, params string[] filters );
+public static void SetFilters( bool showAllFilesFilter, IEnumerable<FileBrowser.Filter> filters );
+public static void SetFilters( bool showAllFilesFilter, params FileBrowser.Filter[] filters );
+```
+
+When **showAllFilesFilter** is set to true, a filter by the name "*All Files (.\*)*" will appear that will show all the files when selected. To select a default filter, use the following function:
+
+```csharp
+public static bool SetDefaultFilter( string defaultFilter );
+```
+
+## EXAMPLE CODE
 ```csharp
 using UnityEngine;
 using System.Collections;
@@ -81,35 +132,4 @@ public class FileBrowserTest : MonoBehaviour
 		Debug.Log( FileBrowser.Success + " " + FileBrowser.Result );
 	}
 }
-```
-
-##Method Signatures##
-
-```csharp
-public delegate void OnSuccess( string path );
-public delegate void OnCancel();
-
-public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel,
-								   bool folderMode = false, string initialPath = null,
-								   string title = "Save", string saveButtonText = "Save" );
-								   
-public static bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, 
-								   bool folderMode = false, string initialPath = null,
-								   string title = "Load", string loadButtonText = "Select" );
-								   
-public static IEnumerator WaitForSaveDialog( bool folderMode = false, string initialPath = null,
-											 string title = "Save", string saveButtonText = "Save" );
-											 
-public static IEnumerator WaitForLoadDialog( bool folderMode = false, string initialPath = null,
-											 string title = "Load", string loadButtonText = "Select" );
-											 
-public static bool AddQuickLink( Sprite icon, string name, string path );
-
-public static void SetExcludedExtensions( params string[] excludedExtensions );
-
-public static void SetFilters( bool showAllFilesFilter, IEnumerable<string> filters );
-public static void SetFilters( bool showAllFilesFilter, params string[] filters );
-public static void SetFilters( bool showAllFilesFilter, IEnumerable<FileBrowser.Filter> filters );
-public static void SetFilters( bool showAllFilesFilter, params FileBrowser.Filter[] filters );
-public static bool SetDefaultFilter( string defaultFilter )
 ```

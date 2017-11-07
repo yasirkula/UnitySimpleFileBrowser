@@ -48,8 +48,7 @@ namespace SimpleFileBrowser
 				this.name = name;
 
 				extension = extension.ToLower();
-				extensions = new HashSet<string>();
-				extensions.Add( extension );
+				extensions = new HashSet<string>() { extension };
 				defaultExtension = extension;
 			}
 
@@ -107,13 +106,13 @@ namespace SimpleFileBrowser
 		public static string Result = null;
 
 		private static FileBrowser m_instance = null;
-		private static FileBrowser instance
+		private static FileBrowser Instance
 		{
 			get
 			{
 				if( m_instance == null )
 				{
-					m_instance = Instantiate<GameObject>( Resources.Load<GameObject>( "SimpleFileBrowserCanvas" ) ).GetComponent<FileBrowser>();
+					m_instance = Instantiate( Resources.Load<GameObject>( "SimpleFileBrowserCanvas" ) ).GetComponent<FileBrowser>();
 					DontDestroyOnLoad( m_instance.gameObject );
 					m_instance.gameObject.SetActive( false );
 				}
@@ -273,6 +272,8 @@ namespace SimpleFileBrowser
 					filesScrollRect.verticalNormalizedPosition = 1;
 
 					filenameImage.color = Color.white;
+					if( m_folderSelectMode )
+						filenameInputField.text = string.Empty;
 
 					RefreshFiles( true );
 				}
@@ -408,8 +409,8 @@ namespace SimpleFileBrowser
 		public delegate void OnSuccess( string path );
 		public delegate void OnCancel();
 
-		public event OnSuccess onSuccess;
-		public event OnCancel onCancel;
+		private OnSuccess onSuccess;
+		private OnCancel onCancel;
 		#endregion
 
 		#region Messages
@@ -507,12 +508,55 @@ namespace SimpleFileBrowser
 
 			if( generateQuickLinksForDrives )
 			{
+#if !UNITY_EDITOR && UNITY_ANDROID
+				using( AndroidJavaClass externalDrivesList = new AndroidJavaClass( "com.yasirkula.unity.ExternalDrivesList" ) )
+				{
+					string drivesList = externalDrivesList.CallStatic<string>( "GetExternalDrives" );
+					if( drivesList != null && drivesList.Length > 0 )
+					{
+						bool defaultPathInitialized = false;
+						string[] drives = drivesList.Split( ':' );
+						for( int i = 0; i < drives.Length; i++ )
+						{
+							if( drives[i].ToLower().Contains( "/usb" ) )
+								continue;
+
+							int driveIndex = 1;
+							try
+							{
+								string driveName = new DirectoryInfo( drives[i] ).Name;
+								if( driveName.Length <= 1 )
+								{
+									try
+									{
+										driveName = Directory.GetParent( drives[i] ).Name + "/" + driveName;
+									}
+									catch( Exception )
+									{
+										driveName = "Drive " + driveIndex++;
+									}
+								}
+
+								AddQuickLink( driveIcon, driveName, drives[i], ref anchoredPos );
+
+								if( !defaultPathInitialized )
+								{
+									DEFAULT_PATH = drives[i];
+									defaultPathInitialized = true;
+								}
+							}
+							catch( Exception ) { }
+						}
+					}
+				}
+#else
 				string[] drives = Directory.GetLogicalDrives();
 
 				for( int i = 0; i < drives.Length; i++ )
 				{
 					AddQuickLink( driveIcon, drives[i], drives[i], ref anchoredPos );
 				}
+#endif
 			}
 
 			for( int i = 0; i < quickLinks.Length; i++ )
@@ -525,9 +569,9 @@ namespace SimpleFileBrowser
 
 			quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
 		}
-		#endregion
+#endregion
 
-		#region Button Events
+#region Button Events
 		public void OnBackButtonPressed()
 		{
 			if( currentPathIndex > 0 )
@@ -607,9 +651,9 @@ namespace SimpleFileBrowser
 		{
 			OnOperationCanceled();
 		}
-		#endregion
+#endregion
 
-		#region Other Events
+#region Other Events
 		private void OnOperationSuccessful( string path )
 		{
 			Success = true;
@@ -692,9 +736,9 @@ namespace SimpleFileBrowser
 
 			return addedChar;
 		}
-		#endregion
+#endregion
 
-		#region Helper Functions
+#region Helper Functions
 		public void Show()
 		{
 			currentPathIndex = -1;
@@ -874,37 +918,37 @@ namespace SimpleFileBrowser
 
 			return totalLength;
 		}
-		#endregion
+#endregion
 
-		#region File Browser Functions (static)
+#region File Browser Functions (static)
 		public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel,
 										   bool folderMode = false, string initialPath = null,
 										   string title = "Save", string saveButtonText = "Save" )
 		{
-			if( instance.gameObject.activeSelf )
+			if( Instance.gameObject.activeSelf )
 			{
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				return false;
 			}
 
-			if( ( initialPath == null || !Directory.Exists( initialPath ) ) && instance.m_currentPath.Length == 0 )
-				initialPath = instance.DEFAULT_PATH;
+			if( ( initialPath == null || initialPath.Length == 0 || !Directory.Exists( initialPath ) ) && Instance.CurrentPath.Length == 0 )
+				initialPath = Instance.DEFAULT_PATH;
 
-			instance.onSuccess = onSuccess;
-			instance.onCancel = onCancel;
+			Instance.onSuccess = onSuccess;
+			Instance.onCancel = onCancel;
 
-			instance.FolderSelectMode = folderMode;
-			instance.Title = title;
-			instance.SubmitButtonText = saveButtonText;
+			Instance.FolderSelectMode = folderMode;
+			Instance.Title = title;
+			Instance.SubmitButtonText = saveButtonText;
 
-			instance.AcceptNonExistingFilename = !folderMode;
+			Instance.AcceptNonExistingFilename = !folderMode;
 
-			instance.Show();
+			Instance.Show();
 
-			if( instance.CurrentPath != initialPath )
-				instance.CurrentPath = initialPath;
+			if( Instance.CurrentPath != initialPath )
+				Instance.CurrentPath = initialPath;
 			else
-				instance.RefreshFiles( true );
+				Instance.RefreshFiles( true );
 
 			return true;
 		}
@@ -913,30 +957,30 @@ namespace SimpleFileBrowser
 										   bool folderMode = false, string initialPath = null,
 										   string title = "Load", string loadButtonText = "Select" )
 		{
-			if( instance.gameObject.activeSelf )
+			if( Instance.gameObject.activeSelf )
 			{
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				return false;
 			}
 
-			if( ( initialPath == null || !Directory.Exists( initialPath ) ) && instance.m_currentPath.Length == 0 )
-				initialPath = instance.DEFAULT_PATH;
+			if( ( initialPath == null || initialPath.Length == 0 || !Directory.Exists( initialPath ) ) && Instance.CurrentPath.Length == 0 )
+				initialPath = Instance.DEFAULT_PATH;
 
-			instance.onSuccess = onSuccess;
-			instance.onCancel = onCancel;
+			Instance.onSuccess = onSuccess;
+			Instance.onCancel = onCancel;
 
-			instance.FolderSelectMode = folderMode;
-			instance.Title = title;
-			instance.SubmitButtonText = loadButtonText;
+			Instance.FolderSelectMode = folderMode;
+			Instance.Title = title;
+			Instance.SubmitButtonText = loadButtonText;
 
-			instance.AcceptNonExistingFilename = false;
+			Instance.AcceptNonExistingFilename = false;
 
-			instance.Show();
+			Instance.Show();
 
-			if( instance.CurrentPath != initialPath )
-				instance.CurrentPath = initialPath;
+			if( Instance.CurrentPath != initialPath )
+				Instance.CurrentPath = initialPath;
 			else
-				instance.RefreshFiles( true );
+				Instance.RefreshFiles( true );
 
 			return true;
 		}
@@ -944,7 +988,7 @@ namespace SimpleFileBrowser
 		public static IEnumerator WaitForSaveDialog( bool folderMode = false, string initialPath = null,
 													 string title = "Save", string saveButtonText = "Save" )
 		{
-			if( instance.gameObject.activeSelf )
+			if( Instance.gameObject.activeSelf )
 			{
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				yield break;
@@ -952,14 +996,14 @@ namespace SimpleFileBrowser
 
 			ShowSaveDialog( null, null, folderMode, initialPath, title, saveButtonText );
 
-			while( instance.gameObject.activeSelf )
+			while( Instance.gameObject.activeSelf )
 				yield return null;
 		}
 
 		public static IEnumerator WaitForLoadDialog( bool folderMode = false, string initialPath = null,
 													 string title = "Load", string loadButtonText = "Select" )
 		{
-			if( instance.gameObject.activeSelf )
+			if( Instance.gameObject.activeSelf )
 			{
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				yield break;
@@ -967,17 +1011,17 @@ namespace SimpleFileBrowser
 
 			ShowLoadDialog( null, null, folderMode, initialPath, title, loadButtonText );
 
-			while( instance.gameObject.activeSelf )
+			while( Instance.gameObject.activeSelf )
 				yield return null;
 		}
 
 		public static bool AddQuickLink( Sprite icon, string name, string path )
 		{
-			Vector2 anchoredPos = new Vector2( 0f, -instance.quickLinksContainer.sizeDelta.y );
+			Vector2 anchoredPos = new Vector2( 0f, -Instance.quickLinksContainer.sizeDelta.y );
 			
-			if( instance.AddQuickLink( icon, name, path, ref anchoredPos ) )
+			if( Instance.AddQuickLink( icon, name, path, ref anchoredPos ) )
 			{
-				instance.quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
+				Instance.quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
 				return true;
 			}
 
@@ -986,16 +1030,16 @@ namespace SimpleFileBrowser
 
 		public static void SetExcludedExtensions( params string[] excludedExtensions )
 		{
-			if( instance.excludedExtensionsSet == null )
-				instance.excludedExtensionsSet = new HashSet<string>();
+			if( Instance.excludedExtensionsSet == null )
+				Instance.excludedExtensionsSet = new HashSet<string>();
 			else
-				instance.excludedExtensionsSet.Clear();
+				Instance.excludedExtensionsSet.Clear();
 
 			if( excludedExtensions != null )
 			{
 				for( int i = 0; i < excludedExtensions.Length; i++ )
 				{
-					instance.excludedExtensionsSet.Add( excludedExtensions[i].ToLower() );
+					Instance.excludedExtensionsSet.Add( excludedExtensions[i].ToLower() );
 				}
 			}
 		}
@@ -1009,7 +1053,7 @@ namespace SimpleFileBrowser
 				foreach( string filter in filters )
 				{
 					if( filter != null && filter.Length > 0 )
-						instance.filters.Add( new Filter( null, filter ) );
+						Instance.filters.Add( new Filter( null, filter ) );
 				}
 			}
 
@@ -1025,7 +1069,7 @@ namespace SimpleFileBrowser
 				for( int i = 0; i < filters.Length; i++ )
 				{
 					if( filters[i] != null && filters[i].Length > 0 )
-						instance.filters.Add( new Filter( null, filters[i] ) );
+						Instance.filters.Add( new Filter( null, filters[i] ) );
 				}
 			}
 
@@ -1041,7 +1085,7 @@ namespace SimpleFileBrowser
 				foreach( Filter filter in filters )
 				{
 					if( filter != null && filter.defaultExtension.Length > 0 )
-						instance.filters.Add( filter );
+						Instance.filters.Add( filter );
 				}
 			}
 
@@ -1057,7 +1101,7 @@ namespace SimpleFileBrowser
 				for( int i = 0; i < filters.Length; i++ )
 				{
 					if( filters[i] != null && filters[i].defaultExtension.Length > 0 )
-						instance.filters.Add( filters[i] );
+						Instance.filters.Add( filters[i] );
 				}
 			}
 
@@ -1066,20 +1110,20 @@ namespace SimpleFileBrowser
 
 		private static void SetFiltersPreProcessing( bool showAllFilesFilter )
 		{
-			instance.showAllFilesFilter = showAllFilesFilter;
+			Instance.showAllFilesFilter = showAllFilesFilter;
 
-			instance.filters.Clear();
+			Instance.filters.Clear();
 
 			if( showAllFilesFilter )
-				instance.filters.Add( instance.allFilesFilter );
+				Instance.filters.Add( Instance.allFilesFilter );
 		}
 
 		private static void SetFiltersPostProcessing()
 		{
-			List<Filter> filters = instance.filters;
+			List<Filter> filters = Instance.filters;
 
 			if( filters.Count == 0 )
-				filters.Add( instance.allFilesFilter );
+				filters.Add( Instance.allFilesFilter );
 
 			int maxFilterStrLength = 100;
 			List<string> dropdownValues = new List<string>( filters.Count );
@@ -1088,25 +1132,25 @@ namespace SimpleFileBrowser
 				string filterStr = filters[i].ToString();
 				dropdownValues.Add( filterStr );
 
-				maxFilterStrLength = Mathf.Max( maxFilterStrLength, instance.CalculateLengthOfDropdownText( filterStr ) );
+				maxFilterStrLength = Mathf.Max( maxFilterStrLength, Instance.CalculateLengthOfDropdownText( filterStr ) );
 			}
 
-			Vector2 size = instance.filtersDropdownContainer.sizeDelta;
+			Vector2 size = Instance.filtersDropdownContainer.sizeDelta;
 			size.x = maxFilterStrLength + 28;
-			instance.filtersDropdownContainer.sizeDelta = size;
+			Instance.filtersDropdownContainer.sizeDelta = size;
 
-			instance.filtersDropdown.ClearOptions();
-			instance.filtersDropdown.AddOptions( dropdownValues );
+			Instance.filtersDropdown.ClearOptions();
+			Instance.filtersDropdown.AddOptions( dropdownValues );
 		}
 
 		public static bool SetDefaultFilter( string defaultFilter )
 		{
 			if( defaultFilter == null )
 			{
-				if( instance.showAllFilesFilter )
+				if( Instance.showAllFilesFilter )
 				{
-					instance.filtersDropdown.value = 0;
-					instance.filtersDropdown.RefreshShownValue();
+					Instance.filtersDropdown.value = 0;
+					Instance.filtersDropdown.RefreshShownValue();
 
 					return true;
 				}
@@ -1116,13 +1160,13 @@ namespace SimpleFileBrowser
 
 			defaultFilter = defaultFilter.ToLower();
 
-			for( int i = 0; i < instance.filters.Count; i++ )
+			for( int i = 0; i < Instance.filters.Count; i++ )
 			{
-				HashSet<string> extensions = instance.filters[i].extensions;
+				HashSet<string> extensions = Instance.filters[i].extensions;
 				if( extensions != null && extensions.Contains( defaultFilter ) )
 				{
-					instance.filtersDropdown.value = i;
-					instance.filtersDropdown.RefreshShownValue();
+					Instance.filtersDropdown.value = i;
+					Instance.filtersDropdown.RefreshShownValue();
 
 					return true;
 				}
@@ -1130,6 +1174,6 @@ namespace SimpleFileBrowser
 
 			return false;
 		}
-		#endregion
+#endregion
 	}
 }

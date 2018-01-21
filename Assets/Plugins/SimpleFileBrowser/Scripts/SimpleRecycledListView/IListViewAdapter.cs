@@ -1,4 +1,4 @@
-﻿namespace SimpleRecycledListView
+﻿namespace SimpleFileBrowser
 {
 	public delegate void OnItemClickedHandler( ListItem item );
 

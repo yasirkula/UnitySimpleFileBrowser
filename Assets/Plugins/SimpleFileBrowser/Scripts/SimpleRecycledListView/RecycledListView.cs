@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SimpleRecycledListView
+namespace SimpleFileBrowser
 {
 	[RequireComponent( typeof( ScrollRect ) )]
 	public class RecycledListView : MonoBehaviour
@@ -183,7 +183,7 @@ namespace SimpleRecycledListView
 			}
 
 			// Reposition the item
-			item.transform.localPosition = new Vector3( 1f, -index * itemHeight, 0f );
+			( (RectTransform) item.transform ).anchoredPosition = new Vector2( 1f, -index * itemHeight );
 
 			// To access this item easily in the future, add it to the dictionary
 			items[index] = item;

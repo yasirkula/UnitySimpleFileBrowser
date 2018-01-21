@@ -2,8 +2,6 @@
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-using SimpleRecycledListView;
-
 namespace SimpleFileBrowser
 {
 	public class FileBrowserItem : ListItem, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler

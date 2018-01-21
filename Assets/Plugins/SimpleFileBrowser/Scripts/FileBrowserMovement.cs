@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
-using SimpleRecycledListView;
-
 namespace SimpleFileBrowser
 {
 	public class FileBrowserMovement : MonoBehaviour

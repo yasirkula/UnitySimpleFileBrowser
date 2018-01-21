@@ -6,8 +6,6 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 
-using SimpleRecycledListView;
-
 namespace SimpleFileBrowser
 {
 	public class FileBrowser : MonoBehaviour, IListViewAdapter

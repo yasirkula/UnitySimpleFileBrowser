@@ -97,10 +97,10 @@ public class FileBrowserTest : MonoBehaviour
 
 		// Add a new quick link to the browser (optional) (returns true if quick link is added successfully)
 		// It is sufficient to add a quick link just once
-		// Icon: default (folder icon)
 		// Name: Users
 		// Path: C:\Users
-		FileBrowser.AddQuickLink( null, "Users", "C:\\Users" );
+		// Icon: default (folder icon)
+		FileBrowser.AddQuickLink( "Users", "C:\\Users", null );
 
 		// Show a save file dialog 
 		// onSuccess event: not registered (which means this dialog is pretty useless)

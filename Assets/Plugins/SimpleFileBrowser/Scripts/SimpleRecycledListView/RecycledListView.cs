@@ -25,7 +25,6 @@ namespace SimpleFileBrowser
 		void Start()
 		{
 			viewportHeight = viewportTransform.rect.height;
-
 			GetComponent<ScrollRect>().onValueChanged.AddListener( ( pos ) => UpdateItemsInTheList() );
 		}
 
@@ -42,6 +41,7 @@ namespace SimpleFileBrowser
 		{
 			float newHeight = Mathf.Max( 1f, adapter.Count * itemHeight );
 			contentTransform.sizeDelta = new Vector2( 0f, newHeight );
+			viewportHeight = viewportTransform.rect.height;
 
 			UpdateItemsInTheList( true );
 		}
@@ -50,7 +50,6 @@ namespace SimpleFileBrowser
 		public void OnViewportDimensionsChanged()
 		{
 			viewportHeight = viewportTransform.rect.height;
-
 			UpdateItemsInTheList();
 		}
 
@@ -60,11 +59,11 @@ namespace SimpleFileBrowser
 			// If there is at least one item to show
 			if( adapter.Count > 0 )
 			{
-				Vector3 localPos = contentTransform.localPosition;
+				Vector2 contentPos = contentTransform.anchoredPosition;
 
 				// Use an extra item at each side, in case of scrolling
-				int newTopIndex = (int) ( localPos.y * _1OverItemHeight ) - 1;
-				int newBottomIndex = (int) ( ( localPos.y + viewportHeight ) * _1OverItemHeight ) + 1;
+				int newTopIndex = (int) ( contentPos.y * _1OverItemHeight ) - 1;
+				int newBottomIndex = (int) ( ( contentPos.y + viewportHeight ) * _1OverItemHeight ) + 1;
 
 				if( newTopIndex < 0 )
 					newTopIndex = 0;

@@ -10,6 +10,8 @@ namespace SimpleFileBrowser
 {
 	public class FileBrowser : MonoBehaviour, IListViewAdapter
 	{
+		public enum Permission { Denied = 0, Granted = 1, ShouldAsk = 2 };
+
 		#region Structs
 		[Serializable]
 		private struct FiletypeIcon
@@ -94,7 +96,7 @@ namespace SimpleFileBrowser
 		#region Constants
 		private const string ALL_FILES_FILTER_TEXT = "All Files (.*)";
 		private const string FOLDERS_FILTER_TEXT = "Folders";
-		private string DEFAULT_PATH = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
+		private string DEFAULT_PATH;
 		#endregion
 
 		#region Static Variables
@@ -102,6 +104,13 @@ namespace SimpleFileBrowser
 
 		public static bool Success { get; private set; }
 		public static string Result { get; private set; }
+
+		private static bool m_askPermissions = true;
+		public static bool AskPermissions
+		{
+			get { return m_askPermissions; }
+			set { m_askPermissions = value; }
+		}
 
 		private static FileBrowser m_instance = null;
 		private static FileBrowser Instance
@@ -118,6 +127,37 @@ namespace SimpleFileBrowser
 				return m_instance;
 			}
 		}
+
+#if !UNITY_EDITOR && UNITY_ANDROID
+		private static AndroidJavaClass m_ajc = null;
+		private static AndroidJavaClass AJC
+		{
+			get
+			{
+				if( m_ajc == null )
+					m_ajc = new AndroidJavaClass( "com.yasirkula.unity.FileBrowser" );
+
+				return m_ajc;
+			}
+		}
+
+		private static AndroidJavaObject m_context = null;
+		private static AndroidJavaObject Context
+		{
+			get
+			{
+				if( m_context == null )
+				{
+					using( AndroidJavaObject unityClass = new AndroidJavaClass( "com.unity3d.player.UnityPlayer" ) )
+					{
+						m_context = unityClass.GetStatic<AndroidJavaObject>( "currentActivity" );
+					}
+				}
+
+				return m_context;
+			}
+		}
+#endif
 		#endregion
 
 		#region Variables
@@ -204,8 +244,10 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private string[] excludeExtensions;
 
+#pragma warning disable 0414
 		[SerializeField]
 		private QuickLink[] quickLinks;
+#pragma warning restore 0414
 
 		private HashSet<string> excludedExtensionsSet;
 		private HashSet<string> addedQuickLinksSet;
@@ -227,9 +269,9 @@ namespace SimpleFileBrowser
 
 		// Required in RefreshFiles() function
 		private UnityEngine.EventSystems.PointerEventData nullPointerEventData;
-		#endregion
+#endregion
 
-		#region Properties
+#region Properties
 		private string m_currentPath = string.Empty;
 		private string CurrentPath
 		{
@@ -239,6 +281,10 @@ namespace SimpleFileBrowser
 			}
 			set
 			{
+				value = GetPathWithoutTrailingDirectorySeparator( value );
+				if( value == null )
+					return;
+
 				if( m_currentPath != value )
 				{
 					if( !Directory.Exists( value ) )
@@ -254,14 +300,10 @@ namespace SimpleFileBrowser
 						{
 							pathsFollowed[currentPathIndex] = value;
 							for( int i = pathsFollowed.Count - 1; i >= currentPathIndex + 1; i-- )
-							{
 								pathsFollowed.RemoveAt( i );
-							}
 						}
 						else
-						{
 							pathsFollowed.Add( m_currentPath );
-						}
 					}
 
 					m_searchString = string.Empty;
@@ -272,9 +314,9 @@ namespace SimpleFileBrowser
 					filenameImage.color = Color.white;
 					if( m_folderSelectMode )
 						filenameInputField.text = string.Empty;
-
-					RefreshFiles( true );
 				}
+
+				RefreshFiles( true );
 			}
 		}
 
@@ -336,17 +378,8 @@ namespace SimpleFileBrowser
 		private bool m_acceptNonExistingFilename = false;
 		private bool AcceptNonExistingFilename
 		{
-			get
-			{
-				return m_acceptNonExistingFilename;
-			}
-			set
-			{
-				if( m_acceptNonExistingFilename != value )
-				{
-					m_acceptNonExistingFilename = value;
-				}
-			}
+			get { return m_acceptNonExistingFilename; }
+			set { m_acceptNonExistingFilename = value; }
 		}
 
 		private bool m_folderSelectMode = false;
@@ -380,45 +413,38 @@ namespace SimpleFileBrowser
 
 		private string Title
 		{
-			get
-			{
-				return titleText.text;
-			}
-			set
-			{
-				titleText.text = value;
-			}
+			get { return titleText.text; }
+			set { titleText.text = value; }
 		}
 
 		private string SubmitButtonText
 		{
-			get
-			{
-				return submitButtonText.text;
-			}
-			set
-			{
-				submitButtonText.text = value;
-			}
+			get { return submitButtonText.text; }
+			set { submitButtonText.text = value; }
 		}
-		#endregion
+#endregion
 
-		#region Delegates
+#region Delegates
 		public delegate void OnSuccess( string path );
 		public delegate void OnCancel();
 
 		private OnSuccess onSuccess;
 		private OnCancel onCancel;
-		#endregion
+#endregion
 
-		#region Messages
+#region Messages
 		void Awake()
 		{
 			m_instance = this;
 
 			itemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
-
 			nullPointerEventData = new UnityEngine.EventSystems.PointerEventData( null );
+
+#if !UNITY_EDITOR && UNITY_IOS
+			DEFAULT_PATH = Application.persistentDataPath;
+#else
+			DEFAULT_PATH = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
+#endif
 
 			InitializeFiletypeIcons();
 			filetypeIcons = null;
@@ -440,13 +466,11 @@ namespace SimpleFileBrowser
 		void OnApplicationFocus( bool focus )
 		{
 			if( focus )
-			{
 				RefreshFiles( true );
-			}
 		}
-		#endregion
+#endregion
 
-		#region Interface Methods
+#region Interface Methods
 		public OnItemClickedHandler OnItemClicked { get { return null; } set { } }
 
 		public int Count { get { return validItems.Count; } }
@@ -474,6 +498,7 @@ namespace SimpleFileBrowser
 				icon = defaultIcon;
 
 			file.SetFile( icon, fileInfo.Name, isDirectory );
+			file.SetHidden( ( fileInfo.Attributes & FileAttributes.Hidden ) == FileAttributes.Hidden );
 
 			if( item.Position == m_selectedFilePosition )
 			{
@@ -481,13 +506,11 @@ namespace SimpleFileBrowser
 				file.Select();
 			}
 			else
-			{
 				file.Deselect();
-			}
 		}
-		#endregion
+#endregion
 
-		#region Initialization Functions
+#region Initialization Functions
 		private void InitializeFiletypeIcons()
 		{
 			filetypeToIcon = new Dictionary<string, Sprite>();
@@ -507,56 +530,63 @@ namespace SimpleFileBrowser
 			if( generateQuickLinksForDrives )
 			{
 #if !UNITY_EDITOR && UNITY_ANDROID
-				using( AndroidJavaClass externalDrivesList = new AndroidJavaClass( "com.yasirkula.unity.ExternalDrivesList" ) )
+				string drivesList = AJC.CallStatic<string>( "GetExternalDrives" );
+				if( drivesList != null && drivesList.Length > 0 )
 				{
-					string drivesList = externalDrivesList.CallStatic<string>( "GetExternalDrives" );
-					if( drivesList != null && drivesList.Length > 0 )
+					bool defaultPathInitialized = false;
+					int driveIndex = 1;
+					string[] drives = drivesList.Split( ':' );
+					for( int i = 0; i < drives.Length; i++ )
 					{
-						bool defaultPathInitialized = false;
-						string[] drives = drivesList.Split( ':' );
-						for( int i = 0; i < drives.Length; i++ )
+						try
 						{
-							if( drives[i].ToLower().Contains( "/usb" ) )
-								continue;
+							//string driveName = new DirectoryInfo( drives[i] ).Name;
+							//if( driveName.Length <= 1 )
+							//{
+							//	try
+							//	{
+							//		driveName = Directory.GetParent( drives[i] ).Name + "/" + driveName;
+							//	}
+							//	catch
+							//	{
+							//		driveName = "Drive " + driveIndex++;
+							//	}
+							//}	
 
-							int driveIndex = 1;
-							try
+							string driveName;
+							if( !defaultPathInitialized )
 							{
-								string driveName = new DirectoryInfo( drives[i] ).Name;
-								if( driveName.Length <= 1 )
-								{
-									try
-									{
-										driveName = Directory.GetParent( drives[i] ).Name + "/" + driveName;
-									}
-									catch( Exception )
-									{
-										driveName = "Drive " + driveIndex++;
-									}
-								}
+								DEFAULT_PATH = drives[i];
+								defaultPathInitialized = true;
 
-								AddQuickLink( driveIcon, driveName, drives[i], ref anchoredPos );
-
-								if( !defaultPathInitialized )
-								{
-									DEFAULT_PATH = drives[i];
-									defaultPathInitialized = true;
-								}
+								driveName = "Primary Drive";
 							}
-							catch( Exception ) { }
+							else
+							{
+								if( driveIndex == 1 )
+									driveName = "External Drive";
+								else
+									driveName = "External Drive " + driveIndex;
+
+								driveIndex++;
+							}
+
+							AddQuickLink( driveIcon, driveName, drives[i], ref anchoredPos );
 						}
+						catch { }
 					}
 				}
+#elif !UNITY_EDITOR && UNITY_IOS
+				AddQuickLink( driveIcon, "Files", Application.persistentDataPath, ref anchoredPos );
 #else
 				string[] drives = Directory.GetLogicalDrives();
 
 				for( int i = 0; i < drives.Length; i++ )
-				{
 					AddQuickLink( driveIcon, drives[i], drives[i], ref anchoredPos );
-				}
 #endif
 			}
 
+#if UNITY_EDITOR || !UNITY_ANDROID
 			for( int i = 0; i < quickLinks.Length; i++ )
 			{
 				QuickLink quickLink = quickLinks[i];
@@ -564,6 +594,7 @@ namespace SimpleFileBrowser
 
 				AddQuickLink( quickLink.icon, quickLink.name, quickLinkPath, ref anchoredPos );
 			}
+#endif
 
 			quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
 		}
@@ -573,19 +604,13 @@ namespace SimpleFileBrowser
 		public void OnBackButtonPressed()
 		{
 			if( currentPathIndex > 0 )
-			{
-				currentPathIndex--;
-				CurrentPath = pathsFollowed[currentPathIndex];
-			}
+				CurrentPath = pathsFollowed[--currentPathIndex];
 		}
 
 		public void OnForwardButtonPressed()
 		{
 			if( currentPathIndex < pathsFollowed.Count - 1 )
-			{
-				currentPathIndex++;
-				CurrentPath = pathsFollowed[currentPathIndex];
-			}
+				CurrentPath = pathsFollowed[++currentPathIndex];
 		}
 
 		public void OnUpButtonPressed()
@@ -601,26 +626,18 @@ namespace SimpleFileBrowser
 			string path = m_currentPath;
 			if( filenameInputField.text.Length > 0 )
 				path = Path.Combine( path, filenameInputField.text );
-			else
-				path = GetPathWithoutTrailingDirectorySeparator( path );
 
 			if( File.Exists( path ) )
 			{
 				if( !m_folderSelectMode )
-				{
 					OnOperationSuccessful( path );
-				}
 				else
-				{
 					filenameImage.color = wrongFilenameColor;
-				}
 			}
 			else if( Directory.Exists( path ) )
 			{
 				if( m_folderSelectMode )
-				{
 					OnOperationSuccessful( path );
-				}
 				else
 				{
 					if( m_currentPath == path )
@@ -639,15 +656,13 @@ namespace SimpleFileBrowser
 					OnOperationSuccessful( path );
 				}
 				else
-				{
 					filenameImage.color = wrongFilenameColor;
-				}
 			}
 		}
 
 		public void OnCancelButtonClicked()
 		{
-			OnOperationCanceled();
+			OnOperationCanceled( true );
 		}
 #endregion
 
@@ -660,27 +675,28 @@ namespace SimpleFileBrowser
 			Hide();
 
 			if( onSuccess != null )
-			{
 				onSuccess( path );
-			}
+
+			onSuccess = null;
+			onCancel = null;
 		}
 
-		private void OnOperationCanceled()
+		private void OnOperationCanceled( bool invokeCancelCallback )
 		{
 			Success = false;
 			Result = null;
 
 			Hide();
 
-			if( onCancel != null )
-			{
+			if( invokeCancelCallback && onCancel != null )
 				onCancel();
-			}
+
+			onSuccess = null;
+			onCancel = null;
 		}
 
 		public void OnPathChanged( string newPath )
 		{
-			newPath = GetPathWithoutTrailingDirectorySeparator( newPath );
 			CurrentPath = newPath;
 		}
 
@@ -702,9 +718,7 @@ namespace SimpleFileBrowser
 		public void OnQuickLinkSelected( FileBrowserQuickLink quickLink )
 		{
 			if( quickLink != null )
-			{
 				CurrentPath = quickLink.TargetPath;
-			}
 		}
 
 		public void OnItemSelected( FileBrowserItem item )
@@ -715,13 +729,9 @@ namespace SimpleFileBrowser
 		public void OnItemOpened( FileBrowserItem item )
 		{
 			if( item.IsDirectory )
-			{
 				CurrentPath = Path.Combine( m_currentPath, item.Name );
-			}
 			else
-			{
 				OnSubmitButtonClicked();
-			}
 		}
 
 		public char OnValidateFilenameInput( string text, int charIndex, char addedChar )
@@ -737,10 +747,10 @@ namespace SimpleFileBrowser
 #endregion
 
 #region Helper Functions
-		public void Show()
+		public void Show( string initialPath )
 		{
-			currentPathIndex = -1;
-			pathsFollowed.Clear();
+			if( AskPermissions )
+				RequestPermission();
 
 			SelectedFile = null;
 
@@ -756,11 +766,16 @@ namespace SimpleFileBrowser
 			Result = null;
 
 			gameObject.SetActive( true );
+
+			CurrentPath = GetInitialPath( initialPath );
 		}
 
 		public void Hide()
 		{
 			IsOpen = false;
+
+			currentPathIndex = -1;
+			pathsFollowed.Clear();
 
 			gameObject.SetActive( false );
 		}
@@ -843,25 +858,12 @@ namespace SimpleFileBrowser
 
 		private bool AddQuickLink( Sprite icon, string name, string path, ref Vector2 anchoredPos )
 		{
-			if( path == null || path.Length == 0 )
+			if( string.IsNullOrEmpty( path ) )
 				return false;
-
-			try
-			{
-				path = GetPathWithoutTrailingDirectorySeparator( path );
-			}
-			catch( ArgumentException )
-			{
-				return false;
-			}
-			catch( PathTooLongException )
-			{
-				return false;
-			}
-
+			
 			if( !Directory.Exists( path ) )
 				return false;
-
+			
 			// Don't add quick link if it already exists
 			if( addedQuickLinksSet.Contains( path ) )
 				return false;
@@ -874,7 +876,7 @@ namespace SimpleFileBrowser
 			else
 				quickLink.SetQuickLink( folderIcon, name, path );
 
-			quickLink.transformComponent.anchoredPosition = anchoredPos;
+			quickLink.TransformComponent.anchoredPosition = anchoredPos;
 
 			anchoredPos.y -= itemHeight;
 
@@ -885,14 +887,24 @@ namespace SimpleFileBrowser
 
 		private string GetPathWithoutTrailingDirectorySeparator( string path )
 		{
-			// Credit: http://stackoverflow.com/questions/6019227/remove-the-last-character-if-its-directoryseparatorchar-with-c-sharp
-			if( Path.GetDirectoryName( path ) != null )
-			{
-				char lastChar = path[path.Length - 1];
-				if( lastChar == Path.DirectorySeparatorChar || lastChar == Path.AltDirectorySeparatorChar )
-					path = path.Substring( 0, path.Length - 1 );
-			}
+			if( string.IsNullOrEmpty( path ) )
+				return null;
 
+			// Credit: http://stackoverflow.com/questions/6019227/remove-the-last-character-if-its-directoryseparatorchar-with-c-sharp
+			try
+			{
+				if( Path.GetDirectoryName( path ) != null )
+				{
+					char lastChar = path[path.Length - 1];
+					if( lastChar == Path.DirectorySeparatorChar || lastChar == Path.AltDirectorySeparatorChar )
+						path = path.Substring( 0, path.Length - 1 );
+				}
+			}
+			catch
+			{
+				return null;
+			}
+			
 			return path;
 		}
 
@@ -916,9 +928,24 @@ namespace SimpleFileBrowser
 
 			return totalLength;
 		}
-#endregion
 
-#region File Browser Functions (static)
+		private string GetInitialPath( string initialPath )
+		{
+			if( string.IsNullOrEmpty( initialPath ) || !Directory.Exists( initialPath ) )
+			{
+				if( CurrentPath.Length == 0 )
+					initialPath = DEFAULT_PATH;
+				else
+					initialPath = CurrentPath;
+			}
+
+			m_currentPath = string.Empty; // Needed to correctly reset the pathsFollowed
+
+			return initialPath;
+		}
+		#endregion
+
+		#region File Browser Functions (static)
 		public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel,
 										   bool folderMode = false, string initialPath = null,
 										   string title = "Save", string saveButtonText = "Save" )
@@ -928,25 +955,16 @@ namespace SimpleFileBrowser
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				return false;
 			}
-
-			if( ( initialPath == null || initialPath.Length == 0 || !Directory.Exists( initialPath ) ) && Instance.CurrentPath.Length == 0 )
-				initialPath = Instance.DEFAULT_PATH;
-
+			
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;
 
 			Instance.FolderSelectMode = folderMode;
 			Instance.Title = title;
 			Instance.SubmitButtonText = saveButtonText;
-
 			Instance.AcceptNonExistingFilename = !folderMode;
 
-			Instance.Show();
-
-			if( Instance.CurrentPath != initialPath )
-				Instance.CurrentPath = initialPath;
-			else
-				Instance.RefreshFiles( true );
+			Instance.Show( initialPath );
 
 			return true;
 		}
@@ -960,39 +978,30 @@ namespace SimpleFileBrowser
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				return false;
 			}
-
-			if( ( initialPath == null || initialPath.Length == 0 || !Directory.Exists( initialPath ) ) && Instance.CurrentPath.Length == 0 )
-				initialPath = Instance.DEFAULT_PATH;
-
+			
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;
 
 			Instance.FolderSelectMode = folderMode;
 			Instance.Title = title;
 			Instance.SubmitButtonText = loadButtonText;
-
 			Instance.AcceptNonExistingFilename = false;
 
-			Instance.Show();
-
-			if( Instance.CurrentPath != initialPath )
-				Instance.CurrentPath = initialPath;
-			else
-				Instance.RefreshFiles( true );
+			Instance.Show( initialPath );
 
 			return true;
+		}
+
+		public static void HideDialog( bool invokeCancelCallback = false )
+		{
+			Instance.OnOperationCanceled( invokeCancelCallback );
 		}
 
 		public static IEnumerator WaitForSaveDialog( bool folderMode = false, string initialPath = null,
 													 string title = "Save", string saveButtonText = "Save" )
 		{
-			if( Instance.gameObject.activeSelf )
-			{
-				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
+			if( !ShowSaveDialog( null, null, folderMode, initialPath, title, saveButtonText ) )
 				yield break;
-			}
-
-			ShowSaveDialog( null, null, folderMode, initialPath, title, saveButtonText );
 
 			while( Instance.gameObject.activeSelf )
 				yield return null;
@@ -1001,13 +1010,8 @@ namespace SimpleFileBrowser
 		public static IEnumerator WaitForLoadDialog( bool folderMode = false, string initialPath = null,
 													 string title = "Load", string loadButtonText = "Select" )
 		{
-			if( Instance.gameObject.activeSelf )
-			{
-				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
+			if( !ShowLoadDialog( null, null, folderMode, initialPath, title, loadButtonText ) )
 				yield break;
-			}
-
-			ShowLoadDialog( null, null, folderMode, initialPath, title, loadButtonText );
 
 			while( Instance.gameObject.activeSelf )
 				yield return null;
@@ -1036,9 +1040,7 @@ namespace SimpleFileBrowser
 			if( excludedExtensions != null )
 			{
 				for( int i = 0; i < excludedExtensions.Length; i++ )
-				{
 					Instance.excludedExtensionsSet.Add( excludedExtensions[i].ToLower() );
-				}
 			}
 		}
 
@@ -1171,6 +1173,45 @@ namespace SimpleFileBrowser
 			}
 
 			return false;
+		}
+
+		public static Permission CheckPermission()
+		{
+#if !UNITY_EDITOR && UNITY_ANDROID
+			Permission result = (Permission) AJC.CallStatic<int>( "CheckPermission", Context );
+			if( result == Permission.Denied && (Permission) PlayerPrefs.GetInt( "FileBrowserPermission", (int) Permission.ShouldAsk ) == Permission.ShouldAsk )
+				result = Permission.ShouldAsk;
+
+			return result;
+#else
+			return Permission.Granted;
+#endif
+		}
+
+		public static Permission RequestPermission()
+		{
+#if !UNITY_EDITOR && UNITY_ANDROID
+			object threadLock = new object();
+			lock( threadLock )
+			{
+				FBPermissionCallbackAndroid nativeCallback = new FBPermissionCallbackAndroid( threadLock );
+
+				AJC.CallStatic( "RequestPermission", Context, nativeCallback, PlayerPrefs.GetInt( "FileBrowserPermission", (int) Permission.ShouldAsk ) );
+
+				if( nativeCallback.Result == -1 )
+					System.Threading.Monitor.Wait( threadLock );
+
+				if( (Permission) nativeCallback.Result != Permission.ShouldAsk && PlayerPrefs.GetInt( "FileBrowserPermission", -1 ) != nativeCallback.Result )
+				{
+					PlayerPrefs.SetInt( "FileBrowserPermission", nativeCallback.Result );
+					PlayerPrefs.Save();
+				}
+
+				return (Permission) nativeCallback.Result;
+			}
+#else
+			return Permission.Granted;
+#endif
 		}
 #endregion
 	}

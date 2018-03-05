@@ -27,7 +27,7 @@ namespace SimpleFileBrowser
 
 		#region Properties
 		private RectTransform m_transform;
-		public RectTransform transformComponent
+		public RectTransform TransformComponent
 		{
 			get
 			{
@@ -78,14 +78,18 @@ namespace SimpleFileBrowser
 
 		public void OnPointerEnter( PointerEventData eventData )
 		{
+#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
 			if( fileBrowser.SelectedFilePosition != Position )
 				background.color = fileBrowser.hoveredFileColor;
+#endif
 		}
 
 		public void OnPointerExit( PointerEventData eventData )
 		{
+#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
 			if( fileBrowser.SelectedFilePosition != Position )
 				background.color = fileBrowser.normalFileColor;
+#endif
 		}
 		#endregion
 
@@ -98,6 +102,17 @@ namespace SimpleFileBrowser
 		public void Deselect()
 		{
 			background.color = fileBrowser.normalFileColor;
+		}
+
+		public void SetHidden( bool isHidden )
+		{
+			Color c = icon.color;
+			c.a = isHidden ? 0.5f : 1f;
+			icon.color = c;
+
+			c = nameText.color;
+			c.a = isHidden ? 0.55f : 1f;
+			nameText.color = c;
 		}
 		#endregion
 	}

@@ -59,11 +59,10 @@ namespace SimpleFileBrowser
 			// If there is at least one item to show
 			if( adapter.Count > 0 )
 			{
-				Vector2 contentPos = contentTransform.anchoredPosition;
-
-				// Use an extra item at each side, in case of scrolling
-				int newTopIndex = (int) ( contentPos.y * _1OverItemHeight ) - 1;
-				int newBottomIndex = (int) ( ( contentPos.y + viewportHeight ) * _1OverItemHeight ) + 1;
+				float contentPos = contentTransform.anchoredPosition.y - 1f;
+				
+				int newTopIndex = (int) ( contentPos * _1OverItemHeight );
+				int newBottomIndex = (int) ( ( contentPos + viewportHeight + 2f ) * _1OverItemHeight );
 
 				if( newTopIndex < 0 )
 					newTopIndex = 0;

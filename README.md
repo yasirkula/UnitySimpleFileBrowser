@@ -2,6 +2,10 @@
 
 ![screenshot](https://yasirkula.files.wordpress.com/2016/11/simplefileexplorer.png)
 
+**Available on Asset Store:** https://www.assetstore.unity3d.com/en/#!/content/113006
+
+**Forum Thread:** https://forum.unity.com/threads/simple-file-browser-open-source.441908/
+
 ## FEATURES
 - Behaves similar to Windows file chooser
 - Costs 3 SetPass calls and ~13 draw calls

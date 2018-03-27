@@ -759,6 +759,7 @@ namespace SimpleFileBrowser
 
 			filesScrollRect.verticalNormalizedPosition = 1;
 
+			filenameInputField.text = string.Empty;
 			filenameImage.color = Color.white;
 
 			IsOpen = true;

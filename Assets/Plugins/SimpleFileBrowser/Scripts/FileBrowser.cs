@@ -478,7 +478,7 @@ namespace SimpleFileBrowser
 
 		public ListItem CreateItem()
 		{
-			FileBrowserItem item = Instantiate( itemPrefab, filesContainer, false );
+			FileBrowserItem item = (FileBrowserItem) Instantiate( itemPrefab, filesContainer, false );
 			item.SetFileBrowser( this );
 
 			return item;
@@ -869,7 +869,7 @@ namespace SimpleFileBrowser
 			if( addedQuickLinksSet.Contains( path ) )
 				return false;
 
-			FileBrowserQuickLink quickLink = Instantiate( quickLinkPrefab, quickLinksContainer, false );
+			FileBrowserQuickLink quickLink = (FileBrowserQuickLink) Instantiate( quickLinkPrefab, quickLinksContainer, false );
 			quickLink.SetFileBrowser( this );
 
 			if( icon != null )

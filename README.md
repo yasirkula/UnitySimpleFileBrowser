@@ -8,7 +8,7 @@
 
 ## FEATURES
 - Behaves similar to Windows file chooser
-- Costs 3 SetPass calls and ~13 draw calls
+- Costs 1 SetPass call and ~10 batches (assuming that *Sprite Packing* is enabled in *Editor Settings*)
 - Ability to search by name or filter by type
 - Quick links
 - Simple user interface

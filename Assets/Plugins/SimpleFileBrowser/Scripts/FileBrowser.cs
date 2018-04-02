@@ -47,7 +47,7 @@ namespace SimpleFileBrowser
 			{
 				this.name = name;
 
-				extension = extension.ToLower();
+				extension = extension.ToLowerInvariant();
 				extensions = new HashSet<string>() { extension };
 				defaultExtension = extension;
 			}
@@ -57,7 +57,7 @@ namespace SimpleFileBrowser
 				this.name = name;
 
 				for( int i = 0; i < extensions.Length; i++ )
-					extensions[i] = extensions[i].ToLower();
+					extensions[i] = extensions[i].ToLowerInvariant();
 
 				this.extensions = new HashSet<string>( extensions );
 				defaultExtension = extensions[0];
@@ -494,7 +494,7 @@ namespace SimpleFileBrowser
 			Sprite icon;
 			if( isDirectory )
 				icon = folderIcon;
-			else if( !filetypeToIcon.TryGetValue( fileInfo.Extension.ToLower(), out icon ) )
+			else if( !filetypeToIcon.TryGetValue( fileInfo.Extension.ToLowerInvariant(), out icon ) )
 				icon = defaultIcon;
 
 			file.SetFile( icon, fileInfo.Name, isDirectory );
@@ -827,7 +827,7 @@ namespace SimpleFileBrowser
 						if( ( fileInfo.Attributes & ignoredFileAttributes ) != 0 )
 							continue;
 
-						string extension = fileInfo.Extension.ToLower();
+						string extension = fileInfo.Extension.ToLowerInvariant();
 						if( excludedExtensionsSet.Contains( extension ) )
 							continue;
 
@@ -1041,7 +1041,7 @@ namespace SimpleFileBrowser
 			if( excludedExtensions != null )
 			{
 				for( int i = 0; i < excludedExtensions.Length; i++ )
-					Instance.excludedExtensionsSet.Add( excludedExtensions[i].ToLower() );
+					Instance.excludedExtensionsSet.Add( excludedExtensions[i].ToLowerInvariant() );
 			}
 		}
 
@@ -1159,7 +1159,7 @@ namespace SimpleFileBrowser
 				return false;
 			}
 
-			defaultFilter = defaultFilter.ToLower();
+			defaultFilter = defaultFilter.ToLowerInvariant();
 
 			for( int i = 0; i < Instance.filters.Count; i++ )
 			{

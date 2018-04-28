@@ -17,6 +17,8 @@
 - Supports runtime permissions on Android M+
 - Optimized using a recycled list view (makes *Instantiate* calls sparingly)
 
+**NOTE:** Universal Windows Platform (UWP) is not supported!
+
 ## HOW TO
 Simply import **SimpleFileBrowser.unitypackage** to your project. Afterwards, add `using SimpleFileBrowser;` to your script.
 

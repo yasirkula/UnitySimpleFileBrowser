@@ -23,7 +23,9 @@ namespace SimpleFileBrowser
 		[Serializable]
 		private struct QuickLink
 		{
+#if UNITY_EDITOR || ( !UNITY_WSA && !UNITY_WSA_10_0 )
 			public Environment.SpecialFolder target;
+#endif
 			public string name;
 			public Sprite icon;
 		}
@@ -251,7 +253,7 @@ namespace SimpleFileBrowser
 
 		private HashSet<string> excludedExtensionsSet;
 		private HashSet<string> addedQuickLinksSet;
-		
+
 		[SerializeField]
 		private bool generateQuickLinksForDrives = true;
 
@@ -269,9 +271,9 @@ namespace SimpleFileBrowser
 
 		// Required in RefreshFiles() function
 		private UnityEngine.EventSystems.PointerEventData nullPointerEventData;
-#endregion
+		#endregion
 
-#region Properties
+		#region Properties
 		private string m_currentPath = string.Empty;
 		private string CurrentPath
 		{
@@ -422,17 +424,17 @@ namespace SimpleFileBrowser
 			get { return submitButtonText.text; }
 			set { submitButtonText.text = value; }
 		}
-#endregion
+		#endregion
 
-#region Delegates
+		#region Delegates
 		public delegate void OnSuccess( string path );
 		public delegate void OnCancel();
 
 		private OnSuccess onSuccess;
 		private OnCancel onCancel;
-#endregion
+		#endregion
 
-#region Messages
+		#region Messages
 		void Awake()
 		{
 			m_instance = this;
@@ -440,7 +442,7 @@ namespace SimpleFileBrowser
 			itemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
 			nullPointerEventData = new UnityEngine.EventSystems.PointerEventData( null );
 
-#if !UNITY_EDITOR && UNITY_IOS
+#if !UNITY_EDITOR && ( UNITY_IOS || UNITY_WSA || UNITY_WSA_10_0 )
 			DEFAULT_PATH = Application.persistentDataPath;
 #else
 			DEFAULT_PATH = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
@@ -468,9 +470,9 @@ namespace SimpleFileBrowser
 			if( focus )
 				RefreshFiles( true );
 		}
-#endregion
+		#endregion
 
-#region Interface Methods
+		#region Interface Methods
 		public OnItemClickedHandler OnItemClicked { get { return null; } set { } }
 
 		public int Count { get { return validItems.Count; } }
@@ -508,9 +510,9 @@ namespace SimpleFileBrowser
 			else
 				file.Deselect();
 		}
-#endregion
+		#endregion
 
-#region Initialization Functions
+		#region Initialization Functions
 		private void InitializeFiletypeIcons()
 		{
 			filetypeToIcon = new Dictionary<string, Sprite>();
@@ -576,7 +578,7 @@ namespace SimpleFileBrowser
 						catch { }
 					}
 				}
-#elif !UNITY_EDITOR && UNITY_IOS
+#elif !UNITY_EDITOR && ( UNITY_IOS || UNITY_WSA || UNITY_WSA_10_0 )
 				AddQuickLink( driveIcon, "Files", Application.persistentDataPath, ref anchoredPos );
 #else
 				string[] drives = Directory.GetLogicalDrives();
@@ -586,7 +588,7 @@ namespace SimpleFileBrowser
 #endif
 			}
 
-#if UNITY_EDITOR || !UNITY_ANDROID
+#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_WSA && !UNITY_WSA_10_0 )
 			for( int i = 0; i < quickLinks.Length; i++ )
 			{
 				QuickLink quickLink = quickLinks[i];
@@ -598,9 +600,9 @@ namespace SimpleFileBrowser
 
 			quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
 		}
-#endregion
+		#endregion
 
-#region Button Events
+		#region Button Events
 		public void OnBackButtonPressed()
 		{
 			if( currentPathIndex > 0 )
@@ -664,9 +666,9 @@ namespace SimpleFileBrowser
 		{
 			OnOperationCanceled( true );
 		}
-#endregion
+		#endregion
 
-#region Other Events
+		#region Other Events
 		private void OnOperationSuccessful( string path )
 		{
 			Success = true;
@@ -744,9 +746,9 @@ namespace SimpleFileBrowser
 
 			return addedChar;
 		}
-#endregion
+		#endregion
 
-#region Helper Functions
+		#region Helper Functions
 		public void Show( string initialPath )
 		{
 			if( AskPermissions )
@@ -802,7 +804,7 @@ namespace SimpleFileBrowser
 			}
 
 			validItems.Clear();
-			
+
 			SelectedFile = null;
 
 			if( !showHiddenFilesToggle.isOn )
@@ -861,10 +863,10 @@ namespace SimpleFileBrowser
 		{
 			if( string.IsNullOrEmpty( path ) )
 				return false;
-			
+
 			if( !Directory.Exists( path ) )
 				return false;
-			
+
 			// Don't add quick link if it already exists
 			if( addedQuickLinksSet.Contains( path ) )
 				return false;
@@ -905,7 +907,7 @@ namespace SimpleFileBrowser
 			{
 				return null;
 			}
-			
+
 			return path;
 		}
 
@@ -956,7 +958,7 @@ namespace SimpleFileBrowser
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				return false;
 			}
-			
+
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;
 
@@ -979,7 +981,7 @@ namespace SimpleFileBrowser
 				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
 				return false;
 			}
-			
+
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;
 
@@ -1021,7 +1023,7 @@ namespace SimpleFileBrowser
 		public static bool AddQuickLink( string name, string path, Sprite icon = null )
 		{
 			Vector2 anchoredPos = new Vector2( 0f, -Instance.quickLinksContainer.sizeDelta.y );
-			
+
 			if( Instance.AddQuickLink( icon, name, path, ref anchoredPos ) )
 			{
 				Instance.quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
@@ -1064,7 +1066,7 @@ namespace SimpleFileBrowser
 		public static void SetFilters( bool showAllFilesFilter, params string[] filters )
 		{
 			SetFiltersPreProcessing( showAllFilesFilter );
-			
+
 			if( filters != null )
 			{
 				for( int i = 0; i < filters.Length; i++ )
@@ -1214,6 +1216,6 @@ namespace SimpleFileBrowser
 			return Permission.Granted;
 #endif
 		}
-#endregion
+		#endregion
 	}
 }

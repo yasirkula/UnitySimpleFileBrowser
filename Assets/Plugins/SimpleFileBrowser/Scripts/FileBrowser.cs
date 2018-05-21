@@ -1144,6 +1144,7 @@ namespace SimpleFileBrowser
 
 			Instance.filtersDropdown.ClearOptions();
 			Instance.filtersDropdown.AddOptions( dropdownValues );
+			Instance.filtersDropdown.value = 0;
 		}
 
 		public static bool SetDefaultFilter( string defaultFilter )

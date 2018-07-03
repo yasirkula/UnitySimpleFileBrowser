@@ -1543,9 +1543,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46d41d79fe7c3d44ca846b4f3d81a476, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  canvas: {fileID: 224000013577827562}
+  canvas: {fileID: 223000012645506472}
   window: {fileID: 224000012589068232}
-  dragGizmo: {fileID: 224000010142423696}
   fileBrowser: {fileID: 114000013689746302}
   listView: {fileID: 114985255881820402}
 --- !u!114 &114000011218353566
@@ -1712,6 +1711,23 @@ MonoBehaviour:
         m_Calls:
         - m_Target: {fileID: 114000011184475620}
           m_MethodName: OnResize
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: UnityEngine.EventSystems.EventTrigger+TriggerEvent, UnityEngine.UI,
+        Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+  - eventID: 13
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 114000011184475620}
+          m_MethodName: OnResizeStarted
           m_Mode: 0
           m_Arguments:
             m_ObjectArgument: {fileID: 0}

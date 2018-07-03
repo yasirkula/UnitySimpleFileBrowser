@@ -114,6 +114,13 @@ namespace SimpleFileBrowser
 			set { m_askPermissions = value; }
 		}
 
+		private static bool m_singleClickMode = false;
+		public static bool SingleClickMode
+		{
+			get { return m_singleClickMode; }
+			set { m_singleClickMode = value; }
+		}
+
 		private static FileBrowser m_instance = null;
 		private static FileBrowser Instance
 		{
@@ -264,8 +271,6 @@ namespace SimpleFileBrowser
 
 		private bool showAllFilesFilter = true;
 
-		private float itemHeight;
-
 		private int currentPathIndex = -1;
 		private List<string> pathsFollowed = new List<string>();
 
@@ -277,13 +282,12 @@ namespace SimpleFileBrowser
 		private string m_currentPath = string.Empty;
 		private string CurrentPath
 		{
-			get
-			{
-				return m_currentPath;
-			}
+			get { return m_currentPath; }
 			set
 			{
-				value = GetPathWithoutTrailingDirectorySeparator( value );
+				if( value != null )
+					value = GetPathWithoutTrailingDirectorySeparator( value.Trim() );
+
 				if( value == null )
 					return;
 
@@ -439,7 +443,7 @@ namespace SimpleFileBrowser
 		{
 			m_instance = this;
 
-			itemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
+			ItemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
 			nullPointerEventData = new UnityEngine.EventSystems.PointerEventData( null );
 
 #if !UNITY_EDITOR && ( UNITY_IOS || UNITY_WSA || UNITY_WSA_10_0 )
@@ -476,7 +480,7 @@ namespace SimpleFileBrowser
 		public OnItemClickedHandler OnItemClicked { get { return null; } set { } }
 
 		public int Count { get { return validItems.Count; } }
-		public float ItemHeight { get { return itemHeight; } }
+		public float ItemHeight { get; private set; }
 
 		public ListItem CreateItem()
 		{
@@ -789,17 +793,20 @@ namespace SimpleFileBrowser
 			{
 				allItems.Clear();
 
-				try
+				if( !string.IsNullOrEmpty( m_currentPath ) )
 				{
-					DirectoryInfo dir = new DirectoryInfo( m_currentPath );
+					try
+					{
+						DirectoryInfo dir = new DirectoryInfo( m_currentPath );
 
-					FileSystemInfo[] items = dir.GetFileSystemInfos();
-					for( int i = 0; i < items.Length; i++ )
-						allItems.Add( items[i] );
-				}
-				catch( Exception e )
-				{
-					Debug.LogException( e );
+						FileSystemInfo[] items = dir.GetFileSystemInfos();
+						for( int i = 0; i < items.Length; i++ )
+							allItems.Add( items[i] );
+					}
+					catch( Exception e )
+					{
+						Debug.LogException( e );
+					}
 				}
 			}
 
@@ -880,8 +887,7 @@ namespace SimpleFileBrowser
 				quickLink.SetQuickLink( folderIcon, name, path );
 
 			quickLink.TransformComponent.anchoredPosition = anchoredPos;
-
-			anchoredPos.y -= itemHeight;
+			anchoredPos.y -= ItemHeight;
 
 			addedQuickLinksSet.Add( path );
 

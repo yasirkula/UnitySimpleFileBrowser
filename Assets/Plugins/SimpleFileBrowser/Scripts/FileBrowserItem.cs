@@ -39,9 +39,7 @@ namespace SimpleFileBrowser
 		}
 
 		public string Name { get { return nameText.text; } }
-
-		private bool m_isDirectory;
-		public bool IsDirectory { get { return m_isDirectory; } }
+		public bool IsDirectory { get; private set; }
 		#endregion
 
 		#region Initialization Functions
@@ -55,24 +53,32 @@ namespace SimpleFileBrowser
 			this.icon.sprite = icon;
 			nameText.text = name;
 
-			m_isDirectory = isDirectory;
+			IsDirectory = isDirectory;
 		}
 		#endregion
 
 		#region Pointer Events
 		public void OnPointerClick( PointerEventData eventData )
 		{
-			if( Time.realtimeSinceStartup - prevTouchTime < DOUBLE_CLICK_TIME )
+			if( FileBrowser.SingleClickMode )
 			{
-				if( fileBrowser.SelectedFilePosition == Position )
-					fileBrowser.OnItemOpened( this );
-
-				prevTouchTime = Mathf.NegativeInfinity;
+				fileBrowser.OnItemSelected( this );
+				fileBrowser.OnItemOpened( this );
 			}
 			else
 			{
-				fileBrowser.OnItemSelected( this );
-				prevTouchTime = Time.realtimeSinceStartup;
+				if( Time.realtimeSinceStartup - prevTouchTime < DOUBLE_CLICK_TIME )
+				{
+					if( fileBrowser.SelectedFilePosition == Position )
+						fileBrowser.OnItemOpened( this );
+
+					prevTouchTime = Mathf.NegativeInfinity;
+				}
+				else
+				{
+					fileBrowser.OnItemSelected( this );
+					prevTouchTime = Time.realtimeSinceStartup;
+				}
 			}
 		}
 

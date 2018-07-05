@@ -84,7 +84,7 @@ When **showAllFilesFilter** is set to true, a filter by the name "*All Files (.\
 public static bool SetDefaultFilter( string defaultFilter );
 ```
 
-To open files or directories in the file browser with a single click (instead of double clicking), you can set `FileBrowser.SingleClickMode` to *true*.
+To open files or directories in the file browser with a single click (instead of double clicking), you can set **FileBrowser.SingleClickMode** to *true*.
 
 On Android, file browser requires external storage access to function properly. You can use the following function to check if we have runtime permission to access the external storage:
 

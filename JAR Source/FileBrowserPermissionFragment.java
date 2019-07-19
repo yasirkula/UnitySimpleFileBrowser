@@ -16,9 +16,11 @@ package com.yasirkula.unity;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Fragment;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
 @TargetApi( Build.VERSION_CODES.M )
 public class FileBrowserPermissionFragment extends Fragment
@@ -42,9 +44,7 @@ public class FileBrowserPermissionFragment extends Fragment
 	{
 		super.onCreate( savedInstanceState );
 		if( permissionReceiver == null )
-		{
 			getFragmentManager().beginTransaction().remove( this ).commit();
-		}
 		else
 		{
 			requestPermissions( new String[]
@@ -58,6 +58,14 @@ public class FileBrowserPermissionFragment extends Fragment
 	{
 		if( requestCode != PERMISSIONS_REQUEST_CODE )
 			return;
+
+		if( permissionReceiver == null )
+		{
+			Log.e( "Unity", "Fragment data got reset while asking permissions!" );
+
+			getFragmentManager().beginTransaction().remove( this ).commit();
+			return;
+		}
 
 		// 0 -> denied, must go to settings
 		// 1 -> granted
@@ -84,5 +92,19 @@ public class FileBrowserPermissionFragment extends Fragment
 
 		permissionReceiver.OnPermissionResult( result );
 		getFragmentManager().beginTransaction().remove( this ).commit();
+
+		// Resolves a bug in Unity 2019 where the calling activity
+		// doesn't resume automatically after the fragment finishes
+		// Credit: https://stackoverflow.com/a/12409215/2373034
+		try
+		{
+			Intent resumeUnityActivity = new Intent( getActivity(), getActivity().getClass() );
+			resumeUnityActivity.setFlags( Intent.FLAG_ACTIVITY_REORDER_TO_FRONT );
+			getActivity().startActivityIfNeeded( resumeUnityActivity, 0 );
+		}
+		catch( Exception e )
+		{
+			Log.e( "Unity", "Exception (resume):", e );
+		}
 	}
 }

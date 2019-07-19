@@ -90,18 +90,12 @@ public class FileBrowser
 		return result;
 	}
 
+	@TargetApi( Build.VERSION_CODES.M )
 	public static int CheckPermission( Context context )
 	{
 		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.M )
 			return 1;
 
-		return CheckPermissionInternal( context );
-	}
-
-	// Credit: https://github.com/Over17/UnityAndroidPermissions/blob/0dca33e40628f1f279decb67d901fd444b409cd7/src/UnityAndroidPermissions/src/main/java/com/unity3d/plugin/UnityAndroidPermissions.java
-	@TargetApi( Build.VERSION_CODES.M )
-	private static int CheckPermissionInternal( Context context )
-	{
 		if( context.checkSelfPermission( Manifest.permission.WRITE_EXTERNAL_STORAGE ) == PackageManager.PERMISSION_GRANTED &&
 				context.checkSelfPermission( Manifest.permission.READ_EXTERNAL_STORAGE ) == PackageManager.PERMISSION_GRANTED )
 			return 1;

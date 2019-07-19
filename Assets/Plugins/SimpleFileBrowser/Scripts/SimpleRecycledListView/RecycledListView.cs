@@ -14,8 +14,8 @@ namespace SimpleFileBrowser
 		private float itemHeight, _1OverItemHeight;
 		private float viewportHeight;
 
-		private Dictionary<int, ListItem> items = new Dictionary<int, ListItem>();
-		private Stack<ListItem> pooledItems = new Stack<ListItem>();
+		private readonly Dictionary<int, ListItem> items = new Dictionary<int, ListItem>();
+		private readonly Stack<ListItem> pooledItems = new Stack<ListItem>();
 
 		IListViewAdapter adapter = null;
 
@@ -60,7 +60,7 @@ namespace SimpleFileBrowser
 			if( adapter.Count > 0 )
 			{
 				float contentPos = contentTransform.anchoredPosition.y - 1f;
-				
+
 				int newTopIndex = (int) ( contentPos * _1OverItemHeight );
 				int newBottomIndex = (int) ( ( contentPos + viewportHeight + 2f ) * _1OverItemHeight );
 

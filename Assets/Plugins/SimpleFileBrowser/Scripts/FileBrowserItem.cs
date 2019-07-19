@@ -13,6 +13,7 @@ namespace SimpleFileBrowser
 		#region Variables
 		protected FileBrowser fileBrowser;
 
+#pragma warning disable 0649
 		[SerializeField]
 		private Image background;
 
@@ -21,6 +22,7 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private Text nameText;
+#pragma warning restore 0649
 
 		private float prevTouchTime = Mathf.NegativeInfinity;
 		#endregion

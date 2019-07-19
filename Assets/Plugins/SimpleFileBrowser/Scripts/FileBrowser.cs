@@ -13,6 +13,7 @@ namespace SimpleFileBrowser
 		public enum Permission { Denied = 0, Granted = 1, ShouldAsk = 2 };
 
 		#region Structs
+#pragma warning disable 0649
 		[Serializable]
 		private struct FiletypeIcon
 		{
@@ -29,6 +30,7 @@ namespace SimpleFileBrowser
 			public string name;
 			public Sprite icon;
 		}
+#pragma warning restore 0649
 		#endregion
 
 		#region Inner Classes
@@ -170,6 +172,7 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Variables
+#pragma warning disable 0649
 		[Header( "References" )]
 
 		[SerializeField]
@@ -263,6 +266,7 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private bool generateQuickLinksForDrives = true;
+#pragma warning restore 0649
 
 		private FileAttributes ignoredFileAttributes = FileAttributes.System;
 

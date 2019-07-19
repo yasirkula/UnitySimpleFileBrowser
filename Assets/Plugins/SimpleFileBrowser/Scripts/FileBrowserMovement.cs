@@ -6,6 +6,7 @@ namespace SimpleFileBrowser
 	public class FileBrowserMovement : MonoBehaviour
 	{
 		#region Variables
+#pragma warning disable 0649
 		[SerializeField]
 		private Canvas canvas;
 		private RectTransform canvasTR;
@@ -19,6 +20,7 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private RecycledListView listView;
+#pragma warning restore 0649
 
 		private Vector2 initialTouchPos = Vector2.zero;
 		private Vector2 initialAnchoredPos, initialSizeDelta;

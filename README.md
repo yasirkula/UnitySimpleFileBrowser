@@ -127,8 +127,8 @@ public static void FileBrowserHelpers.AppendCopyToFile( string targetPath, strin
 public static byte[] FileBrowserHelpers.ReadBytesFromFile( string sourcePath );
 public static string FileBrowserHelpers.ReadTextFromFile( string sourcePath );
 public static void FileBrowserHelpers.ReadCopyFromFile( string sourcePath, string destinationFile ); // Copies the contents of source to destinationFile. Here, destinationFile must be a file path
-public static void FileBrowserHelpers.RenameFile( string path, string newName );
-public static void FileBrowserHelpers.RenameDirectory( string path, string newName );
+public static string FileBrowserHelpers.RenameFile( string path, string newName ); // Returns the new path of the file
+public static string FileBrowserHelpers.RenameDirectory( string path, string newName ); // Returns the new path of the directory
 public static void FileBrowserHelpers.DeleteFile( string path );
 public static void FileBrowserHelpers.DeleteDirectory( string path );
 public static string FileBrowserHelpers.GetFilename( string path );

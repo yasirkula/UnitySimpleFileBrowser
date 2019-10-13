@@ -152,6 +152,8 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 224000014068651142}
+  - component: {fileID: 223383913520683742}
+  - component: {fileID: 114369654339803456}
   - component: {fileID: 114000011744356224}
   - component: {fileID: 222000012900979236}
   - component: {fileID: 114000013452696640}
@@ -1383,7 +1385,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 114000010382772448}
   m_HandleRect: {fileID: 224000013440901968}
   m_Direction: 2
-  m_Value: 0.8332848
+  m_Value: 0
   m_Size: 0.74
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -1543,9 +1545,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46d41d79fe7c3d44ca846b4f3d81a476, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  canvas: {fileID: 223000012645506472}
   window: {fileID: 224000012589068232}
-  fileBrowser: {fileID: 114000013689746302}
   listView: {fileID: 114985255881820402}
 --- !u!114 &114000011218353566
 MonoBehaviour:
@@ -1728,6 +1728,23 @@ MonoBehaviour:
         m_Calls:
         - m_Target: {fileID: 114000011184475620}
           m_MethodName: OnResizeStarted
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: UnityEngine.EventSystems.EventTrigger+TriggerEvent, UnityEngine.UI,
+        Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+  - eventID: 14
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 114000011184475620}
+          m_MethodName: OnEndResize
           m_Mode: 0
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -2066,6 +2083,23 @@ MonoBehaviour:
         m_Calls:
         - m_Target: {fileID: 114000011184475620}
           m_MethodName: OnDrag
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: UnityEngine.EventSystems.EventTrigger+TriggerEvent, UnityEngine.UI,
+        Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+  - eventID: 14
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 114000011184475620}
+          m_MethodName: OnEndDrag
           m_Mode: 0
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -2828,11 +2862,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f51dc09bf9e35804ba0f5e76c527025e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  window: {fileID: 114000011184475620}
   itemPrefab: {fileID: 114000012265032802, guid: c2db22c1e3cd2584fa0e9168745a4536,
     type: 2}
   quickLinkPrefab: {fileID: 114000012163346592, guid: 419c1f8581236d6469bd13ae862bfb50,
     type: 2}
   titleText: {fileID: 114000013569220760}
+  backButton: {fileID: 114000010360865314}
+  forwardButton: {fileID: 114000012076811388}
+  upButton: {fileID: 114000013838333444}
   pathInputField: {fileID: 114000013413615576}
   searchInputField: {fileID: 114000010785476448}
   quickLinksContainer: {fileID: 224000010383356806}
@@ -3268,6 +3306,22 @@ MonoBehaviour:
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
   m_DragThreshold: 5
+--- !u!114 &114369654339803456
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000010629955072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1301386320, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &114985255881820402
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -3552,6 +3606,26 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_SortingLayerID: 0
   m_SortingOrder: 2016
+  m_TargetDisplay: 0
+--- !u!223 &223383913520683742
+Canvas:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000010629955072}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_SortingLayerID: 0
+  m_SortingOrder: 0
   m_TargetDisplay: 0
 --- !u!224 &224000010015050490
 RectTransform:
@@ -3947,7 +4021,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 160, y: 0}
+  m_SizeDelta: {x: 145, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!224 &224000011462177674
 RectTransform:
@@ -4022,7 +4096,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 160, y: 0}
+  m_AnchoredPosition: {x: 145, y: 0}
   m_SizeDelta: {x: 1, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!224 &224000011699808258
@@ -4294,7 +4368,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 13.003799}
+  m_AnchoredPosition: {x: 0, y: 78}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!224 &224000013035464314
@@ -4560,8 +4634,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 160, y: 0}
-  m_SizeDelta: {x: -160, y: 0}
+  m_AnchoredPosition: {x: 145, y: 0}
+  m_SizeDelta: {x: -145, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!224 &224000014075494044
 RectTransform:

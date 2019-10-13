@@ -7,17 +7,13 @@ namespace SimpleFileBrowser
 	{
 		#region Variables
 #pragma warning disable 0649
-		[SerializeField]
-		private Canvas canvas;
+		private FileBrowser fileBrowser;
 		private RectTransform canvasTR;
 		private Camera canvasCam;
 
 		[SerializeField]
 		private RectTransform window;
-
-		[SerializeField]
-		private FileBrowser fileBrowser;
-
+		
 		[SerializeField]
 		private RecycledListView listView;
 #pragma warning restore 0649
@@ -26,10 +22,11 @@ namespace SimpleFileBrowser
 		private Vector2 initialAnchoredPos, initialSizeDelta;
 		#endregion
 
-		#region Messages
-		private void Awake()
+		#region Initialization Functions
+		public void Initialize( FileBrowser fileBrowser )
 		{
-			canvasTR = canvas.GetComponent<RectTransform>();
+			this.fileBrowser = fileBrowser;
+			canvasTR = fileBrowser.GetComponent<RectTransform>();
 		}
 		#endregion
 
@@ -49,6 +46,11 @@ namespace SimpleFileBrowser
 			Vector2 touchPos;
 			RectTransformUtility.ScreenPointToLocalPointInRectangle( window, pointer.position, canvasCam, out touchPos );
 			window.anchoredPosition += touchPos - initialTouchPos;
+		}
+
+		public void OnEndDrag( BaseEventData data )
+		{
+			fileBrowser.EnsureWindowIsWithinBounds();
 		}
 
 		public void OnResizeStarted( BaseEventData data )
@@ -83,6 +85,11 @@ namespace SimpleFileBrowser
 			window.sizeDelta = newSize;
 
 			listView.OnViewportDimensionsChanged();
+		}
+
+		public void OnEndResize( BaseEventData data )
+		{
+			fileBrowser.EnsureWindowIsWithinBounds();
 		}
 		#endregion
 	}

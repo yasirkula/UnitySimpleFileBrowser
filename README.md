@@ -1,14 +1,14 @@
 # Unity Simple File Browser
 
-![screenshot](https://yasirkula.files.wordpress.com/2016/11/simplefileexplorer.png)
+![screenshot](screenshots/filebrowser.png)
 
 **Available on Asset Store:** https://www.assetstore.unity3d.com/en/#!/content/113006
 
 **Forum Thread:** https://forum.unity.com/threads/simple-file-browser-open-source.441908/
 
 ## FEATURES
+
 - Behaves similar to Windows file chooser
-- Costs 1 SetPass call and ~10 batches (assuming that *Sprite Packing* is enabled in *Editor Settings*)
 - Ability to search by name or filter by type
 - Quick links
 - Simple user interface
@@ -20,9 +20,12 @@
 **NOTE:** Universal Windows Platform (UWP) is not supported!
 
 ## HOW TO
-Simply import **SimpleFileBrowser.unitypackage** to your project. Afterwards, add `using SimpleFileBrowser;` to your script.
+
+Simply import [SimpleFileBrowser.unitypackage](https://github.com/yasirkula/UnitySimpleFileBrowser/releases) to your project. Afterwards, add `using SimpleFileBrowser;` to your script.
 
 *for Android*: set **Write Permission** to **External (SDCard)** in **Player Settings**
+
+**NOTE:** On *Android Q (10)* or later, it is impossible to work with *File* APIs. On these devices, SimpleFileBrowser uses *Storage Access Framework (SAF)* to browse the files. However, paths returned by SAF are not File API compatible. To simulate the behaviour of the File API on all devices (including SAF), you can check out the **FileBrowserHelpers** functions. For reference, here is an example SAF path: `content://com.android.externalstorage.documents/tree/primary%3A/document/primary%3APictures`
 
 The file browser can be shown either as a **save dialog** or a **load dialog**. In load mode, the returned path always leads to an existing file or folder. In save mode, the returned path can point to a non-existing file, as well. You can use the following functions to show the file browser:
 
@@ -106,7 +109,35 @@ public static FileBrowser.Permission RequestPermission();
 
 Note that FileBrowser automatically calls RequestPermission before opening a dialog. If you want, you can turn this feature off by setting **FileBrowser.AskPermissions** to *false*.
 
+The following file manipulation functions work on all platforms (including *Storage Access Framework (SAF)* on *Android 10+*). These functions should be called with the paths returned by the FileBrowser functions only:
+
+```csharp
+public static bool FileBrowserHelpers.FileExists( string path );
+public static bool FileBrowserHelpers.DirectoryExists( string path );
+public static bool FileBrowserHelpers.IsDirectory( string path );
+public static FileSystemEntry[] FileBrowserHelpers.GetEntriesInDirectory( string path ); // Returns all files and folders in a directory
+public static string FileBrowserHelpers.CreateFileInDirectory( string directoryPath, string filename ); // Returns the created file's path
+public static string FileBrowserHelpers.CreateFolderInDirectory( string directoryPath, string folderName ); // Returns the created folder's path
+public static void FileBrowserHelpers.WriteBytesToFile( string targetPath, byte[] bytes );
+public static void FileBrowserHelpers.WriteTextToFile( string targetPath, string text );
+public static void FileBrowserHelpers.WriteCopyToFile( string targetPath, string sourceFile ); // Copies the contents of sourceFile to target file. Here, sourceFile must be a file path (i.e. don't use a SAF path as sourceFile)
+public static void FileBrowserHelpers.AppendBytesToFile( string targetPath, byte[] bytes );
+public static void FileBrowserHelpers.AppendTextToFile( string targetPath, string text );
+public static void FileBrowserHelpers.AppendCopyToFile( string targetPath, string sourceFile ); // Appends the contents of sourceFile to target file. Here, sourceFile must be a file path
+public static byte[] FileBrowserHelpers.ReadBytesFromFile( string sourcePath );
+public static string FileBrowserHelpers.ReadTextFromFile( string sourcePath );
+public static void FileBrowserHelpers.ReadCopyFromFile( string sourcePath, string destinationFile ); // Copies the contents of source to destinationFile. Here, destinationFile must be a file path
+public static void FileBrowserHelpers.RenameFile( string path, string newName );
+public static void FileBrowserHelpers.RenameDirectory( string path, string newName );
+public static void FileBrowserHelpers.DeleteFile( string path );
+public static void FileBrowserHelpers.DeleteDirectory( string path );
+public static string FileBrowserHelpers.GetFilename( string path );
+public static long FileBrowserHelpers.GetFilesize( string path );
+public static DateTime FileBrowserHelpers.GetLastModifiedDate( string path );
+```
+
 ## EXAMPLE CODE
+
 ```csharp
 using UnityEngine;
 using System.Collections;
@@ -169,6 +200,13 @@ public class FileBrowserTest : MonoBehaviour
 		// Print whether a file is chosen (FileBrowser.Success)
 		// and the path to the selected file (FileBrowser.Result) (null, if FileBrowser.Success is false)
 		Debug.Log( FileBrowser.Success + " " + FileBrowser.Result );
+		
+		if( FileBrowser.Success )
+		{
+			// If a file was chosen, read its bytes via FileBrowserHelpers
+			// Contrary to File.ReadAllBytes, this function works on Android 10+, as well
+			byte[] bytes = FileBrowserHelpers.ReadBytesFromFile( FileBrowser.Result );
+		}
 	}
 }
 ```

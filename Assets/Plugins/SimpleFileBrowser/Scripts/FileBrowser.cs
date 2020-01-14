@@ -796,11 +796,12 @@ namespace SimpleFileBrowser
 
 			Hide();
 
-			if( onSuccess != null )
-				onSuccess( path );
-
+			OnSuccess _onSuccess = onSuccess;
 			onSuccess = null;
 			onCancel = null;
+
+			if( _onSuccess != null )
+				_onSuccess( path );
 		}
 
 		private void OnOperationCanceled( bool invokeCancelCallback )
@@ -810,11 +811,12 @@ namespace SimpleFileBrowser
 
 			Hide();
 
-			if( invokeCancelCallback && onCancel != null )
-				onCancel();
-
+			OnCancel _onCancel = onCancel;
 			onSuccess = null;
 			onCancel = null;
+
+			if( invokeCancelCallback && _onCancel != null )
+				_onCancel();
 		}
 
 		public void OnPathChanged( string newPath )

@@ -56,7 +56,7 @@ public class FileBrowserDirectoryPickerFragment extends Fragment
 
 		String rawUri = "";
 		String name = "";
-		if( resultCode == Activity.RESULT_OK )
+		if( resultCode == Activity.RESULT_OK && data != null )
 		{
 			Uri directoryUri = data.getData();
 			if( directoryUri != null )

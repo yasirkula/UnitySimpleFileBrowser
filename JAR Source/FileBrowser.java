@@ -300,10 +300,15 @@ public class FileBrowser
 			}
 			finally
 			{
-				if( output != null )
-					output.close();
-
-				input.close();
+				try
+				{
+					if( output != null )
+						output.close();
+				}
+				finally
+				{
+					input.close();
+				}
 			}
 		}
 		catch( Exception e )

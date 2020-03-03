@@ -2,7 +2,7 @@
 
 ![screenshot](screenshots/filebrowser.png)
 
-**Available on Asset Store:** https://www.assetstore.unity3d.com/en/#!/content/113006
+**Available on Asset Store:** https://assetstore.unity.com/packages/tools/gui/runtime-file-browser-113006
 
 **Forum Thread:** https://forum.unity.com/threads/simple-file-browser-open-source.441908/
 

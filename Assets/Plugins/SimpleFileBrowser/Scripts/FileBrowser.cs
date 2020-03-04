@@ -584,6 +584,10 @@ namespace SimpleFileBrowser
 			if( generateQuickLinksForDrives )
 			{
 #if !UNITY_EDITOR && UNITY_ANDROID
+				// Fetching the list of external drives is only possible with the READ_EXTERNAL_STORAGE permission granted on Android
+				if( AskPermissions )
+					RequestPermission();
+
 				string drivesList = FileBrowserHelpers.AJC.CallStatic<string>( "GetExternalDrives" );
 				if( drivesList != null && drivesList.Length > 0 )
 				{

@@ -243,10 +243,11 @@ namespace SimpleFileBrowser
 #pragma warning disable 0414
 		[SerializeField]
 		private QuickLink[] quickLinks;
+		private static bool quickLinksInitialized;
 #pragma warning restore 0414
 
-		private HashSet<string> excludedExtensionsSet;
-		private HashSet<string> addedQuickLinksSet;
+		private readonly HashSet<string> excludedExtensionsSet = new HashSet<string>();
+		private readonly HashSet<string> addedQuickLinksSet = new HashSet<string>();
 
 		[SerializeField]
 		private bool generateQuickLinksForDrives = true;
@@ -489,9 +490,6 @@ namespace SimpleFileBrowser
 
 			filenameInputField.onValidateInput += OnValidateFilenameInput;
 
-			InitializeQuickLinks();
-			quickLinks = null;
-
 			allFilesFilter = new Filter( ALL_FILES_FILTER_TEXT );
 			filters.Add( allFilesFilter );
 
@@ -573,8 +571,6 @@ namespace SimpleFileBrowser
 
 		private void InitializeQuickLinks()
 		{
-			addedQuickLinksSet = new HashSet<string>();
-
 			Vector2 anchoredPos = new Vector2( 0f, -quickLinksContainer.sizeDelta.y );
 
 #if !UNITY_EDITOR && UNITY_ANDROID
@@ -584,10 +580,6 @@ namespace SimpleFileBrowser
 			if( generateQuickLinksForDrives )
 			{
 #if !UNITY_EDITOR && UNITY_ANDROID
-				// Fetching the list of external drives is only possible with the READ_EXTERNAL_STORAGE permission granted on Android
-				if( AskPermissions )
-					RequestPermission();
-
 				string drivesList = FileBrowserHelpers.AJC.CallStatic<string>( "GetExternalDrives" );
 				if( drivesList != null && drivesList.Length > 0 )
 				{
@@ -652,6 +644,8 @@ namespace SimpleFileBrowser
 
 				AddQuickLink( quickLink.icon, quickLink.name, quickLinkPath, ref anchoredPos );
 			}
+
+			quickLinks = null;
 #endif
 #if !UNITY_EDITOR && UNITY_ANDROID
 			}
@@ -983,6 +977,12 @@ namespace SimpleFileBrowser
 			if( AskPermissions )
 				RequestPermission();
 
+			if( !quickLinksInitialized )
+			{
+				quickLinksInitialized = true;
+				InitializeQuickLinks();
+			}
+
 			SelectedFile = null;
 
 			m_searchString = string.Empty;
@@ -1283,6 +1283,17 @@ namespace SimpleFileBrowser
 				return false;
 #endif
 
+			if( !quickLinksInitialized )
+			{
+				quickLinksInitialized = true;
+
+				// Fetching the list of external drives is only possible with the READ_EXTERNAL_STORAGE permission granted on Android
+				if( AskPermissions )
+					RequestPermission();
+
+				Instance.InitializeQuickLinks();
+			}
+
 			Vector2 anchoredPos = new Vector2( 0f, -Instance.quickLinksContainer.sizeDelta.y );
 
 			if( Instance.AddQuickLink( icon, name, path, ref anchoredPos ) )
@@ -1296,10 +1307,7 @@ namespace SimpleFileBrowser
 
 		public static void SetExcludedExtensions( params string[] excludedExtensions )
 		{
-			if( Instance.excludedExtensionsSet == null )
-				Instance.excludedExtensionsSet = new HashSet<string>();
-			else
-				Instance.excludedExtensionsSet.Clear();
+			Instance.excludedExtensionsSet.Clear();
 
 			if( excludedExtensions != null )
 			{

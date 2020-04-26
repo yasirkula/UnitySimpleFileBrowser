@@ -197,8 +197,22 @@ namespace SimpleFileBrowser
 			{
 				FileSystemInfo[] items = new DirectoryInfo( path ).GetFileSystemInfos();
 				FileSystemEntry[] result = new FileSystemEntry[items.Length];
+				int index = 0;
 				for( int i = 0; i < items.Length; i++ )
-					result[i] = new FileSystemEntry( items[i] );
+				{
+					try
+					{
+						result[index] = new FileSystemEntry( items[i] );
+						index++;
+					}
+					catch( System.Exception e )
+					{
+						Debug.LogException( e );
+					}
+				}
+
+				if( result.Length != index )
+					System.Array.Resize( ref result, index );
 
 				return result;
 			}

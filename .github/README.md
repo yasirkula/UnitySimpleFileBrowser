@@ -23,7 +23,13 @@
 
 ## HOW TO
 
-Simply import [SimpleFileBrowser.unitypackage](https://github.com/yasirkula/UnitySimpleFileBrowser/releases) to your project. Afterwards, add `using SimpleFileBrowser;` to your script.
+There are 3 ways to install this plugin:
+
+- import [SimpleFileBrowser.unitypackage](https://github.com/yasirkula/UnitySimpleFileBrowser/releases) via *Assets-Import Package*
+- import it from [Asset Store](https://assetstore.unity.com/packages/tools/gui/runtime-file-browser-113006)
+- *(via Package Manager)* add the following line to *Packages/manifest.json*: `"com.yasirkula.simplefilebrowser": "https://github.com/yasirkula/UnitySimpleFileBrowser.git",`
+
+Afterwards, add `using SimpleFileBrowser;` to your script.
 
 *for Android*: set **Write Permission** to **External (SDCard)** in **Player Settings**
 

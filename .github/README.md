@@ -23,11 +23,13 @@
 
 ## HOW TO
 
-There are 3 ways to install this plugin:
+There are 4 ways to install this plugin:
 
 - import [SimpleFileBrowser.unitypackage](https://github.com/yasirkula/UnitySimpleFileBrowser/releases) via *Assets-Import Package*
+- clone/[download](https://github.com/yasirkula/UnitySimpleFileBrowser/archive/master.zip) this repository and move the *Plugins* folder to your Unity project's *Assets* folder
 - import it from [Asset Store](https://assetstore.unity.com/packages/tools/gui/runtime-file-browser-113006)
-- *(via Package Manager)* add the following line to *Packages/manifest.json*: `"com.yasirkula.simplefilebrowser": "https://github.com/yasirkula/UnitySimpleFileBrowser.git",`
+- *(via Package Manager)* add the following line to *Packages/manifest.json*:
+  - `"com.yasirkula.simplefilebrowser": "https://github.com/yasirkula/UnitySimpleFileBrowser.git",`
 
 Afterwards, add `using SimpleFileBrowser;` to your script.
 

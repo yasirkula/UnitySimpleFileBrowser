@@ -21,7 +21,7 @@
 
 **NOTE:** Universal Windows Platform (UWP) is not supported!
 
-## HOW TO
+## INSTALLATION
 
 There are 4 ways to install this plugin:
 
@@ -31,11 +31,13 @@ There are 4 ways to install this plugin:
 - *(via Package Manager)* add the following line to *Packages/manifest.json*:
   - `"com.yasirkula.simplefilebrowser": "https://github.com/yasirkula/UnitySimpleFileBrowser.git",`
 
-Afterwards, add `using SimpleFileBrowser;` to your script.
+## HOW TO
 
 *for Android*: set **Write Permission** to **External (SDCard)** in **Player Settings**
 
 **NOTE:** On *Android Q (10)* or later, it is impossible to work with *File* APIs. On these devices, SimpleFileBrowser uses *Storage Access Framework (SAF)* to browse the files. However, paths returned by SAF are not File API compatible. To simulate the behaviour of the File API on all devices (including SAF), you can check out the **FileBrowserHelpers** functions. For reference, here is an example SAF path: `content://com.android.externalstorage.documents/tree/primary%3A/document/primary%3APictures`
+
+First, add `using SimpleFileBrowser;` to your script.
 
 The file browser can be shown either as a **save dialog** or a **load dialog**. In load mode, the returned path always leads to an existing file or folder. In save mode, the returned path can point to a non-existing file, as well. You can use the following functions to show the file browser:
 

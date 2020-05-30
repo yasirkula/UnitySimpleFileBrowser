@@ -16,7 +16,8 @@
 - Simple user interface
 - Draggable and resizable
 - Ability to choose folders instead of files
-- Supports runtime permissions on Android M+
+- Supports selecting multiple files/folders
+- Supports runtime permissions on Android M+ and *Storage Access Framework* on Android Q+
 - Optimized using a recycled list view (makes *Instantiate* calls sparingly)
 
 **NOTE:** Universal Windows Platform (UWP) is not supported!
@@ -41,28 +42,28 @@ There are 5 ways to install this plugin:
 
 First, add `using SimpleFileBrowser;` to your script.
 
-The file browser can be shown either as a **save dialog** or a **load dialog**. In load mode, the returned path always leads to an existing file or folder. In save mode, the returned path can point to a non-existing file, as well. You can use the following functions to show the file browser:
+The file browser can be shown either as a **save dialog** or a **load dialog**. In load mode, the returned path(s) always lead to existing files or folders. In save mode, the returned path(s) can point to non-existing files, as well. You can use the following functions to show the file browser:
 
 ```csharp
-public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
-public static bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
+public static bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
 
-public delegate void OnSuccess( string path );
+public delegate void OnSuccess( string[] paths );
 public delegate void OnCancel();
 ```
 
 There can only be one dialog active at a time. These functions will return *true* if the dialog is shown successfully (if no other dialog is active), *false* otherwise. You can query the **FileBrowser.IsOpen** property to see if there is an active dialog at the moment.
 
-If user presses the *Cancel* button, **onCancel** callback is called. Otherwise, **onSuccess** callback is called with the path of the selected file/folder as parameter. When **folderMode** is set to *true*, the file browser will show only folders and the user will pick a folder instead of a file.
+If user presses the *Cancel* button, **onCancel** callback is called. Otherwise, **onSuccess** callback is called with the paths of the selected files/folders as parameter. When **folderMode** is set to *true*, the file browser will show only folders and the user will pick folders instead of files. Setting **allowMultiSelection** to *true* will allow picking multiple files/folders.
 
 There are also coroutine variants of these functions that will yield while the dialog is active:
 
 ```csharp
-public static IEnumerator WaitForSaveDialog( bool folderMode = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );									 
-public static IEnumerator WaitForLoadDialog( bool folderMode = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+public static IEnumerator WaitForSaveDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );									 
+public static IEnumerator WaitForLoadDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
 ```
 
-After the dialog is closed, you can check the **FileBrowser.Success** property to see whether the user selected a file/folder or cancelled the operation and if FileBrowser.Success was set to *true*, you can use the **FileBrowser.Result** property to get the path of the selected file/folder.
+After the dialog is closed, you can check the **FileBrowser.Success** property to see whether the user has selected some files/folders or cancelled the operation and if FileBrowser.Success is set to *true*, you can use the **FileBrowser.Result** property to get the paths of the selected files/folders.
 
 You can force close an open dialog using the following function:
 
@@ -86,7 +87,7 @@ By default, the file browser doesn't show files with *.lnk* or *.tmp* extensions
 public static void SetExcludedExtensions( params string[] excludedExtensions );
 ```
 
-Lastly, you can use the following functions to set the file filters:
+Lastly, you can use the following functions to set the file filters (filters should include the period, e.g. "*.jpg*" instead of "*jpg*"):
 
 ```csharp
 public static void SetFilters( bool showAllFilesFilter, IEnumerable<string> filters );
@@ -189,16 +190,18 @@ public class FileBrowserTest : MonoBehaviour
 		// Show a save file dialog 
 		// onSuccess event: not registered (which means this dialog is pretty useless)
 		// onCancel event: not registered
-		// Save file/folder: file, Initial path: "C:\", Title: "Save As", submit button text: "Save"
-		// FileBrowser.ShowSaveDialog( null, null, false, "C:\\", "Save As", "Save" );
+		// Save file/folder: file, Allow multiple selection: false
+		// Initial path: "C:\", Title: "Save As", submit button text: "Save"
+		// FileBrowser.ShowSaveDialog( null, null, false, false, "C:\\", "Save As", "Save" );
 
 		// Show a select folder dialog 
 		// onSuccess event: print the selected folder's path
 		// onCancel event: print "Canceled"
-		// Load file/folder: folder, Initial path: default (Documents), Title: "Select Folder", submit button text: "Select"
-		// FileBrowser.ShowLoadDialog( (path) => { Debug.Log( "Selected: " + path ); }, 
-		//                                () => { Debug.Log( "Canceled" ); }, 
-		//                                true, null, "Select Folder", "Select" );
+		// Load file/folder: folder, Allow multiple selection: false
+		// Initial path: default (Documents), Title: "Select Folder", submit button text: "Select"
+		// FileBrowser.ShowLoadDialog( ( paths ) => { Debug.Log( "Selected: " + paths[0] ); },
+		//                            () => { Debug.Log( "Canceled" ); },
+		//                            true, false, null, "Select Folder", "Select" );
 
 		// Coroutine example
 		StartCoroutine( ShowLoadDialogCoroutine() );
@@ -207,19 +210,23 @@ public class FileBrowserTest : MonoBehaviour
 	IEnumerator ShowLoadDialogCoroutine()
 	{
 		// Show a load file dialog and wait for a response from user
-		// Load file/folder: file, Initial path: default (Documents), Title: "Load File", submit button text: "Load"
-		yield return FileBrowser.WaitForLoadDialog( false, null, "Load File", "Load" );
+		// Load file/folder: file, Allow multiple selection: true
+		// Initial path: default (Documents), Title: "Load File", submit button text: "Load"
+		yield return FileBrowser.WaitForLoadDialog( false, true, null, "Load File", "Load" );
 
 		// Dialog is closed
-		// Print whether a file is chosen (FileBrowser.Success)
-		// and the path to the selected file (FileBrowser.Result) (null, if FileBrowser.Success is false)
-		Debug.Log( FileBrowser.Success + " " + FileBrowser.Result );
-		
+		// Print whether the user has selected some files/folders or cancelled the operation (FileBrowser.Success)
+		Debug.Log( FileBrowser.Success );
+
 		if( FileBrowser.Success )
 		{
-			// If a file was chosen, read its bytes via FileBrowserHelpers
+			// Print paths of the selected files (FileBrowser.Result) (null, if FileBrowser.Success is false)
+			for( int i = 0; i < FileBrowser.Result.Length; i++ )
+				Debug.Log( FileBrowser.Result[i] );
+
+			// Read the bytes of the first file via FileBrowserHelpers
 			// Contrary to File.ReadAllBytes, this function works on Android 10+, as well
-			byte[] bytes = FileBrowserHelpers.ReadBytesFromFile( FileBrowser.Result );
+			byte[] bytes = FileBrowserHelpers.ReadBytesFromFile( FileBrowser.Result[0] );
 		}
 	}
 }

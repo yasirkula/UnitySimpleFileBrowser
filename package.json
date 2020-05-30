@@ -1,6 +1,6 @@
 {
   "name": "com.yasirkula.simplefilebrowser",
   "displayName": "Simple File Browser",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "This plugin helps you show save/load dialogs during gameplay with its uGUI based file browser."
 }

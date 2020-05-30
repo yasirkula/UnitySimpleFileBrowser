@@ -4,10 +4,14 @@ using UnityEngine.EventSystems;
 
 namespace SimpleFileBrowser
 {
-	public class FileBrowserItem : ListItem, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+	public class FileBrowserItem : ListItem, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler
+#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
+		, IPointerEnterHandler, IPointerExitHandler
+#endif
 	{
 		#region Constants
 		private const float DOUBLE_CLICK_TIME = 0.5f;
+		private const float TOGGLE_MULTI_SELECTION_HOLD_TIME = 0.5f;
 		#endregion
 
 		#region Variables
@@ -21,10 +25,16 @@ namespace SimpleFileBrowser
 		private Image icon;
 
 		[SerializeField]
+		private Image multiSelectionToggle;
+
+		[SerializeField]
 		private Text nameText;
 #pragma warning restore 0649
 
-		private float prevTouchTime = Mathf.NegativeInfinity;
+		private bool isSelected;
+
+		private float pressTime = Mathf.Infinity;
+		private float prevClickTime;
 		#endregion
 
 		#region Properties
@@ -59,57 +69,100 @@ namespace SimpleFileBrowser
 		}
 		#endregion
 
-		#region Pointer Events
-		public void OnPointerClick( PointerEventData eventData )
+		#region Messages
+		private void Update()
 		{
-			if( FileBrowser.SingleClickMode )
+			if( fileBrowser.AllowMultiSelection && Time.realtimeSinceStartup - pressTime >= TOGGLE_MULTI_SELECTION_HOLD_TIME )
 			{
-				fileBrowser.OnItemSelected( this );
-				fileBrowser.OnItemOpened( this );
+				// Item is held for a while
+				pressTime = Mathf.Infinity;
+				fileBrowser.MultiSelectionToggleSelectionMode = true;
+
+				if( !isSelected )
+					fileBrowser.OnItemSelected( this, false );
 			}
-			else
-			{
-				if( Time.realtimeSinceStartup - prevTouchTime < DOUBLE_CLICK_TIME )
-				{
-					if( fileBrowser.SelectedFilePosition == Position )
-						fileBrowser.OnItemOpened( this );
-
-					prevTouchTime = Mathf.NegativeInfinity;
-				}
-				else
-				{
-					fileBrowser.OnItemSelected( this );
-					prevTouchTime = Time.realtimeSinceStartup;
-				}
-			}
-		}
-
-		public void OnPointerEnter( PointerEventData eventData )
-		{
-#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
-			if( fileBrowser.SelectedFilePosition != Position )
-				background.color = fileBrowser.hoveredFileColor;
-#endif
-		}
-
-		public void OnPointerExit( PointerEventData eventData )
-		{
-#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
-			if( fileBrowser.SelectedFilePosition != Position )
-				background.color = fileBrowser.normalFileColor;
-#endif
 		}
 		#endregion
 
-		#region Other Events
-		public void Select()
+		#region Pointer Events
+		public void OnPointerClick( PointerEventData eventData )
 		{
-			background.color = fileBrowser.selectedFileColor;
+			if( Time.realtimeSinceStartup - prevClickTime < DOUBLE_CLICK_TIME )
+			{
+				prevClickTime = 0f;
+				fileBrowser.OnItemSelected( this, true );
+			}
+			else
+			{
+				prevClickTime = Time.realtimeSinceStartup;
+				fileBrowser.OnItemSelected( this, false );
+			}
 		}
 
-		public void Deselect()
+		public void OnPointerDown( PointerEventData eventData )
 		{
-			background.color = fileBrowser.normalFileColor;
+			pressTime = Time.realtimeSinceStartup;
+		}
+
+		public void OnPointerUp( PointerEventData eventData )
+		{
+			if( pressTime == Mathf.Infinity )
+			{
+				// We have activated MultiSelectionToggleSelectionMode with this press, processing the click would result in
+				// deselecting this item since its selected state would be toggled
+				eventData.eligibleForClick = false;
+			}
+			else
+				pressTime = Mathf.Infinity;
+		}
+
+#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
+		public void OnPointerEnter( PointerEventData eventData )
+		{
+			if( !isSelected )
+				background.color = fileBrowser.hoveredFileColor;
+		}
+#endif
+
+#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
+		public void OnPointerExit( PointerEventData eventData )
+		{
+			if( !isSelected )
+				background.color = fileBrowser.normalFileColor;
+		}
+#endif
+		#endregion
+
+		#region Other Events
+		public void SetSelected( bool isSelected )
+		{
+			this.isSelected = isSelected;
+			background.color = isSelected ? fileBrowser.selectedFileColor : fileBrowser.normalFileColor;
+
+			if( fileBrowser.MultiSelectionToggleSelectionMode )
+			{
+				if( !multiSelectionToggle.gameObject.activeSelf )
+				{
+					multiSelectionToggle.gameObject.SetActive( true );
+
+					Vector2 shiftAmount = new Vector2( multiSelectionToggle.rectTransform.sizeDelta.x, 0f );
+					icon.rectTransform.anchoredPosition += shiftAmount;
+					nameText.rectTransform.anchoredPosition += shiftAmount;
+				}
+
+				multiSelectionToggle.sprite = isSelected ? fileBrowser.multiSelectionToggleOnIcon : fileBrowser.multiSelectionToggleOffIcon;
+			}
+			else if( multiSelectionToggle.gameObject.activeSelf )
+			{
+				multiSelectionToggle.gameObject.SetActive( false );
+
+				Vector2 shiftAmount = new Vector2( -multiSelectionToggle.rectTransform.sizeDelta.x, 0f );
+				icon.rectTransform.anchoredPosition += shiftAmount;
+				nameText.rectTransform.anchoredPosition += shiftAmount;
+
+				// Clicking a file shortly after disabling MultiSelectionToggleSelectionMode does nothing, this workaround fixes that issue
+				prevClickTime = 0f;
+			}
 		}
 
 		public void SetHidden( bool isHidden )

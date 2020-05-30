@@ -9,7 +9,7 @@ This plugin helps you show save/load dialogs during gameplay with its uGUI based
 2. HOW TO
 for Android: set Write Permission to External (SDCard) in Player Settings
 
-The file browser can be shown either as a save dialog or a load dialog. In load mode, the returned path always leads to an existing file or folder. In save mode, the returned path can point to a non-existing file, as well.
+The file browser can be shown either as a save dialog or a load dialog. In load mode, the returned path(s) always lead to existing files or folders. In save mode, the returned path(s) can point to non-existing files, as well.
 
 3. SCRIPTING API
 Please see the online documentation for a more in-depth documentation of the Scripting API: https://github.com/yasirkula/UnitySimpleFileBrowser
@@ -25,11 +25,11 @@ public delegate void OnSuccess( string path );
 public delegate void OnCancel();
 
 // Showing dialog
-bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
-bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
+bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
 
-IEnumerator WaitForSaveDialog( bool folderMode = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
-IEnumerator WaitForLoadDialog( bool folderMode = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+IEnumerator WaitForSaveDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
+IEnumerator WaitForLoadDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
 
 // Force closing an open dialog
 void HideDialog( bool invokeCancelCallback = false );
@@ -38,6 +38,7 @@ void HideDialog( bool invokeCancelCallback = false );
 bool AddQuickLink( string name, string path, Sprite icon = null );
 void SetExcludedExtensions( params string[] excludedExtensions );
 
+// Filters should include the period (e.g. ".jpg" instead of "jpg")
 void SetFilters( bool showAllFilesFilter, IEnumerable<string> filters );
 void SetFilters( bool showAllFilesFilter, params string[] filters );
 void SetFilters( bool showAllFilesFilter, IEnumerable<FileBrowser.Filter> filters );

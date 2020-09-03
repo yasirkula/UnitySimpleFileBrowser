@@ -28,7 +28,7 @@ namespace SimpleFileBrowser
 			}
 			finally
 			{
-				Object.Destroy( callbackHelper );
+				Object.Destroy( callbackHelper.gameObject );
 			}
 		}
 	}

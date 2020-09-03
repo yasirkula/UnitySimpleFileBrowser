@@ -270,7 +270,9 @@ namespace SimpleFileBrowser
 		private readonly List<int> selectedFileEntries = new List<int>( 4 );
 		private readonly List<string> pendingFileEntrySelection = new List<string>();
 
+#pragma warning disable 0414 // Value is assigned but never used on Android & iOS
 		private int multiSelectionPivotFileEntry;
+#pragma warning restore 0414
 		private StringBuilder multiSelectionFilenameBuilder;
 
 		private readonly List<Filter> filters = new List<Filter>();

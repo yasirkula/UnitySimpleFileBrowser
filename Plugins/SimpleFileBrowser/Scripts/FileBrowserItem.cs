@@ -58,6 +58,7 @@ namespace SimpleFileBrowser
 		public void SetFileBrowser( FileBrowser fileBrowser )
 		{
 			this.fileBrowser = fileBrowser;
+			background.color = fileBrowser.normalFileColor;
 		}
 
 		public void SetFile( Sprite icon, string name, bool isDirectory )

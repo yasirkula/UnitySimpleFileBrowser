@@ -659,7 +659,27 @@ namespace SimpleFileBrowser
 				string[] drives = Directory.GetLogicalDrives();
 
 				for( int i = 0; i < drives.Length; i++ )
+				{
+					if( string.IsNullOrEmpty( drives[i] ) )
+						continue;
+
+#if UNITY_STANDALONE_OSX
+					// There are a number of useless drives listed on Mac OS, filter them
+					if( drives[i] == "/" )
+						AddQuickLink( driveIcon, "Root", drives[i], ref anchoredPos );
+					else if( drives[i].StartsWith( "/Volumes/" ) && drives[i] != "/Volumes/Recovery" )
+						AddQuickLink( driveIcon, drives[i].Substring( drives[i].LastIndexOf( '/' ) + 1 ), drives[i], ref anchoredPos );
+#else
 					AddQuickLink( driveIcon, drives[i], drives[i], ref anchoredPos );
+#endif
+				}
+
+#if UNITY_STANDALONE_OSX
+				// Add a quick link for user directory on Mac OS
+				string userDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
+				if( !string.IsNullOrEmpty( userDirectory ) )
+					AddQuickLink( driveIcon, userDirectory.Substring( userDirectory.LastIndexOf( '/' ) + 1 ), userDirectory, ref anchoredPos );
+#endif
 #endif
 			}
 
@@ -668,6 +688,11 @@ namespace SimpleFileBrowser
 			{
 				QuickLink quickLink = quickLinks[i];
 				string quickLinkPath = Environment.GetFolderPath( quickLink.target );
+#if UNITY_STANDALONE_OSX
+				// Documents folder must be appended manually on Mac OS
+				if( quickLink.target == Environment.SpecialFolder.MyDocuments && !string.IsNullOrEmpty( quickLinkPath ) )
+					quickLinkPath = Path.Combine( quickLinkPath, "Documents" );
+#endif
 
 				AddQuickLink( quickLink.icon, quickLink.name, quickLinkPath, ref anchoredPos );
 			}

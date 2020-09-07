@@ -1490,6 +1490,12 @@ namespace SimpleFileBrowser
 
 		private string GetInitialPath( string initialPath )
 		{
+			if( !string.IsNullOrEmpty( initialPath ) && !Directory.Exists( initialPath ) && File.Exists( initialPath ) )
+			{
+				// Path points to a file, use its parent directory's path instead
+				initialPath = Path.GetDirectoryName( initialPath );
+			}
+
 			if( string.IsNullOrEmpty( initialPath ) || !Directory.Exists( initialPath ) )
 			{
 				if( CurrentPath.Length == 0 )

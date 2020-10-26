@@ -150,14 +150,19 @@ namespace SimpleFileBrowser
 #pragma warning disable 0649
 		[Header( "Settings" )]
 
-		public Color normalFileColor = Color.white;
-		public Color hoveredFileColor = new Color32( 225, 225, 255, 255 );
-		public Color selectedFileColor = new Color32( 0, 175, 255, 255 );
+		[SerializeField]
+		internal Color normalFileColor = Color.white;
+		[SerializeField]
+		internal Color hoveredFileColor = new Color32( 225, 225, 255, 255 );
+		[SerializeField]
+		internal Color selectedFileColor = new Color32( 0, 175, 255, 255 );
+		[SerializeField]
+		internal Color wrongFilenameColor = new Color32( 255, 100, 100, 255 );
 
-		public Color wrongFilenameColor = new Color32( 255, 100, 100, 255 );
-
-		public int minWidth = 380;
-		public int minHeight = 300;
+		[SerializeField]
+		internal int minWidth = 380;
+		[SerializeField]
+		internal int minHeight = 300;
 
 		[SerializeField]
 		private float narrowScreenWidth = 380f;
@@ -196,8 +201,10 @@ namespace SimpleFileBrowser
 
 		private Dictionary<string, Sprite> filetypeToIcon;
 
-		public Sprite multiSelectionToggleOffIcon;
-		public Sprite multiSelectionToggleOnIcon;
+		[SerializeField]
+		internal Sprite multiSelectionToggleOffIcon;
+		[SerializeField]
+		internal Sprite multiSelectionToggleOnIcon;
 
 		[Header( "Internal References" )]
 
@@ -226,6 +233,7 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private FileBrowserItem itemPrefab;
 		private readonly List<FileBrowserItem> allItems = new List<FileBrowserItem>( 16 );
+		private float itemHeight;
 
 		[SerializeField]
 		private FileBrowserQuickLink quickLinkPrefab;
@@ -500,7 +508,7 @@ namespace SimpleFileBrowser
 			middleViewOriginalSize = middleView.sizeDelta;
 			middleViewQuickLinksOriginalSize = middleViewQuickLinks.sizeDelta;
 
-			ItemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
+			itemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
 			nullPointerEventData = new PointerEventData( null );
 
 #if !UNITY_EDITOR && ( UNITY_ANDROID || UNITY_IOS || UNITY_WSA || UNITY_WSA_10_0 )
@@ -590,12 +598,12 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Interface Methods
-		public OnItemClickedHandler OnItemClicked { get { return null; } set { } }
+		OnItemClickedHandler IListViewAdapter.OnItemClicked { get { return null; } set { } }
 
-		public int Count { get { return validFileEntries.Count; } }
-		public float ItemHeight { get; private set; }
+		int IListViewAdapter.Count { get { return validFileEntries.Count; } }
+		float IListViewAdapter.ItemHeight { get { return itemHeight; } }
 
-		public ListItem CreateItem()
+		ListItem IListViewAdapter.CreateItem()
 		{
 			FileBrowserItem item = (FileBrowserItem) Instantiate( itemPrefab, filesContainer, false );
 			item.SetFileBrowser( this );
@@ -604,7 +612,7 @@ namespace SimpleFileBrowser
 			return item;
 		}
 
-		public void SetItemContent( ListItem item )
+		void IListViewAdapter.SetItemContent( ListItem item )
 		{
 			FileBrowserItem file = (FileBrowserItem) item;
 			FileSystemEntry fileInfo = validFileEntries[item.Position];
@@ -1382,14 +1390,14 @@ namespace SimpleFileBrowser
 				quickLink.SetQuickLink( folderIcon, name, path );
 
 			quickLink.TransformComponent.anchoredPosition = anchoredPos;
-			anchoredPos.y -= ItemHeight;
+			anchoredPos.y -= itemHeight;
 
 			addedQuickLinksSet.Add( path );
 
 			return true;
 		}
 
-		public void EnsureWindowIsWithinBounds()
+		internal void EnsureWindowIsWithinBounds()
 		{
 			Vector2 canvasSize = rectTransform.sizeDelta;
 			Vector2 windowSize = windowTR.sizeDelta;
@@ -1424,7 +1432,7 @@ namespace SimpleFileBrowser
 			windowTR.sizeDelta = windowSize;
 		}
 
-		public void OnWindowDimensionsChanged( Vector2 size )
+		internal void OnWindowDimensionsChanged( Vector2 size )
 		{
 			float windowWidth = size.x;
 			float quickLinksWidth = Mathf.Min( middleViewQuickLinksOriginalSize.x, windowWidth * quickLinksMaxWidthPercentage );

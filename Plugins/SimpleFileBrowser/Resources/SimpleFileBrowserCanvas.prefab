@@ -650,6 +650,7 @@ GameObject:
   - component: {fileID: 222000014084106484}
   - component: {fileID: 114000014287647564}
   - component: {fileID: 114000011715092176}
+  - component: {fileID: 114458032168439820}
   m_Layer: 5
   m_Name: WindowDragGizmo
   m_TagString: Untagged
@@ -3425,6 +3426,18 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &114458032168439820
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000012300833210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 759524cf7ef37f244bb00cd9724f0349, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  resizeCursor: {fileID: 2800000, guid: f54814069fd98ae45be23283803a557c, type: 3}
 --- !u!114 &114509553718010344
 MonoBehaviour:
   m_ObjectHideFlags: 1

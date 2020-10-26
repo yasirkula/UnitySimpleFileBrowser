@@ -7,9 +7,13 @@ namespace SimpleFileBrowser
 	[RequireComponent( typeof( ScrollRect ) )]
 	public class RecycledListView : MonoBehaviour
 	{
+#pragma warning disable 0649
 		// Cached components
-		public RectTransform viewportTransform;
-		public RectTransform contentTransform;
+		[SerializeField]
+		private RectTransform viewportTransform;
+		[SerializeField]
+		private RectTransform contentTransform;
+#pragma warning restore 0649
 
 		private float itemHeight, _1OverItemHeight;
 		private float viewportHeight;

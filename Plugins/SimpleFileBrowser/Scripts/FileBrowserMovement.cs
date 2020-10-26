@@ -13,7 +13,7 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private RectTransform window;
-		
+
 		[SerializeField]
 		private RecycledListView listView;
 #pragma warning restore 0649
@@ -72,9 +72,13 @@ namespace SimpleFileBrowser
 
 			Vector2 delta = touchPos - initialTouchPos;
 			Vector2 newSize = initialSizeDelta + new Vector2( delta.x, -delta.y );
+			Vector2 canvasSize = canvasTR.sizeDelta;
 
 			if( newSize.x < fileBrowser.minWidth ) newSize.x = fileBrowser.minWidth;
 			if( newSize.y < fileBrowser.minHeight ) newSize.y = fileBrowser.minHeight;
+
+			if( newSize.x > canvasSize.x ) newSize.x = canvasSize.x;
+			if( newSize.y > canvasSize.y ) newSize.y = canvasSize.y;
 
 			newSize.x = (int) newSize.x;
 			newSize.y = (int) newSize.y;
@@ -82,7 +86,12 @@ namespace SimpleFileBrowser
 			delta = newSize - initialSizeDelta;
 
 			window.anchoredPosition = initialAnchoredPos + new Vector2( delta.x * 0.5f, delta.y * -0.5f );
-			window.sizeDelta = newSize;
+
+			if( window.sizeDelta != newSize )
+			{
+				window.sizeDelta = newSize;
+				fileBrowser.OnWindowDimensionsChanged( newSize );
+			}
 
 			listView.OnViewportDimensionsChanged();
 		}

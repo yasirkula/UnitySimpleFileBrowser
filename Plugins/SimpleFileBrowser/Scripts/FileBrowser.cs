@@ -160,6 +160,12 @@ namespace SimpleFileBrowser
 		public int minHeight = 300;
 
 		[SerializeField]
+		private float narrowScreenWidth = 380f;
+
+		[SerializeField]
+		private float quickLinksMaxWidthPercentage = 0.4f;
+
+		[SerializeField]
 		private string[] excludeExtensions;
 
 #pragma warning disable 0414
@@ -200,6 +206,24 @@ namespace SimpleFileBrowser
 		private RectTransform windowTR;
 
 		[SerializeField]
+		private RectTransform topViewNarrowScreen;
+
+		[SerializeField]
+		private RectTransform middleView;
+		private Vector2 middleViewOriginalPosition;
+		private Vector2 middleViewOriginalSize;
+
+		[SerializeField]
+		private RectTransform middleViewQuickLinks;
+		private Vector2 middleViewQuickLinksOriginalSize;
+
+		[SerializeField]
+		private RectTransform middleViewFiles;
+
+		[SerializeField]
+		private RectTransform middleViewSeparator;
+
+		[SerializeField]
 		private FileBrowserItem itemPrefab;
 		private readonly List<FileBrowserItem> allItems = new List<FileBrowserItem>( 16 );
 
@@ -220,6 +244,12 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private InputField pathInputField;
+
+		[SerializeField]
+		private RectTransform pathInputFieldSlotTop;
+
+		[SerializeField]
+		private RectTransform pathInputFieldSlotBottom;
 
 		[SerializeField]
 		private InputField searchInputField;
@@ -286,7 +316,7 @@ namespace SimpleFileBrowser
 		private bool canvasDimensionsChanged;
 
 		// Required in RefreshFiles() function
-		private UnityEngine.EventSystems.PointerEventData nullPointerEventData;
+		private PointerEventData nullPointerEventData;
 		#endregion
 
 		#region Properties
@@ -466,8 +496,12 @@ namespace SimpleFileBrowser
 			rectTransform = (RectTransform) transform;
 			windowTR = (RectTransform) window.transform;
 
+			middleViewOriginalPosition = middleView.anchoredPosition;
+			middleViewOriginalSize = middleView.sizeDelta;
+			middleViewQuickLinksOriginalSize = middleViewQuickLinks.sizeDelta;
+
 			ItemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
-			nullPointerEventData = new UnityEngine.EventSystems.PointerEventData( null );
+			nullPointerEventData = new PointerEventData( null );
 
 #if !UNITY_EDITOR && ( UNITY_ANDROID || UNITY_IOS || UNITY_WSA || UNITY_WSA_10_0 )
 			DEFAULT_PATH = Application.persistentDataPath;
@@ -515,7 +549,11 @@ namespace SimpleFileBrowser
 			if( canvasDimensionsChanged )
 			{
 				canvasDimensionsChanged = false;
+
+				Vector2 windowSize = windowTR.sizeDelta;
 				EnsureWindowIsWithinBounds();
+				if( windowTR.sizeDelta != windowSize )
+					OnWindowDimensionsChanged( windowTR.sizeDelta );
 			}
 
 			// 2 Text objects are used in the filename input field:
@@ -1356,6 +1394,11 @@ namespace SimpleFileBrowser
 			Vector2 canvasSize = rectTransform.sizeDelta;
 			Vector2 windowSize = windowTR.sizeDelta;
 
+			if( windowSize.x < minWidth )
+				windowSize.x = minWidth;
+			if( windowSize.y < minHeight )
+				windowSize.y = minHeight;
+
 			if( windowSize.x > canvasSize.x )
 				windowSize.x = canvasSize.x;
 			if( windowSize.y > canvasSize.y )
@@ -1379,6 +1422,60 @@ namespace SimpleFileBrowser
 
 			windowTR.anchoredPosition = windowPos;
 			windowTR.sizeDelta = windowSize;
+		}
+
+		public void OnWindowDimensionsChanged( Vector2 size )
+		{
+			float windowWidth = size.x;
+			float quickLinksWidth = Mathf.Min( middleViewQuickLinksOriginalSize.x, windowWidth * quickLinksMaxWidthPercentage );
+
+			if( middleViewQuickLinks.sizeDelta.x != quickLinksWidth )
+			{
+				middleViewQuickLinks.sizeDelta = new Vector2( quickLinksWidth, middleViewQuickLinksOriginalSize.y );
+				middleViewFiles.anchoredPosition = new Vector2( quickLinksWidth, 0f );
+				middleViewFiles.sizeDelta = new Vector2( -quickLinksWidth, middleViewQuickLinksOriginalSize.y );
+				middleViewSeparator.anchoredPosition = new Vector2( quickLinksWidth, 0f );
+			}
+
+#if !UNITY_EDITOR && UNITY_ANDROID
+			// Responsive layout doesn't affect any other visible UI elements on Storage Access Framework
+			if( FileBrowserHelpers.ShouldUseSAF )
+				return;
+#endif
+
+			if( windowWidth >= narrowScreenWidth )
+			{
+				if( pathInputField.transform.parent == pathInputFieldSlotBottom )
+				{
+					pathInputField.transform.SetParent( pathInputFieldSlotTop, false );
+
+					middleView.anchoredPosition = middleViewOriginalPosition;
+					middleView.sizeDelta = middleViewOriginalSize;
+
+					showHiddenFilesToggle.gameObject.SetActive( true );
+
+					listView.OnViewportDimensionsChanged();
+					filesScrollRect.OnScroll( nullPointerEventData );
+				}
+			}
+			else
+			{
+				if( pathInputField.transform.parent == pathInputFieldSlotTop )
+				{
+					pathInputField.transform.SetParent( pathInputFieldSlotBottom, false );
+
+					float topViewAdditionalHeight = topViewNarrowScreen.sizeDelta.y;
+					middleView.anchoredPosition = middleViewOriginalPosition - new Vector2( 0f, topViewAdditionalHeight * 0.5f );
+					middleView.sizeDelta = middleViewOriginalSize - new Vector2( 0f, topViewAdditionalHeight );
+
+					// Responsive layout for narrow screens doesn't include "Show Hidden Files" toggle.
+					// We simply hide it because I think creating a new row for it would be an overkill
+					showHiddenFilesToggle.gameObject.SetActive( false );
+
+					listView.OnViewportDimensionsChanged();
+					filesScrollRect.OnScroll( nullPointerEventData );
+				}
+			}
 		}
 
 		private string GetPathWithoutTrailingDirectorySeparator( string path )
@@ -1515,11 +1612,12 @@ namespace SimpleFileBrowser
 										   bool folderMode = false, bool allowMultiSelection = false, string initialPath = null,
 										   string title = "Save", string saveButtonText = "Save" )
 		{
-			if( Instance.gameObject.activeSelf )
-			{
-				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
-				return false;
-			}
+			// Instead of ignoring this dialog request, let's just override the currently visible dialog's properties
+			//if( Instance.gameObject.activeSelf )
+			//{
+			//	Debug.LogError( "Error: Multiple dialogs are not allowed!" );
+			//	return false;
+			//}
 
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;
@@ -1539,11 +1637,12 @@ namespace SimpleFileBrowser
 										   bool folderMode = false, bool allowMultiSelection = false, string initialPath = null,
 										   string title = "Load", string loadButtonText = "Select" )
 		{
-			if( Instance.gameObject.activeSelf )
-			{
-				Debug.LogError( "Error: Multiple dialogs are not allowed!" );
-				return false;
-			}
+			// Instead of ignoring this dialog request, let's just override the currently visible dialog's properties
+			//if( Instance.gameObject.activeSelf )
+			//{
+			//	Debug.LogError( "Error: Multiple dialogs are not allowed!" );
+			//	return false;
+			//}
 
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;

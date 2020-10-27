@@ -88,6 +88,24 @@ namespace SimpleFileBrowser
 		#region Pointer Events
 		public void OnPointerClick( PointerEventData eventData )
 		{
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+			if( eventData.button == PointerEventData.InputButton.Middle )
+				return;
+			else if( eventData.button == PointerEventData.InputButton.Right )
+			{
+				// First, select the item
+				if( !isSelected )
+				{
+					prevClickTime = 0f;
+					fileBrowser.OnItemSelected( this, false );
+				}
+
+				// Then, show the context menu
+				fileBrowser.OnContextMenuTriggered();
+				return;
+			}
+#endif
+
 			if( Time.realtimeSinceStartup - prevClickTime < DOUBLE_CLICK_TIME )
 			{
 				prevClickTime = 0f;
@@ -102,11 +120,21 @@ namespace SimpleFileBrowser
 
 		public void OnPointerDown( PointerEventData eventData )
 		{
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+			if( eventData.button != PointerEventData.InputButton.Left )
+				return;
+#endif
+
 			pressTime = Time.realtimeSinceStartup;
 		}
 
 		public void OnPointerUp( PointerEventData eventData )
 		{
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+			if( eventData.button != PointerEventData.InputButton.Left )
+				return;
+#endif
+
 			if( pressTime == Mathf.Infinity )
 			{
 				// We have activated MultiSelectionToggleSelectionMode with this press, processing the click would result in

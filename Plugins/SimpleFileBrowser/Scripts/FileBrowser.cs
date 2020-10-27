@@ -70,7 +70,7 @@ namespace SimpleFileBrowser
 
 			public override string ToString()
 			{
-				string result = "";
+				string result = string.Empty;
 
 				if( name != null )
 					result += name;
@@ -134,7 +134,7 @@ namespace SimpleFileBrowser
 		{
 			get
 			{
-				if( m_instance == null )
+				if( !m_instance )
 				{
 					m_instance = Instantiate( Resources.Load<GameObject>( "SimpleFileBrowserCanvas" ) ).GetComponent<FileBrowser>();
 					DontDestroyOnLoad( m_instance.gameObject );
@@ -184,6 +184,12 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private bool generateQuickLinksForDrives = true;
+
+		[SerializeField]
+		private bool contextMenuShowDeleteButton = true;
+
+		[SerializeField]
+		private bool contextMenuShowRenameButton = true;
 
 		[SerializeField]
 		private bool showResizeCursor = true;
@@ -302,10 +308,23 @@ namespace SimpleFileBrowser
 		private Text submitButtonText;
 
 		[SerializeField]
+		private RectTransform moreOptionsContextMenuPosition;
+
+		[SerializeField]
+		private FileBrowserRenamedItem renameItem;
+
+		[SerializeField]
+		private FileBrowserContextMenu contextMenu;
+
+		[SerializeField]
+		private FileBrowserDeleteConfirmationPanel deleteConfirmationPanel;
+
+		[SerializeField]
 		private FileBrowserCursorHandler resizeCursorHandler;
 #pragma warning restore 0649
 
-		private RectTransform rectTransform;
+		internal RectTransform rectTransform;
+		private Canvas canvas;
 
 		private FileAttributes ignoredFileAttributes = FileAttributes.System;
 
@@ -447,7 +466,7 @@ namespace SimpleFileBrowser
 
 					Text placeholder = filenameInputField.placeholder as Text;
 					if( placeholder != null )
-						placeholder.text = m_folderSelectMode ? "" : "Filename";
+						placeholder.text = m_folderSelectMode ? string.Empty : "Filename";
 				}
 			}
 		}
@@ -509,6 +528,7 @@ namespace SimpleFileBrowser
 
 			rectTransform = (RectTransform) transform;
 			windowTR = (RectTransform) window.transform;
+			canvas = GetComponent<Canvas>();
 
 			middleViewOriginalPosition = middleView.anchoredPosition;
 			middleViewOriginalSize = middleView.sizeDelta;
@@ -571,7 +591,27 @@ namespace SimpleFileBrowser
 				EnsureWindowIsWithinBounds();
 				if( windowTR.sizeDelta != windowSize )
 					OnWindowDimensionsChanged( windowTR.sizeDelta );
+
+				deleteConfirmationPanel.OnCanvasDimensionsChanged( rectTransform.sizeDelta );
+
+				if( contextMenu.gameObject.activeSelf )
+					contextMenu.Hide();
 			}
+
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+			// Handle keyboard shortcuts
+			if( !EventSystem.current.currentSelectedGameObject )
+			{
+				if( Input.GetKeyDown( KeyCode.Delete ) )
+					DeleteSelectedFiles();
+
+				if( Input.GetKeyDown( KeyCode.F2 ) )
+					RenameSelectedFile();
+
+				if( Input.GetKeyDown( KeyCode.A ) && ( Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.LeftCommand ) ) )
+					SelectAllFiles();
+			}
+#endif
 
 			// 2 Text objects are used in the filename input field:
 			// filenameInputField.textComponent: visible when editing the text, has Horizontal Overflow set to Wrap (cuts out words, ugly)
@@ -626,15 +666,7 @@ namespace SimpleFileBrowser
 			FileBrowserItem file = (FileBrowserItem) item;
 			FileSystemEntry fileInfo = validFileEntries[item.Position];
 
-			bool isDirectory = fileInfo.IsDirectory;
-
-			Sprite icon;
-			if( isDirectory )
-				icon = folderIcon;
-			else if( !filetypeToIcon.TryGetValue( fileInfo.Extension.ToLowerInvariant(), out icon ) )
-				icon = defaultIcon;
-
-			file.SetFile( icon, fileInfo.Name, isDirectory );
+			file.SetFile( GetIconForFileEntry( fileInfo ), fileInfo.Name, fileInfo.IsDirectory );
 			file.SetSelected( selectedFileEntries.Contains( file.Position ) );
 			file.SetHidden( ( fileInfo.Attributes & FileAttributes.Hidden ) == FileAttributes.Hidden );
 		}
@@ -798,6 +830,34 @@ namespace SimpleFileBrowser
 
 			if( parentPath != null )
 				CurrentPath = parentPath.FullName;
+		}
+
+		public void OnMoreOptionsButtonClicked()
+		{
+			ShowContextMenuAt( rectTransform.InverseTransformPoint( moreOptionsContextMenuPosition.position ), true );
+		}
+
+		internal void OnContextMenuTriggered()
+		{
+			filesScrollRect.velocity = Vector2.zero;
+
+			Vector2 position;
+			RectTransformUtility.ScreenPointToLocalPointInRectangle( rectTransform, Input.mousePosition, canvas.worldCamera, out position );
+
+			ShowContextMenuAt( position, false );
+		}
+
+		private void ShowContextMenuAt( Vector2 position, bool isMoreOptionsMenu )
+		{
+			if( string.IsNullOrEmpty( m_currentPath ) )
+				return;
+
+			bool selectAllButtonVisible = isMoreOptionsMenu && m_allowMultiSelection && validFileEntries.Count > 0;
+			bool deselectAllButtonVisible = isMoreOptionsMenu && selectedFileEntries.Count > 1;
+			bool deleteButtonVisible = contextMenuShowDeleteButton && selectedFileEntries.Count > 0;
+			bool renameButtonVisible = contextMenuShowRenameButton && selectedFileEntries.Count == 1;
+
+			contextMenu.Show( selectAllButtonVisible, deselectAllButtonVisible, deleteButtonVisible, renameButtonVisible, position, isMoreOptionsMenu );
 		}
 
 		public void OnSubmitButtonClicked()
@@ -1009,7 +1069,7 @@ namespace SimpleFileBrowser
 				}
 				else
 				{
-#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
 					// When Shift key is held, all items from the pivot item to the clicked item will be selected
 					if( Input.GetKey( KeyCode.LeftShift ) || Input.GetKey( KeyCode.RightShift ) )
 					{
@@ -1030,7 +1090,7 @@ namespace SimpleFileBrowser
 						multiSelectionPivotFileEntry = item.Position;
 
 						// When in toggle selection mode or Control key is held, individual items can be multi-selected
-#if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
 						if( m_multiSelectionToggleSelectionMode || Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.RightControl ) )
 #else
 						if( m_multiSelectionToggleSelectionMode )
@@ -1054,52 +1114,7 @@ namespace SimpleFileBrowser
 					}
 				}
 
-				// Refresh filenameInputField as follows:
-				// 0 files selected: *blank*
-				// 1 file selected: file.Name
-				// 2+ files selected: "file1.Name" "file2.Name" ...
-				int filenameContributingFileCount = 0;
-				if( FolderSelectMode )
-					filenameContributingFileCount = selectedFileEntries.Count;
-				else
-				{
-					for( int i = 0; i < selectedFileEntries.Count; i++ )
-					{
-						if( !validFileEntries[selectedFileEntries[i]].IsDirectory )
-							filenameContributingFileCount++;
-					}
-				}
-
-				if( filenameContributingFileCount == 0 )
-					filenameInputField.text = string.Empty;
-				else
-				{
-					if( filenameContributingFileCount > 1 )
-					{
-						if( multiSelectionFilenameBuilder == null )
-							multiSelectionFilenameBuilder = new StringBuilder( 75 );
-						else
-							multiSelectionFilenameBuilder.Length = 0;
-					}
-
-					for( int i = 0; i < selectedFileEntries.Count; i++ )
-					{
-						FileSystemEntry selectedFile = validFileEntries[selectedFileEntries[i]];
-						if( FolderSelectMode || !selectedFile.IsDirectory )
-						{
-							if( filenameContributingFileCount == 1 )
-							{
-								filenameInputField.text = selectedFile.Name;
-								break;
-							}
-							else
-								multiSelectionFilenameBuilder.Append( "\"" ).Append( selectedFile.Name ).Append( "\" " );
-						}
-					}
-
-					if( filenameContributingFileCount > 1 )
-						filenameInputField.text = multiSelectionFilenameBuilder.ToString();
-				}
+				UpdateFilenameInputFieldWithSelection();
 			}
 
 			for( int i = 0; i < allItems.Count; i++ )
@@ -1367,6 +1382,194 @@ namespace SimpleFileBrowser
 			filesScrollRect.OnScroll( nullPointerEventData );
 		}
 
+		// Quickly selects all files and folders in the current directory
+		public void SelectAllFiles()
+		{
+			if( !m_allowMultiSelection || validFileEntries.Count == 0 )
+				return;
+
+			multiSelectionPivotFileEntry = 0;
+
+			selectedFileEntries.Clear();
+			for( int i = 0; i < validFileEntries.Count; i++ )
+				selectedFileEntries.Add( i );
+
+#if !UNITY_EDITOR && !UNITY_STANDALONE && !UNITY_WSA && !UNITY_WSA_10_0
+			MultiSelectionToggleSelectionMode = true;
+#endif
+
+			UpdateFilenameInputFieldWithSelection();
+			listView.UpdateList();
+		}
+
+		// Quickly deselects all files and folders in the current directory
+		public void DeselectAllFiles()
+		{
+			if( selectedFileEntries.Count == 0 )
+				return;
+
+			selectedFileEntries.Clear();
+			MultiSelectionToggleSelectionMode = false;
+
+			filenameInputField.text = string.Empty;
+			listView.UpdateList();
+		}
+
+		// Prompts user to create a new folder in the current directory
+		public void CreateNewFolder()
+		{
+			StartCoroutine( CreateNewFolderCoroutine() );
+		}
+
+		private IEnumerator CreateNewFolderCoroutine()
+		{
+			filesScrollRect.verticalNormalizedPosition = 1f;
+			filesScrollRect.velocity = Vector2.zero;
+
+			if( selectedFileEntries.Count > 0 )
+			{
+				selectedFileEntries.Clear();
+				MultiSelectionToggleSelectionMode = false;
+
+				listView.UpdateList();
+			}
+
+			// The easiest way to insert a new item to the top of the list view is to just shift
+			// the list view downwards. However, it doesn't always work if we don't shift it twice
+			yield return null;
+			filesContainer.anchoredPosition = new Vector2( 0f, -itemHeight );
+			yield return null;
+			filesContainer.anchoredPosition = new Vector2( 0f, -itemHeight );
+
+			( (RectTransform) renameItem.transform ).anchoredPosition = new Vector2( 1f, itemHeight );
+			renameItem.Show( string.Empty, selectedFileColor, folderIcon, ( folderName ) =>
+			{
+				filesContainer.anchoredPosition = Vector2.zero;
+
+				if( string.IsNullOrEmpty( folderName ) )
+					return;
+
+				FileBrowserHelpers.CreateFolderInDirectory( CurrentPath, folderName );
+
+				pendingFileEntrySelection.Clear();
+				pendingFileEntrySelection.Add( folderName );
+
+				RefreshFiles( true );
+
+				if( m_folderSelectMode )
+					filenameInputField.text = folderName;
+
+				// Focus on the newly created folder
+				int fileEntryIndex = 0;
+				for( int i = 0; i < validFileEntries.Count; i++ )
+				{
+					if( validFileEntries[i].Name == folderName )
+					{
+						fileEntryIndex = i;
+						break;
+					}
+				}
+
+				filesScrollRect.verticalNormalizedPosition = validFileEntries.Count > 1 ? ( 1f - (float) fileEntryIndex / ( validFileEntries.Count - 1 ) ) : 1f;
+			} );
+		}
+
+		// Prompts user to rename the selected file/folder
+		public void RenameSelectedFile()
+		{
+			if( selectedFileEntries.Count != 1 )
+				return;
+
+			MultiSelectionToggleSelectionMode = false;
+
+			int fileEntryIndex = selectedFileEntries[0];
+			FileSystemEntry fileInfo = validFileEntries[fileEntryIndex];
+
+			// Check if selected file is currently visible in ScrollRect
+			// We consider it visible if both the previous file entry and the next file entry are visible
+			bool prevFileEntryVisible = false, nextFileEntryVisible = false;
+			for( int i = 0; i < allItems.Count; i++ )
+			{
+				if( !allItems[i].gameObject.activeSelf )
+					continue;
+
+				if( allItems[i].Position == fileEntryIndex - 1 )
+				{
+					prevFileEntryVisible = true;
+
+					if( prevFileEntryVisible && nextFileEntryVisible )
+						break;
+				}
+				else if( allItems[i].Position == fileEntryIndex + 1 )
+				{
+					nextFileEntryVisible = true;
+
+					if( prevFileEntryVisible && nextFileEntryVisible )
+						break;
+				}
+			}
+
+			if( !prevFileEntryVisible || !nextFileEntryVisible )
+				filesScrollRect.verticalNormalizedPosition = validFileEntries.Count > 1 ? ( 1f - (float) fileEntryIndex / ( validFileEntries.Count - 1 ) ) : 1f;
+
+			filesScrollRect.velocity = Vector2.zero;
+
+			( (RectTransform) renameItem.transform ).anchoredPosition = new Vector2( 1f, -fileEntryIndex * itemHeight );
+			renameItem.Show( fileInfo.Name, selectedFileColor, GetIconForFileEntry( fileInfo ), ( newName ) =>
+			{
+				if( string.IsNullOrEmpty( newName ) || newName == fileInfo.Name )
+					return;
+
+				if( fileInfo.IsDirectory )
+					FileBrowserHelpers.RenameDirectory( fileInfo.Path, newName );
+				else
+					FileBrowserHelpers.RenameFile( fileInfo.Path, newName );
+
+				pendingFileEntrySelection.Clear();
+				pendingFileEntrySelection.Add( newName );
+
+				RefreshFiles( true );
+
+				if( fileInfo.IsDirectory == m_folderSelectMode )
+					filenameInputField.text = newName;
+			} );
+		}
+
+		// Prompts user to delete the selected files & folders
+		public void DeleteSelectedFiles()
+		{
+			if( selectedFileEntries.Count == 0 )
+				return;
+
+			selectedFileEntries.Sort();
+
+			Sprite[] icons = new Sprite[selectedFileEntries.Count];
+			string[] filenames = new string[selectedFileEntries.Count];
+			for( int i = 0; i < selectedFileEntries.Count; i++ )
+			{
+				FileSystemEntry fileInfo = validFileEntries[selectedFileEntries[i]];
+				icons[i] = GetIconForFileEntry( fileInfo );
+				filenames[i] = fileInfo.Name;
+			}
+
+			deleteConfirmationPanel.Show( icons, filenames, () =>
+			{
+				for( int i = selectedFileEntries.Count - 1; i >= 0; i-- )
+				{
+					FileSystemEntry fileInfo = validFileEntries[selectedFileEntries[i]];
+					if( fileInfo.IsDirectory )
+						FileBrowserHelpers.DeleteDirectory( fileInfo.Path );
+					else
+						FileBrowserHelpers.DeleteFile( fileInfo.Path );
+				}
+
+				selectedFileEntries.Clear();
+
+				MultiSelectionToggleSelectionMode = false;
+				RefreshFiles( true );
+			} );
+		}
+
 		// Makes sure that the selection persists after Refreshing the file entries
 		private void PersistFileEntrySelection()
 		{
@@ -1441,6 +1644,7 @@ namespace SimpleFileBrowser
 			windowTR.sizeDelta = windowSize;
 		}
 
+		// Handles responsive user interface
 		internal void OnWindowDimensionsChanged( Vector2 size )
 		{
 			float windowWidth = size.x;
@@ -1495,6 +1699,17 @@ namespace SimpleFileBrowser
 			}
 		}
 
+		private Sprite GetIconForFileEntry( FileSystemEntry fileInfo )
+		{
+			Sprite icon;
+			if( fileInfo.IsDirectory )
+				icon = folderIcon;
+			else if( !filetypeToIcon.TryGetValue( fileInfo.Extension.ToLowerInvariant(), out icon ) )
+				icon = defaultIcon;
+
+			return icon;
+		}
+
 		private string GetPathWithoutTrailingDirectorySeparator( string path )
 		{
 			if( string.IsNullOrEmpty( path ) )
@@ -1516,6 +1731,56 @@ namespace SimpleFileBrowser
 			}
 
 			return path;
+		}
+
+		private void UpdateFilenameInputFieldWithSelection()
+		{
+			// Refresh filenameInputField as follows:
+			// 0 files selected: *blank*
+			// 1 file selected: file.Name
+			// 2+ files selected: "file1.Name" "file2.Name" ...
+			int filenameContributingFileCount = 0;
+			if( FolderSelectMode )
+				filenameContributingFileCount = selectedFileEntries.Count;
+			else
+			{
+				for( int i = 0; i < selectedFileEntries.Count; i++ )
+				{
+					if( !validFileEntries[selectedFileEntries[i]].IsDirectory )
+						filenameContributingFileCount++;
+				}
+			}
+
+			if( filenameContributingFileCount == 0 )
+				filenameInputField.text = string.Empty;
+			else
+			{
+				if( filenameContributingFileCount > 1 )
+				{
+					if( multiSelectionFilenameBuilder == null )
+						multiSelectionFilenameBuilder = new StringBuilder( 75 );
+					else
+						multiSelectionFilenameBuilder.Length = 0;
+				}
+
+				for( int i = 0; i < selectedFileEntries.Count; i++ )
+				{
+					FileSystemEntry selectedFile = validFileEntries[selectedFileEntries[i]];
+					if( FolderSelectMode || !selectedFile.IsDirectory )
+					{
+						if( filenameContributingFileCount == 1 )
+						{
+							filenameInputField.text = selectedFile.Name;
+							break;
+						}
+						else
+							multiSelectionFilenameBuilder.Append( "\"" ).Append( selectedFile.Name ).Append( "\" " );
+					}
+				}
+
+				if( filenameContributingFileCount > 1 )
+					filenameInputField.text = multiSelectionFilenameBuilder.ToString();
+			}
 		}
 
 		// Extracts filenames from input field. Input can be in 2 formats:

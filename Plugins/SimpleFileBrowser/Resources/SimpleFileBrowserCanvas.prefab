@@ -2960,6 +2960,7 @@ MonoBehaviour:
     name: Desktop
     icon: {fileID: 0}
   generateQuickLinksForDrives: 1
+  showResizeCursor: 1
   folderIcon: {fileID: 21300000, guid: 05e18bb0a86cfdb4dbf887d382b69249, type: 3}
   driveIcon: {fileID: 21300000, guid: c3f6bb04213791646b2e4824be1436dc, type: 3}
   defaultIcon: {fileID: 21300000, guid: 372a6728b63455845bdad04ffc8a323b, type: 3}
@@ -3010,6 +3011,7 @@ MonoBehaviour:
   filterItemTemplate: {fileID: 114000013840550810}
   showHiddenFilesToggle: {fileID: 114000011511084512}
   submitButtonText: {fileID: 114000013382491478}
+  resizeCursorHandler: {fileID: 114458032168439820}
 --- !u!114 &114000013797747800
 MonoBehaviour:
   m_ObjectHideFlags: 1

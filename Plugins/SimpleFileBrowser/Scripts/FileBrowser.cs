@@ -185,6 +185,9 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private bool generateQuickLinksForDrives = true;
 
+		[SerializeField]
+		private bool showResizeCursor = true;
+
 		[Header( "Icons" )]
 
 		[SerializeField]
@@ -297,6 +300,9 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private Text submitButtonText;
+
+		[SerializeField]
+		private FileBrowserCursorHandler resizeCursorHandler;
 #pragma warning restore 0649
 
 		private RectTransform rectTransform;
@@ -545,6 +551,9 @@ namespace SimpleFileBrowser
 
 			window.Initialize( this );
 			listView.SetAdapter( this );
+
+			if( !showResizeCursor )
+				Destroy( resizeCursorHandler );
 		}
 
 		private void OnRectTransformDimensionsChange()

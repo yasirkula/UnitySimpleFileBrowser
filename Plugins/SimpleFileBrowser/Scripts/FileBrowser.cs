@@ -1434,6 +1434,8 @@ namespace SimpleFileBrowser
 				listView.UpdateList();
 			}
 
+			filesScrollRect.movementType = ScrollRect.MovementType.Unrestricted;
+
 			// The easiest way to insert a new item to the top of the list view is to just shift
 			// the list view downwards. However, it doesn't always work if we don't shift it twice
 			yield return null;
@@ -1444,6 +1446,7 @@ namespace SimpleFileBrowser
 			( (RectTransform) renameItem.transform ).anchoredPosition = new Vector2( 1f, itemHeight );
 			renameItem.Show( string.Empty, selectedFileColor, folderIcon, ( folderName ) =>
 			{
+				filesScrollRect.movementType = ScrollRect.MovementType.Clamped;
 				filesContainer.anchoredPosition = Vector2.zero;
 
 				if( string.IsNullOrEmpty( folderName ) )

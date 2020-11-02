@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace SimpleFileBrowser
@@ -35,22 +36,22 @@ namespace SimpleFileBrowser
 
 		private OnDeletionConfirmed onDeletionConfirmed;
 
-		internal void Show( Sprite[] icons, string[] filenames, OnDeletionConfirmed onDeletionConfirmed )
+		internal void Show( FileBrowser fileBrowser, List<FileSystemEntry> items, List<int> selectedItemIndices, OnDeletionConfirmed onDeletionConfirmed )
 		{
 			this.onDeletionConfirmed = onDeletionConfirmed;
 
 			for( int i = 0; i < deletedItems.Length; i++ )
-				deletedItems[i].SetActive( i < icons.Length );
+				deletedItems[i].SetActive( i < selectedItemIndices.Count );
 
-			for( int i = 0; i < deletedItems.Length && i < icons.Length; i++ )
+			for( int i = 0; i < deletedItems.Length && i < selectedItemIndices.Count; i++ )
 			{
-				deletedItemIcons[i].sprite = icons[i];
-				deletedItemNames[i].text = filenames[i];
+				deletedItemIcons[i].sprite = fileBrowser.GetIconForFileEntry( items[selectedItemIndices[i]] );
+				deletedItemNames[i].text = items[selectedItemIndices[i]].Name;
 			}
 
-			if( icons.Length > deletedItems.Length )
+			if( selectedItemIndices.Count > deletedItems.Length )
 			{
-				deletedItemsRestLabel.text = string.Concat( "...and ", ( icons.Length - deletedItems.Length ).ToString(), " other" );
+				deletedItemsRestLabel.text = string.Concat( "...and ", ( selectedItemIndices.Count - deletedItems.Length ).ToString(), " other" );
 				deletedItemsRest.SetActive( true );
 			}
 			else

@@ -103,6 +103,8 @@ namespace SimpleFileBrowser
 		private const string FOLDERS_FILTER_TEXT = "Folders";
 		private string DEFAULT_PATH;
 
+		private const int FILENAME_INPUT_FIELD_MAX_FILE_COUNT = 7;
+
 #if !UNITY_EDITOR && UNITY_ANDROID
 		private const string SAF_PICK_FOLDER_QUICK_LINK_TEXT = "Pick Folder";
 		private const string SAF_PICK_FOLDER_QUICK_LINK_PATH = "SAF_PICK_FOLDER";
@@ -365,13 +367,19 @@ namespace SimpleFileBrowser
 				if( value != null )
 					value = GetPathWithoutTrailingDirectorySeparator( value.Trim() );
 
-				if( value == null )
+				if( string.IsNullOrEmpty( value ) )
+				{
+					pathInputField.text = m_currentPath;
 					return;
+				}
 
 				if( m_currentPath != value )
 				{
 					if( !FileBrowserHelpers.DirectoryExists( value ) )
+					{
+						pathInputField.text = m_currentPath;
 						return;
+					}
 
 					m_currentPath = value;
 					pathInputField.text = m_currentPath;
@@ -404,7 +412,10 @@ namespace SimpleFileBrowser
 
 					filenameImage.color = Color.white;
 					if( m_folderSelectMode )
+					{
 						filenameInputField.text = string.Empty;
+						filenameInputField.interactable = true;
+					}
 				}
 
 				m_multiSelectionToggleSelectionMode = false;
@@ -465,8 +476,8 @@ namespace SimpleFileBrowser
 					}
 
 					Text placeholder = filenameInputField.placeholder as Text;
-					if( placeholder != null )
-						placeholder.text = m_folderSelectMode ? string.Empty : "Filename";
+					if( placeholder )
+						placeholder.gameObject.SetActive( !m_folderSelectMode );
 				}
 			}
 		}
@@ -873,64 +884,85 @@ namespace SimpleFileBrowser
 				return;
 			}
 
-			// In the first iteration, verify that all filenames entered to the input field are valid
-			// ExtractFilenameFromInput doesn't use Substring, so this iteration is GC-free
-			int startIndex = 0, nextStartIndex;
-			int fileCount = 0;
-			int indexOfDirectoryEntryToOpen = -1;
-			while( startIndex < filenameInput.Length )
+			if( m_allowMultiSelection && selectedFileEntries.Count > 1 )
 			{
-				int filenameLength = ExtractFilenameFromInput( filenameInput, ref startIndex, out nextStartIndex );
-				if( filenameLength == 0 )
-					continue;
+				// When multiple files are selected via file browser UI, filenameInputField is not interactable and will show
+				// only the first FILENAME_INPUT_FIELD_MAX_FILE_COUNT entries for performance reasons. We should iterate over
+				// selectedFileEntries instead of filenameInputField
 
-				if( m_acceptNonExistingFilename )
-					fileCount++;
-				else
+				// Beforehand, check if a folder is selected in file selection mode. If so, open that directory
+				if( !m_folderSelectMode )
 				{
-					int fileEntryIndex = FilenameInputToFileEntryIndex( filenameInput, startIndex, filenameLength );
-					if( fileEntryIndex < 0 )
+					for( int i = 0; i < selectedFileEntries.Count; i++ )
 					{
-						// File doesn't exist
-						filenameImage.color = wrongFilenameColor;
-						return;
-					}
-
-					if( validFileEntries[fileEntryIndex].IsDirectory )
-					{
-						if( m_folderSelectMode )
-							fileCount++;
-						else
+						if( validFileEntries[selectedFileEntries[i]].IsDirectory )
 						{
-							// Selected a directory in file selection mode, we'll open that directory if no files are selected
-							indexOfDirectoryEntryToOpen = fileEntryIndex;
-						}
-					}
-					else
-					{
-						if( !m_folderSelectMode )
-							fileCount++;
-						else
-						{
-							// Can't select a file in folder selection mode
-							filenameImage.color = wrongFilenameColor;
+							CurrentPath = validFileEntries[selectedFileEntries[i]].Path;
 							return;
 						}
 					}
 				}
 
-				startIndex = nextStartIndex;
-			}
+				string[] result = new string[selectedFileEntries.Count];
+				for( int i = 0; i < selectedFileEntries.Count; i++ )
+					result[i] = validFileEntries[selectedFileEntries[i]].Path;
 
-			if( indexOfDirectoryEntryToOpen >= 0 )
-				CurrentPath = validFileEntries[indexOfDirectoryEntryToOpen].Path;
-			else if( fileCount == 0 )
-				filenameImage.color = wrongFilenameColor;
+				OnOperationSuccessful( result );
+			}
 			else
 			{
-				string[] result = new string[fileCount];
+				// When multiple files aren't selected via file browser UI, we must consider the rare case where user manually enters
+				// multiple filenames to filenameInputField in format "file1" "file2" and so on. So, we must parse filenameInputField
+
+				// In the first iteration, verify that all filenames entered to the input field are valid
+				// ExtractFilenameFromInput doesn't use Substring, so this iteration is GC-free
+				int fileCount = 0;
+				int startIndex = 0, nextStartIndex;
+				while( startIndex < filenameInput.Length )
+				{
+					int filenameLength = ExtractFilenameFromInput( filenameInput, ref startIndex, out nextStartIndex );
+					if( filenameLength == 0 )
+						continue;
+
+					if( m_acceptNonExistingFilename )
+						fileCount++;
+					else
+					{
+						int fileEntryIndex = FilenameInputToFileEntryIndex( filenameInput, startIndex, filenameLength );
+						if( fileEntryIndex < 0 )
+						{
+							// File doesn't exist
+							filenameImage.color = wrongFilenameColor;
+							return;
+						}
+
+						if( !validFileEntries[fileEntryIndex].IsDirectory )
+							fileCount++;
+						else
+						{
+							if( m_folderSelectMode )
+								fileCount++;
+							else
+							{
+								// Selected a directory in file selection mode, open that directory
+								CurrentPath = validFileEntries[fileEntryIndex].Path;
+								return;
+							}
+						}
+					}
+
+					startIndex = nextStartIndex;
+				}
+
+				if( fileCount == 0 )
+				{
+					filenameImage.color = wrongFilenameColor;
+					return;
+				}
 
 				// In the second iteration, extract filenames from the input field
+				string[] result = new string[fileCount];
+
 				startIndex = 0;
 				fileCount = 0;
 				while( startIndex < filenameInput.Length )
@@ -1271,6 +1303,7 @@ namespace SimpleFileBrowser
 			filesScrollRect.verticalNormalizedPosition = 1;
 
 			filenameInputField.text = string.Empty;
+			filenameInputField.interactable = true;
 			filenameImage.color = Color.white;
 
 			IsOpen = true;
@@ -1376,6 +1409,14 @@ namespace SimpleFileBrowser
 				pendingFileEntrySelection.Clear();
 			}
 
+			if( !filenameInputField.interactable && selectedFileEntries.Count <= 1 )
+			{
+				filenameInputField.interactable = true;
+
+				if( selectedFileEntries.Count == 0 )
+					filenameInputField.text = string.Empty;
+			}
+
 			listView.UpdateList();
 
 			// Prevent the case where all the content stays offscreen after changing the search string
@@ -1412,6 +1453,8 @@ namespace SimpleFileBrowser
 			MultiSelectionToggleSelectionMode = false;
 
 			filenameInputField.text = string.Empty;
+			filenameInputField.interactable = true;
+
 			listView.UpdateList();
 		}
 
@@ -1430,6 +1473,9 @@ namespace SimpleFileBrowser
 			{
 				selectedFileEntries.Clear();
 				MultiSelectionToggleSelectionMode = false;
+
+				filenameInputField.text = string.Empty;
+				filenameInputField.interactable = true;
 
 				listView.UpdateList();
 			}
@@ -1546,16 +1592,7 @@ namespace SimpleFileBrowser
 
 			selectedFileEntries.Sort();
 
-			Sprite[] icons = new Sprite[selectedFileEntries.Count];
-			string[] filenames = new string[selectedFileEntries.Count];
-			for( int i = 0; i < selectedFileEntries.Count; i++ )
-			{
-				FileSystemEntry fileInfo = validFileEntries[selectedFileEntries[i]];
-				icons[i] = GetIconForFileEntry( fileInfo );
-				filenames[i] = fileInfo.Name;
-			}
-
-			deleteConfirmationPanel.Show( icons, filenames, () =>
+			deleteConfirmationPanel.Show( this, validFileEntries, selectedFileEntries, () =>
 			{
 				for( int i = selectedFileEntries.Count - 1; i >= 0; i-- )
 				{
@@ -1702,7 +1739,7 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		private Sprite GetIconForFileEntry( FileSystemEntry fileInfo )
+		internal Sprite GetIconForFileEntry( FileSystemEntry fileInfo )
 		{
 			Sprite icon;
 			if( fileInfo.IsDirectory )
@@ -1741,7 +1778,7 @@ namespace SimpleFileBrowser
 			// Refresh filenameInputField as follows:
 			// 0 files selected: *blank*
 			// 1 file selected: file.Name
-			// 2+ files selected: "file1.Name" "file2.Name" ...
+			// 2+ files selected: "file1.Name" "file2.Name" ... (up to FILENAME_INPUT_FIELD_MAX_FILE_COUNT filenames are displayed for performance reasons)
 			int filenameContributingFileCount = 0;
 			if( FolderSelectMode )
 				filenameContributingFileCount = selectedFileEntries.Count;
@@ -1750,9 +1787,16 @@ namespace SimpleFileBrowser
 				for( int i = 0; i < selectedFileEntries.Count; i++ )
 				{
 					if( !validFileEntries[selectedFileEntries[i]].IsDirectory )
+					{
 						filenameContributingFileCount++;
+
+						if( filenameContributingFileCount >= FILENAME_INPUT_FIELD_MAX_FILE_COUNT )
+							break;
+					}
 				}
 			}
+
+			filenameInputField.interactable = selectedFileEntries.Count <= 1;
 
 			if( filenameContributingFileCount == 0 )
 				filenameInputField.text = string.Empty;
@@ -1766,7 +1810,7 @@ namespace SimpleFileBrowser
 						multiSelectionFilenameBuilder.Length = 0;
 				}
 
-				for( int i = 0; i < selectedFileEntries.Count; i++ )
+				for( int i = 0, fileCount = 0; i < selectedFileEntries.Count; i++ )
 				{
 					FileSystemEntry selectedFile = validFileEntries[selectedFileEntries[i]];
 					if( FolderSelectMode || !selectedFile.IsDirectory )
@@ -1777,7 +1821,15 @@ namespace SimpleFileBrowser
 							break;
 						}
 						else
+						{
 							multiSelectionFilenameBuilder.Append( "\"" ).Append( selectedFile.Name ).Append( "\" " );
+
+							if( ++fileCount >= FILENAME_INPUT_FIELD_MAX_FILE_COUNT )
+							{
+								multiSelectionFilenameBuilder.Append( "..." );
+								break;
+							}
+						}
 					}
 				}
 

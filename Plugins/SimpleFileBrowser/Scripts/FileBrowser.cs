@@ -348,6 +348,8 @@ namespace SimpleFileBrowser
 		private int currentPathIndex = -1;
 		private readonly List<string> pathsFollowed = new List<string>();
 
+		private HashSet<char> invalidFilenameChars;
+
 		private bool canvasDimensionsChanged;
 
 		// Required in RefreshFiles() function
@@ -579,6 +581,12 @@ namespace SimpleFileBrowser
 
 			allFilesFilter = new Filter( ALL_FILES_FILTER_TEXT );
 			filters.Add( allFilesFilter );
+
+			invalidFilenameChars = new HashSet<char>( Path.GetInvalidFileNameChars() )
+			{
+				Path.DirectorySeparatorChar,
+				Path.AltDirectorySeparatorChar
+			};
 
 			window.Initialize( this );
 			listView.SetAdapter( this );
@@ -924,6 +932,13 @@ namespace SimpleFileBrowser
 					if( filenameLength == 0 )
 						continue;
 
+					if( !VerifyFilenameInput( filenameInput, startIndex, filenameLength ) )
+					{
+						// Filename contains invalid characters or is completely whitespace
+						filenameImage.color = wrongFilenameColor;
+						return;
+					}
+
 					if( m_acceptNonExistingFilename )
 						fileCount++;
 					else
@@ -1000,7 +1015,16 @@ namespace SimpleFileBrowser
 						else
 #endif
 						{
-							result[fileCount++] = Path.Combine( m_currentPath, filename );
+							try
+							{
+								result[fileCount++] = Path.Combine( m_currentPath, filename );
+							}
+							catch( ArgumentException e )
+							{
+								filenameImage.color = wrongFilenameColor;
+								Debug.LogException( e );
+								return;
+							}
 						}
 					}
 
@@ -1894,26 +1918,41 @@ namespace SimpleFileBrowser
 		{
 			for( int i = 0; i < validFileEntries.Count; i++ )
 			{
-				if( validFileEntries[i].Name.Length == length && input.IndexOf( validFileEntries[i].Name ) == startIndex )
+				if( validFileEntries[i].Name.Length == length && input.IndexOf( validFileEntries[i].Name, startIndex, length ) == startIndex )
 					return i;
 			}
 
 			return -1;
 		}
 
+		// Verifies that filename doesn't contain any invalid characters
+		private bool VerifyFilenameInput( string input, int startIndex, int length )
+		{
+			bool isWhitespace = true;
+			for( int i = startIndex, endIndex = startIndex + length; i < endIndex; i++ )
+			{
+				char ch = input[i];
+				if( invalidFilenameChars.Contains( ch ) )
+					return false;
+
+				if( isWhitespace && !char.IsWhiteSpace( ch ) )
+					isWhitespace = false;
+			}
+
+			return !isWhitespace;
+		}
+
 		// Credit: http://answers.unity3d.com/questions/898770/how-to-get-the-width-of-ui-text-with-horizontal-ov.html
 		private int CalculateLengthOfDropdownText( string str )
 		{
+			Font font = filterItemTemplate.font;
+			font.RequestCharactersInTexture( str, filterItemTemplate.fontSize, filterItemTemplate.fontStyle );
+
 			int totalLength = 0;
-
-			Font myFont = filterItemTemplate.font;
-			CharacterInfo characterInfo = new CharacterInfo();
-
-			myFont.RequestCharactersInTexture( str, filterItemTemplate.fontSize, filterItemTemplate.fontStyle );
-
 			for( int i = 0; i < str.Length; i++ )
 			{
-				if( !myFont.GetCharacterInfo( str[i], out characterInfo, filterItemTemplate.fontSize ) )
+				CharacterInfo characterInfo;
+				if( !font.GetCharacterInfo( str[i], out characterInfo, filterItemTemplate.fontSize ) )
 					totalLength += 5;
 
 				totalLength += characterInfo.advance;

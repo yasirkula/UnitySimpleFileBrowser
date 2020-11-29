@@ -20,7 +20,7 @@
 - Supports runtime permissions on Android M+ and *Storage Access Framework* on Android Q+
 - Optimized using a recycled list view (makes *Instantiate* calls sparingly)
 
-**NOTE:** Universal Windows Platform (UWP) is not supported!
+**NOTE:** *Universal Windows Platform (UWP)* and *WebGL* platforms aren't supported!
 
 ## INSTALLATION
 
@@ -40,17 +40,15 @@ There are 5 ways to install this plugin:
 
 If your project uses ProGuard, try adding the following line to ProGuard filters: `-keep class com.yasirkula.unity.* { *; }`
 
-- **File browser doesn't show any files on Android**
+- **File browser doesn't show any files on Android 10+**
 
-Make sure that you've set the **Write Permission** to **External (SDCard)** in *Player Settings*. On Android 10+, file browser uses *Storage Access Framework* and users must click the *Pick Folder* button first.
+File browser uses *Storage Access Framework* on these Android versions and users must first click the *Pick Folder* button in the quick links section
 
-- **RequestPermission returns Permission.Denied on Android even though I've set "Write Permission" to "External (SDCard)"**
+- **RequestPermission returns Permission.Denied on Android**
 
 Declare the `WRITE_EXTERNAL_STORAGE` permission manually in your [**Plugins/Android/AndroidManifest.xml** file](https://answers.unity.com/questions/982710/where-is-the-manifest-file-in-unity.html) with the `tools:node="replace"` attribute as follows: `<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="replace"/>` (you'll need to add the `xmlns:tools="http://schemas.android.com/tools"` attribute to the `<manifest ...>` element).
 
 ## HOW TO
-
-*for Android*: set **Write Permission** to **External (SDCard)** in **Player Settings**
 
 **NOTE:** On *Android Q (10)* or later, it is impossible to work with *File* APIs. On these devices, SimpleFileBrowser uses *Storage Access Framework (SAF)* to browse the files. However, paths returned by SAF are not File API compatible. To simulate the behaviour of the File API on all devices (including SAF), you can check out the **FileBrowserHelpers** functions. For reference, here is an example SAF path: `content://com.android.externalstorage.documents/tree/primary%3A/document/primary%3APictures`
 
@@ -59,8 +57,8 @@ First, add `using SimpleFileBrowser;` to your script.
 The file browser can be shown either as a **save dialog** or a **load dialog**. In load mode, the returned path(s) always lead to existing files or folders. In save mode, the returned path(s) can point to non-existing files, as well. You can use the following functions to show the file browser:
 
 ```csharp
-public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
-public static bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Save", string saveButtonText = "Save" );
+public static bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Load", string loadButtonText = "Select" );
 
 public delegate void OnSuccess( string[] paths );
 public delegate void OnCancel();
@@ -68,13 +66,13 @@ public delegate void OnCancel();
 
 There can only be one dialog active at a time. These functions will return *true* if the dialog is shown successfully (if no other dialog is active), *false* otherwise. You can query the **FileBrowser.IsOpen** property to see if there is an active dialog at the moment.
 
-If user presses the *Cancel* button, **onCancel** callback is called. Otherwise, **onSuccess** callback is called with the paths of the selected files/folders as parameter. When **folderMode** is set to *true*, the file browser will show only folders and the user will pick folders instead of files. Setting **allowMultiSelection** to *true* will allow picking multiple files/folders.
+If user presses the *Cancel* button, **onCancel** callback is called. Otherwise, **onSuccess** callback is called with the paths of the selected files/folders as parameter. **pickMode** can be *Files*, *Folders* or *FilesAndFolders*. Setting **allowMultiSelection** to *true* will allow picking multiple files/folders.
 
 There are also coroutine variants of these functions that will yield while the dialog is active:
 
 ```csharp
-public static IEnumerator WaitForSaveDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );									 
-public static IEnumerator WaitForLoadDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+public static IEnumerator WaitForSaveDialog( PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Save", string saveButtonText = "Save" );									 
+public static IEnumerator WaitForLoadDialog( PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Load", string loadButtonText = "Select" );
 ```
 
 After the dialog is closed, you can check the **FileBrowser.Success** property to see whether the user has selected some files/folders or cancelled the operation and if FileBrowser.Success is set to *true*, you can use the **FileBrowser.Result** property to get the paths of the selected files/folders.
@@ -205,17 +203,19 @@ public class FileBrowserTest : MonoBehaviour
 		// onSuccess event: not registered (which means this dialog is pretty useless)
 		// onCancel event: not registered
 		// Save file/folder: file, Allow multiple selection: false
-		// Initial path: "C:\", Title: "Save As", submit button text: "Save"
-		// FileBrowser.ShowSaveDialog( null, null, false, false, "C:\\", "Save As", "Save" );
+		// Initial path: "C:\", Initial filename: "Screenshot.png"
+		// Title: "Save As", Submit button text: "Save"
+		// FileBrowser.ShowSaveDialog( null, null, FileBrowser.PickMode.Files, false, "C:\\", "Screenshot.png", "Save As", "Save" );
 
 		// Show a select folder dialog 
 		// onSuccess event: print the selected folder's path
 		// onCancel event: print "Canceled"
 		// Load file/folder: folder, Allow multiple selection: false
-		// Initial path: default (Documents), Title: "Select Folder", submit button text: "Select"
+		// Initial path: default (Documents), Initial filename: empty
+		// Title: "Select Folder", Submit button text: "Select"
 		// FileBrowser.ShowLoadDialog( ( paths ) => { Debug.Log( "Selected: " + paths[0] ); },
-		//                            () => { Debug.Log( "Canceled" ); },
-		//                            true, false, null, "Select Folder", "Select" );
+		//						   () => { Debug.Log( "Canceled" ); },
+		//						   FileBrowser.PickMode.Folders, false, null, null, "Select Folder", "Select" );
 
 		// Coroutine example
 		StartCoroutine( ShowLoadDialogCoroutine() );
@@ -224,9 +224,10 @@ public class FileBrowserTest : MonoBehaviour
 	IEnumerator ShowLoadDialogCoroutine()
 	{
 		// Show a load file dialog and wait for a response from user
-		// Load file/folder: file, Allow multiple selection: true
-		// Initial path: default (Documents), Title: "Load File", submit button text: "Load"
-		yield return FileBrowser.WaitForLoadDialog( false, true, null, "Load File", "Load" );
+		// Load file/folder: both, Allow multiple selection: true
+		// Initial path: default (Documents), Initial filename: empty
+		// Title: "Load File", Submit button text: "Load"
+		yield return FileBrowser.WaitForLoadDialog( FileBrowser.PickMode.FilesAndFolders, true, null, null, "Load Files and Folders", "Load" );
 
 		// Dialog is closed
 		// Print whether the user has selected some files/folders or cancelled the operation (FileBrowser.Success)

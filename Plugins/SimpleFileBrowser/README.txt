@@ -6,12 +6,24 @@ E-mail: yasirkula@gmail.com
 1. ABOUT
 This plugin helps you show save/load dialogs during gameplay with its uGUI based file browser.
 
-2. HOW TO
-for Android: set Write Permission to External (SDCard) in Player Settings
 
+2. HOW TO
 The file browser can be shown either as a save dialog or a load dialog. In load mode, the returned path(s) always lead to existing files or folders. In save mode, the returned path(s) can point to non-existing files, as well.
 
-3. SCRIPTING API
+
+3. FAQ
+- Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat
+If your project uses ProGuard, try adding the following line to ProGuard filters: -keep class com.yasirkula.unity.* { *; }
+
+- File browser doesn't show any files on Android 10+
+File browser uses Storage Access Framework on these Android versions and users must first click the "Pick Folder" button in the quick links section
+
+- RequestPermission returns Permission.Denied on Android
+Declare the WRITE_EXTERNAL_STORAGE permission manually in your Plugins/Android/AndroidManifest.xml file as follows: <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="replace"/>
+You'll need to add the following attribute to the '<manifest ...>' element: xmlns:tools="http://schemas.android.com/tools"
+
+
+4. SCRIPTING API
 Please see the online documentation for a more in-depth documentation of the Scripting API: https://github.com/yasirkula/UnitySimpleFileBrowser
 
 NOTE: On Android Q (10) or later, it is impossible to work with File APIs. On these devices, SimpleFileBrowser uses Storage Access Framework (SAF) to browse the files. However, paths returned by SAF are not File API compatible. To simulate the behaviour of the File API on all devices (including SAF), you can check out the FileBrowserHelpers functions. For reference, here is an example SAF path: content://com.android.externalstorage.documents/tree/primary%3A/document/primary%3APictures
@@ -20,16 +32,17 @@ NOTE: On Android Q (10) or later, it is impossible to work with File APIs. On th
 using SimpleFileBrowser;
 
 public enum Permission { Denied = 0, Granted = 1, ShouldAsk = 2 };
+public enum PickMode { Files = 0, Folders = 1, FilesAndFolders = 2 };
 
 public delegate void OnSuccess( string path );
 public delegate void OnCancel();
 
 // Showing dialog
-bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
-bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Save", string saveButtonText = "Save" );
+bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel, PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Load", string loadButtonText = "Select" );
 
-IEnumerator WaitForSaveDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Save", string saveButtonText = "Save" );
-IEnumerator WaitForLoadDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null, string title = "Load", string loadButtonText = "Select" );
+IEnumerator WaitForSaveDialog( PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Save", string saveButtonText = "Save" );
+IEnumerator WaitForLoadDialog( PickMode pickMode, bool allowMultiSelection = false, string initialPath = null, string initialFilename = null, string title = "Load", string loadButtonText = "Select" );
 
 // Force closing an open dialog
 void HideDialog( bool invokeCancelCallback = false );

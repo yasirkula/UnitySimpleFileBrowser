@@ -12,6 +12,7 @@ namespace SimpleFileBrowser
 	public class FileBrowser : MonoBehaviour, IListViewAdapter
 	{
 		public enum Permission { Denied = 0, Granted = 1, ShouldAsk = 2 };
+		public enum PickMode { Files = 0, Folders = 1, FilesAndFolders = 2 };
 
 		#region Structs
 #pragma warning disable 0649
@@ -99,19 +100,15 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Constants
-		private const string ALL_FILES_FILTER_TEXT = "All Files (.*)";
-		private const string FOLDERS_FILTER_TEXT = "Folders";
-		private string DEFAULT_PATH;
-
 		private const int FILENAME_INPUT_FIELD_MAX_FILE_COUNT = 7;
-
-#if !UNITY_EDITOR && UNITY_ANDROID
-		private const string SAF_PICK_FOLDER_QUICK_LINK_TEXT = "Pick Folder";
 		private const string SAF_PICK_FOLDER_QUICK_LINK_PATH = "SAF_PICK_FOLDER";
-#endif
 		#endregion
 
 		#region Static Variables
+		public static string AllFilesFilterText = "All Files (.*)";
+		public static string FoldersFilterText = "Folders";
+		public static string PickFolderQuickLinkText = "Pick Folder";
+
 		public static bool IsOpen { get; private set; }
 
 		public static bool Success { get; private set; }
@@ -171,6 +168,9 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private float quickLinksMaxWidthPercentage = 0.4f;
+
+		[SerializeField]
+		private bool sortFilesByName = true;
 
 		[SerializeField]
 		private string[] excludeExtensions;
@@ -345,6 +345,8 @@ namespace SimpleFileBrowser
 
 		private bool showAllFilesFilter = true;
 
+		private string defaultInitialPath;
+
 		private int currentPathIndex = -1;
 		private readonly List<string> pathsFollowed = new List<string>();
 
@@ -413,7 +415,7 @@ namespace SimpleFileBrowser
 					filesScrollRect.verticalNormalizedPosition = 1;
 
 					filenameImage.color = Color.white;
-					if( m_folderSelectMode )
+					if( m_pickerMode != PickMode.Files )
 					{
 						filenameInputField.text = string.Empty;
 						filenameInputField.interactable = true;
@@ -428,10 +430,7 @@ namespace SimpleFileBrowser
 		private string m_searchString = string.Empty;
 		private string SearchString
 		{
-			get
-			{
-				return m_searchString;
-			}
+			get { return m_searchString; }
 			set
 			{
 				if( m_searchString != value )
@@ -451,36 +450,30 @@ namespace SimpleFileBrowser
 			set { m_acceptNonExistingFilename = value; }
 		}
 
-		private bool m_folderSelectMode = false;
-		private bool FolderSelectMode
+		private PickMode m_pickerMode = PickMode.Files;
+		private PickMode PickerMode
 		{
-			get
-			{
-				return m_folderSelectMode;
-			}
+			get { return m_pickerMode; }
 			set
 			{
-				if( m_folderSelectMode != value )
+				m_pickerMode = value;
+
+				if( m_pickerMode == PickMode.Folders )
 				{
-					m_folderSelectMode = value;
-
-					if( m_folderSelectMode )
-					{
-						filtersDropdown.options[0].text = FOLDERS_FILTER_TEXT;
-						filtersDropdown.value = 0;
-						filtersDropdown.RefreshShownValue();
-						filtersDropdown.interactable = false;
-					}
-					else
-					{
-						filtersDropdown.options[0].text = filters[0].ToString();
-						filtersDropdown.interactable = true;
-					}
-
-					Text placeholder = filenameInputField.placeholder as Text;
-					if( placeholder )
-						placeholder.gameObject.SetActive( !m_folderSelectMode );
+					filtersDropdown.options[0].text = FoldersFilterText;
+					filtersDropdown.value = 0;
+					filtersDropdown.RefreshShownValue();
+					filtersDropdown.interactable = false;
 				}
+				else
+				{
+					filtersDropdown.options[0].text = filters[0].ToString();
+					filtersDropdown.interactable = true;
+				}
+
+				Text placeholder = filenameInputField.placeholder as Text;
+				if( placeholder )
+					placeholder.gameObject.SetActive( m_pickerMode != PickMode.Folders );
 			}
 		}
 
@@ -551,9 +544,9 @@ namespace SimpleFileBrowser
 			nullPointerEventData = new PointerEventData( null );
 
 #if !UNITY_EDITOR && ( UNITY_ANDROID || UNITY_IOS || UNITY_WSA || UNITY_WSA_10_0 )
-			DEFAULT_PATH = Application.persistentDataPath;
+			defaultInitialPath = Application.persistentDataPath;
 #else
-			DEFAULT_PATH = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
+			defaultInitialPath = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
 #endif
 
 #if !UNITY_EDITOR && UNITY_ANDROID
@@ -579,7 +572,7 @@ namespace SimpleFileBrowser
 			filenameInputField.onValidateInput += OnValidateFilenameInput;
 			filenameInputField.onValueChanged.AddListener( OnFilenameInputChanged );
 
-			allFilesFilter = new Filter( ALL_FILES_FILTER_TEXT );
+			allFilesFilter = new Filter( AllFilesFilterText );
 			filters.Add( allFilesFilter );
 
 			invalidFilenameChars = new HashSet<char>( Path.GetInvalidFileNameChars() )
@@ -739,7 +732,7 @@ namespace SimpleFileBrowser
 							string driveName;
 							if( !defaultPathInitialized )
 							{
-								DEFAULT_PATH = drives[i];
+								defaultInitialPath = drives[i];
 								defaultPathInitialized = true;
 
 								driveName = "Primary Drive";
@@ -809,7 +802,7 @@ namespace SimpleFileBrowser
 			}
 			else
 			{
-				AddQuickLink( driveIcon, SAF_PICK_FOLDER_QUICK_LINK_TEXT, SAF_PICK_FOLDER_QUICK_LINK_PATH, ref anchoredPos );
+				AddQuickLink( driveIcon, PickFolderQuickLinkText, SAF_PICK_FOLDER_QUICK_LINK_PATH, ref anchoredPos );
 				
 				try
 				{
@@ -884,7 +877,7 @@ namespace SimpleFileBrowser
 			string filenameInput = filenameInputField.text.Trim();
 			if( filenameInput.Length == 0 )
 			{
-				if( m_folderSelectMode )
+				if( m_pickerMode != PickMode.Files )
 					OnOperationSuccessful( new string[1] { m_currentPath } );
 				else
 					filenameImage.color = wrongFilenameColor;
@@ -899,7 +892,7 @@ namespace SimpleFileBrowser
 				// selectedFileEntries instead of filenameInputField
 
 				// Beforehand, check if a folder is selected in file selection mode. If so, open that directory
-				if( !m_folderSelectMode )
+				if( m_pickerMode == PickMode.Files )
 				{
 					for( int i = 0; i < selectedFileEntries.Count; i++ )
 					{
@@ -955,7 +948,7 @@ namespace SimpleFileBrowser
 							fileCount++;
 						else
 						{
-							if( m_folderSelectMode )
+							if( m_pickerMode != PickMode.Files )
 								fileCount++;
 							else
 							{
@@ -994,37 +987,37 @@ namespace SimpleFileBrowser
 					}
 					else
 					{
-						// This is a nonexisting file
-						string filename = filenameInput.Substring( startIndex, filenameLength );
-						if( !m_folderSelectMode && filters[filtersDropdown.value].defaultExtension != null )
+						try
 						{
-							// In file selection mode, make sure that nonexisting files' extensions match one of the required extensions
-							string fileExtension = Path.GetExtension( filename );
-							if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].extensions.Contains( fileExtension.ToLowerInvariant() ) )
-								filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
-						}
+							// This is a nonexisting file
+							string filename = filenameInput.Substring( startIndex, filenameLength );
+							if( m_pickerMode != PickMode.Folders && filters[filtersDropdown.value].defaultExtension != null )
+							{
+								// In file selection mode, make sure that nonexisting files' extensions match one of the required extensions
+								string fileExtension = Path.GetExtension( filename );
+								if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].extensions.Contains( fileExtension.ToLowerInvariant() ) )
+									filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
+							}
 
 #if !UNITY_EDITOR && UNITY_ANDROID
-						if( FileBrowserHelpers.ShouldUseSAF )
-						{
-							if( m_folderSelectMode )
-								result[fileCount++] = FileBrowserHelpers.CreateFolderInDirectory( m_currentPath, filename );
+							if( FileBrowserHelpers.ShouldUseSAF )
+							{
+								if( m_pickerMode == PickMode.Folders )
+									result[fileCount++] = FileBrowserHelpers.CreateFolderInDirectory( m_currentPath, filename );
+								else
+									result[fileCount++] = FileBrowserHelpers.CreateFileInDirectory( m_currentPath, filename );
+							}
 							else
-								result[fileCount++] = FileBrowserHelpers.CreateFileInDirectory( m_currentPath, filename );
-						}
-						else
 #endif
-						{
-							try
 							{
 								result[fileCount++] = Path.Combine( m_currentPath, filename );
 							}
-							catch( ArgumentException e )
-							{
-								filenameImage.color = wrongFilenameColor;
-								Debug.LogException( e );
-								return;
-							}
+						}
+						catch( ArgumentException e )
+						{
+							filenameImage.color = wrongFilenameColor;
+							Debug.LogException( e );
+							return;
 						}
 					}
 
@@ -1281,7 +1274,7 @@ namespace SimpleFileBrowser
 
 				if( AddQuickLink( folderIcon, entryName, rawUri, ref anchoredPos ) && !defaultPathInitialized )
 				{
-					DEFAULT_PATH = rawUri;
+					defaultInitialPath = rawUri;
 					defaultPathInitialized = true;
 				}
 			}
@@ -1307,7 +1300,7 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Helper Functions
-		public void Show( string initialPath )
+		public void Show( string initialPath, string initialFilename )
 		{
 			if( AskPermissions )
 				RequestPermission();
@@ -1326,10 +1319,6 @@ namespace SimpleFileBrowser
 
 			filesScrollRect.verticalNormalizedPosition = 1;
 
-			filenameInputField.text = string.Empty;
-			filenameInputField.interactable = true;
-			filenameImage.color = Color.white;
-
 			IsOpen = true;
 			Success = false;
 			Result = null;
@@ -1337,6 +1326,10 @@ namespace SimpleFileBrowser
 			gameObject.SetActive( true );
 
 			CurrentPath = GetInitialPath( initialPath );
+
+			filenameInputField.text = initialFilename ?? string.Empty;
+			filenameInputField.interactable = true;
+			filenameImage.color = Color.white;
 		}
 
 		public void Hide()
@@ -1376,6 +1369,20 @@ namespace SimpleFileBrowser
 
 			if( allFileEntries != null )
 			{
+				if( sortFilesByName )
+				{
+					// Sort the files and folders in the following order:
+					// 1. Directories come before files
+					// 2. Directories and files are sorted by their names
+					Array.Sort( allFileEntries, ( entry1, entry2 ) =>
+					{
+						if( entry1.IsDirectory != entry2.IsDirectory )
+							return entry1.IsDirectory ? -1 : 1;
+						else
+							return entry1.Name.CompareTo( entry2.Name );
+					} );
+				}
+
 				for( int i = 0; i < allFileEntries.Length; i++ )
 				{
 					try
@@ -1384,7 +1391,7 @@ namespace SimpleFileBrowser
 
 						if( !item.IsDirectory )
 						{
-							if( m_folderSelectMode )
+							if( m_pickerMode == PickMode.Folders )
 								continue;
 
 							if( ( item.Attributes & ignoredFileAttributes ) != 0 )
@@ -1529,7 +1536,7 @@ namespace SimpleFileBrowser
 
 				RefreshFiles( true );
 
-				if( m_folderSelectMode )
+				if( m_pickerMode != PickMode.Files )
 					filenameInputField.text = folderName;
 
 				// Focus on the newly created folder
@@ -1603,7 +1610,7 @@ namespace SimpleFileBrowser
 
 				RefreshFiles( true );
 
-				if( fileInfo.IsDirectory == m_folderSelectMode )
+				if( ( fileInfo.IsDirectory && m_pickerMode != PickMode.Files ) || ( !fileInfo.IsDirectory && m_pickerMode != PickMode.Folders ) )
 					filenameInputField.text = newName;
 			} );
 		}
@@ -1804,7 +1811,7 @@ namespace SimpleFileBrowser
 			// 1 file selected: file.Name
 			// 2+ files selected: "file1.Name" "file2.Name" ... (up to FILENAME_INPUT_FIELD_MAX_FILE_COUNT filenames are displayed for performance reasons)
 			int filenameContributingFileCount = 0;
-			if( FolderSelectMode )
+			if( m_pickerMode != PickMode.Files )
 				filenameContributingFileCount = selectedFileEntries.Count;
 			else
 			{
@@ -1837,7 +1844,7 @@ namespace SimpleFileBrowser
 				for( int i = 0, fileCount = 0; i < selectedFileEntries.Count; i++ )
 				{
 					FileSystemEntry selectedFile = validFileEntries[selectedFileEntries[i]];
-					if( FolderSelectMode || !selectedFile.IsDirectory )
+					if( m_pickerMode != PickMode.Files || !selectedFile.IsDirectory )
 					{
 						if( filenameContributingFileCount == 1 )
 						{
@@ -1972,7 +1979,7 @@ namespace SimpleFileBrowser
 			if( string.IsNullOrEmpty( initialPath ) || !Directory.Exists( initialPath ) )
 			{
 				if( CurrentPath.Length == 0 )
-					initialPath = DEFAULT_PATH;
+					initialPath = defaultInitialPath;
 				else
 					initialPath = CurrentPath;
 			}
@@ -1985,33 +1992,24 @@ namespace SimpleFileBrowser
 
 		#region File Browser Functions (static)
 		public static bool ShowSaveDialog( OnSuccess onSuccess, OnCancel onCancel,
-										   bool folderMode = false, bool allowMultiSelection = false, string initialPath = null,
+										   PickMode pickMode, bool allowMultiSelection = false,
+										   string initialPath = null, string initialFilename = null,
 										   string title = "Save", string saveButtonText = "Save" )
 		{
-			// Instead of ignoring this dialog request, let's just override the currently visible dialog's properties
-			//if( Instance.gameObject.activeSelf )
-			//{
-			//	Debug.LogError( "Error: Multiple dialogs are not allowed!" );
-			//	return false;
-			//}
-
-			Instance.onSuccess = onSuccess;
-			Instance.onCancel = onCancel;
-
-			Instance.FolderSelectMode = folderMode;
-			Instance.AllowMultiSelection = allowMultiSelection;
-			Instance.Title = title;
-			Instance.SubmitButtonText = saveButtonText;
-			Instance.AcceptNonExistingFilename = !folderMode;
-
-			Instance.Show( initialPath );
-
-			return true;
+			return ShowDialogInternal( onSuccess, onCancel, pickMode, allowMultiSelection, pickMode != PickMode.Folders, initialPath, initialFilename, title, saveButtonText );
 		}
 
 		public static bool ShowLoadDialog( OnSuccess onSuccess, OnCancel onCancel,
-										   bool folderMode = false, bool allowMultiSelection = false, string initialPath = null,
+										   PickMode pickMode, bool allowMultiSelection = false,
+										   string initialPath = null, string initialFilename = null,
 										   string title = "Load", string loadButtonText = "Select" )
+		{
+			return ShowDialogInternal( onSuccess, onCancel, pickMode, allowMultiSelection, false, initialPath, initialFilename, title, loadButtonText );
+		}
+
+		private static bool ShowDialogInternal( OnSuccess onSuccess, OnCancel onCancel,
+												PickMode pickMode, bool allowMultiSelection, bool acceptNonExistingFilename,
+												string initialPath, string initialFilename, string title, string submitButtonText )
 		{
 			// Instead of ignoring this dialog request, let's just override the currently visible dialog's properties
 			//if( Instance.gameObject.activeSelf )
@@ -2023,13 +2021,13 @@ namespace SimpleFileBrowser
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;
 
-			Instance.FolderSelectMode = folderMode;
+			Instance.PickerMode = pickMode;
 			Instance.AllowMultiSelection = allowMultiSelection;
 			Instance.Title = title;
-			Instance.SubmitButtonText = loadButtonText;
-			Instance.AcceptNonExistingFilename = false;
+			Instance.SubmitButtonText = submitButtonText;
+			Instance.AcceptNonExistingFilename = acceptNonExistingFilename;
 
-			Instance.Show( initialPath );
+			Instance.Show( initialPath, initialFilename );
 
 			return true;
 		}
@@ -2039,20 +2037,22 @@ namespace SimpleFileBrowser
 			Instance.OnOperationCanceled( invokeCancelCallback );
 		}
 
-		public static IEnumerator WaitForSaveDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null,
+		public static IEnumerator WaitForSaveDialog( PickMode pickMode, bool allowMultiSelection = false,
+													 string initialPath = null, string initialFilename = null,
 													 string title = "Save", string saveButtonText = "Save" )
 		{
-			if( !ShowSaveDialog( null, null, folderMode, allowMultiSelection, initialPath, title, saveButtonText ) )
+			if( !ShowSaveDialog( null, null, pickMode, allowMultiSelection, initialPath, initialFilename, title, saveButtonText ) )
 				yield break;
 
 			while( Instance.gameObject.activeSelf )
 				yield return null;
 		}
 
-		public static IEnumerator WaitForLoadDialog( bool folderMode = false, bool allowMultiSelection = false, string initialPath = null,
+		public static IEnumerator WaitForLoadDialog( PickMode pickMode, bool allowMultiSelection = false,
+													 string initialPath = null, string initialFilename = null,
 													 string title = "Load", string loadButtonText = "Select" )
 		{
-			if( !ShowLoadDialog( null, null, folderMode, allowMultiSelection, initialPath, title, loadButtonText ) )
+			if( !ShowLoadDialog( null, null, pickMode, allowMultiSelection, initialPath, initialFilename, title, loadButtonText ) )
 				yield break;
 
 			while( Instance.gameObject.activeSelf )

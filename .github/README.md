@@ -34,6 +34,20 @@ There are 5 ways to install this plugin:
 - *(via [OpenUPM](https://openupm.com))* after installing [openupm-cli](https://github.com/openupm/openupm-cli), run the following command:
   - `openupm add com.yasirkula.simplefilebrowser`
 
+## FAQ
+
+- **Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat**
+
+If your project uses ProGuard, try adding the following line to ProGuard filters: `-keep class com.yasirkula.unity.* { *; }`
+
+- **File browser doesn't show any files on Android**
+
+Make sure that you've set the **Write Permission** to **External (SDCard)** in *Player Settings*. On Android 10+, file browser uses *Storage Access Framework* and users must click the *Pick Folder* button first.
+
+- **RequestPermission returns Permission.Denied on Android even though I've set "Write Permission" to "External (SDCard)"**
+
+Declare the `WRITE_EXTERNAL_STORAGE` permission manually in your [**Plugins/Android/AndroidManifest.xml** file](https://answers.unity.com/questions/982710/where-is-the-manifest-file-in-unity.html) with the `tools:node="replace"` attribute as follows: `<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="replace"/>` (you'll need to add the `xmlns:tools="http://schemas.android.com/tools"` attribute to the `<manifest ...>` element).
+
 ## HOW TO
 
 *for Android*: set **Write Permission** to **External (SDCard)** in **Player Settings**

@@ -105,10 +105,6 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Static Variables
-		public static string AllFilesFilterText = "All Files (.*)";
-		public static string FoldersFilterText = "Folders";
-		public static string PickFolderQuickLinkText = "Pick Folder";
-
 		public static bool IsOpen { get; private set; }
 
 		public static bool Success { get; private set; }
@@ -126,6 +122,77 @@ namespace SimpleFileBrowser
 		{
 			get { return m_singleClickMode; }
 			set { m_singleClickMode = value; }
+		}
+
+		private static string m_allFilesFilterText = "All Files (.*)";
+		public static string AllFilesFilterText
+		{
+			get { return m_allFilesFilterText; }
+			set
+			{
+				if( m_allFilesFilterText != value )
+				{
+					string oldValue = m_allFilesFilterText;
+					m_allFilesFilterText = value;
+
+					if( m_instance )
+					{
+						Filter oldAllFilesFilter = m_instance.allFilesFilter;
+						m_instance.allFilesFilter = new Filter( value );
+
+						if( m_instance.filters.Count > 0 && m_instance.filters[0] == oldAllFilesFilter )
+							m_instance.filters[0] = m_instance.allFilesFilter;
+
+						if( m_instance.filtersDropdown.options[0].text == oldValue )
+							m_instance.filtersDropdown.options[0].text = value;
+					}
+				}
+			}
+		}
+
+
+		private static string m_foldersFilterText = "Folders";
+		public static string FoldersFilterText
+		{
+			get { return m_foldersFilterText; }
+			set
+			{
+				if( m_foldersFilterText != value )
+				{
+					string oldValue = m_foldersFilterText;
+					m_foldersFilterText = value;
+
+					if( m_instance && m_instance.filtersDropdown.options[0].text == oldValue )
+						m_instance.filtersDropdown.options[0].text = value;
+				}
+			}
+		}
+
+
+		private static string m_pickFolderQuickLinkText = "Pick Folder";
+		public static string PickFolderQuickLinkText
+		{
+			get { return m_pickFolderQuickLinkText; }
+			set
+			{
+				if( m_pickFolderQuickLinkText != value )
+				{
+					m_pickFolderQuickLinkText = value;
+
+					if( m_instance && m_instance.addedQuickLinksSet.Contains( SAF_PICK_FOLDER_QUICK_LINK_PATH ) )
+					{
+						for( int i = 0; i < m_instance.quickLinksContainer.childCount; i++ )
+						{
+							FileBrowserQuickLink quickLink = m_instance.quickLinksContainer.GetChild( i ).GetComponent<FileBrowserQuickLink>();
+							if( quickLink && quickLink.TargetPath == SAF_PICK_FOLDER_QUICK_LINK_PATH )
+							{
+								quickLink.SetQuickLink( m_instance.driveIcon, value, SAF_PICK_FOLDER_QUICK_LINK_PATH );
+								break;
+							}
+						}
+					}
+				}
+			}
 		}
 
 		private static FileBrowser m_instance = null;

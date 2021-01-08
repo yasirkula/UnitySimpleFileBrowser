@@ -42,7 +42,7 @@ If your project uses ProGuard, try adding the following line to ProGuard filters
 
 - **File browser doesn't show any files on Android 10+**
 
-File browser uses *Storage Access Framework* on these Android versions and users must first click the *Pick Folder* button in the quick links section
+File browser uses *Storage Access Framework* on these Android versions and users must first click the *Browse...* button in the quick links section
 
 - **RequestPermission returns Permission.Denied on Android**
 
@@ -115,6 +115,8 @@ public static bool SetDefaultFilter( string defaultFilter );
 ```
 
 To open files or directories in the file browser with a single click (instead of double clicking), you can set **FileBrowser.SingleClickMode** to *true*.
+
+File browser refreshes the list of drives at a regular interval to detect the insertion/removal of USB drives. This interval can be changed via **FileBrowser.DrivesRefreshInterval**. If its value is less than 0, list of drives won't be refreshed. By default, this value is 5 seconds on standalone platforms and -1 on mobile platforms.
 
 On Android, file browser requires external storage access to function properly. You can use the following function to check if we have runtime permission to access the external storage:
 

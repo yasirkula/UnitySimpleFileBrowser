@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
@@ -209,6 +210,72 @@ public class FileBrowser
 		return stringBuilder.toString();
 	}
 
+	// Copies/moves a Storage Access Framework (SAF) file/raw file
+	@TargetApi( Build.VERSION_CODES.Q )
+	public static void CopyFile( Context context, String sourceRawUri, String destinationRawUri, boolean isMoveOperation )
+	{
+		// Parameters can point to either SAF files or raw filesystem files
+		boolean isSourceSAFFile = sourceRawUri.contains( "://" );
+		boolean isDestinationSAFFile = destinationRawUri.contains( "://" );
+
+		if( isSourceSAFFile )
+		{
+			if( isDestinationSAFFile )
+			{
+				// Copy SAF file to SAF file
+				CopySAFEntry( context, sourceRawUri, destinationRawUri );
+			}
+			else
+			{
+				// Copy SAF file to raw file
+				ReadFromSAFEntry( context, sourceRawUri, destinationRawUri );
+			}
+		}
+		else
+		{
+			if( isDestinationSAFFile )
+			{
+				// Copy raw file to SAF file
+				WriteToSAFEntry( context, destinationRawUri, sourceRawUri, false );
+			}
+			else
+			{
+				// Copy raw file to raw file
+				CopyRawFile( sourceRawUri, destinationRawUri );
+			}
+		}
+
+		if( isMoveOperation )
+		{
+			if( isSourceSAFFile )
+				DeleteSAFEntry( context, sourceRawUri );
+			else
+				new File( sourceRawUri ).delete();
+		}
+	}
+
+	// Copies/moves a Storage Access Framework (SAF) directory/raw directory
+	@TargetApi( Build.VERSION_CODES.Q )
+	public static void CopyDirectory( Context context, String sourceRawUri, String destinationRawUri, boolean isMoveOperation )
+	{
+		// Parameters can point to either SAF directories or raw filesystem directories
+		boolean isSourceSAFDirectory = sourceRawUri.contains( "://" );
+		boolean isDestinationSAFDirectory = destinationRawUri.contains( "://" );
+
+		if( isSourceSAFDirectory )
+			CopySAFDirectoryRecursively( context, new FileBrowserSAFEntry( context, Uri.parse( sourceRawUri ) ), destinationRawUri, isDestinationSAFDirectory );
+		else
+			CopyRawDirectoryRecursively( context, new File( sourceRawUri ), destinationRawUri, isDestinationSAFDirectory );
+
+		if( isMoveOperation )
+		{
+			if( isSourceSAFDirectory )
+				DeleteSAFEntry( context, sourceRawUri );
+			else
+				DeleteRawDirectoryRecursively( new File( sourceRawUri ) );
+		}
+	}
+
 	// Fetches the contents of a Storage Access Framework (SAF) folder
 	@TargetApi( Build.VERSION_CODES.Q )
 	public static String OpenSAFFolder( Context context, String rawUri )
@@ -252,25 +319,28 @@ public class FileBrowser
 	{
 		try
 		{
-			InputStream in = new FileInputStream( new File( sourceFile ) );
+			InputStream input = new FileInputStream( new File( sourceFile ) );
 			try
 			{
-				OutputStream out = context.getContentResolver().openOutputStream( Uri.parse( rawUri ), appendMode ? "wa" : "rwt" );
+				OutputStream output = context.getContentResolver().openOutputStream( Uri.parse( rawUri ), appendMode ? "wa" : "rwt" );
+				if( output == null )
+					return;
+
 				try
 				{
-					byte[] buf = new byte[1024];
+					byte[] buf = new byte[4096];
 					int len;
-					while( ( len = in.read( buf ) ) > 0 )
-						out.write( buf, 0, len );
+					while( ( len = input.read( buf ) ) > 0 )
+						output.write( buf, 0, len );
 				}
 				finally
 				{
-					out.close();
+					output.close();
 				}
 			}
 			finally
 			{
-				in.close();
+				input.close();
 			}
 		}
 		catch( Exception e )
@@ -288,27 +358,24 @@ public class FileBrowser
 			if( input == null )
 				return;
 
-			OutputStream output = null;
 			try
 			{
-				output = new FileOutputStream( new File( destinationFile ), false );
-
-				byte[] buf = new byte[4096];
-				int len;
-				while( ( len = input.read( buf ) ) > 0 )
-					output.write( buf, 0, len );
-			}
-			finally
-			{
+				OutputStream output = new FileOutputStream( new File( destinationFile ), false );
 				try
 				{
-					if( output != null )
-						output.close();
+					byte[] buf = new byte[4096];
+					int len;
+					while( ( len = input.read( buf ) ) > 0 )
+						output.write( buf, 0, len );
 				}
 				finally
 				{
-					input.close();
+					output.close();
 				}
+			}
+			finally
+			{
+				input.close();
 			}
 		}
 		catch( Exception e )
@@ -318,9 +385,48 @@ public class FileBrowser
 	}
 
 	@TargetApi( Build.VERSION_CODES.Q )
-	public static boolean SAFEntryExists( Context context, String rawUri )
+	public static void CopySAFEntry( Context context, String sourceRawUri, String destinationRawUri )
 	{
-		return new FileBrowserSAFEntry( context, Uri.parse( rawUri ) ).exists();
+		try
+		{
+			InputStream input = context.getContentResolver().openInputStream( Uri.parse( sourceRawUri ) );
+			if( input == null )
+				return;
+
+			try
+			{
+				OutputStream output = context.getContentResolver().openOutputStream( Uri.parse( destinationRawUri ), "rwt" );
+				if( output == null )
+					return;
+
+				try
+				{
+					byte[] buf = new byte[4096];
+					int len;
+					while( ( len = input.read( buf ) ) > 0 )
+						output.write( buf, 0, len );
+				}
+				finally
+				{
+					output.close();
+				}
+			}
+			finally
+			{
+				input.close();
+			}
+		}
+		catch( Exception e )
+		{
+			Log.e( "Unity", "Exception:", e );
+		}
+	}
+
+	@TargetApi( Build.VERSION_CODES.Q )
+	public static boolean SAFEntryExists( Context context, String rawUri, boolean isDirectory )
+	{
+		FileBrowserSAFEntry entry = new FileBrowserSAFEntry( context, Uri.parse( rawUri ) );
+		return entry.exists() && entry.isDirectory() == isDirectory;
 	}
 
 	@TargetApi( Build.VERSION_CODES.Q )
@@ -358,4 +464,271 @@ public class FileBrowser
 	{
 		return new FileBrowserSAFEntry( context, Uri.parse( rawUri ) ).delete();
 	}
+
+	@TargetApi( Build.VERSION_CODES.Q )
+	public static String GetParentDirectory( Context context, String rawUri )
+	{
+		try
+		{
+			if( !rawUri.contains( "://" ) )
+			{
+				// This is a raw filepath, not a SAF path
+				String parentPath = new File( rawUri ).getParent();
+				return parentPath != null ? parentPath : "";
+			}
+
+			// The most promising method is to calculate the URI's path using findDocumentPath, omit the last path segment from it
+			// and then replace the rawUri's path entirely
+			DocumentsContract.Path rawUriPath = DocumentsContract.findDocumentPath( context.getContentResolver(), Uri.parse( rawUri ) );
+			if( rawUriPath != null )
+			{
+				List<String> pathSegments = rawUriPath.getPath();
+				if( pathSegments != null && pathSegments.size() > 0 )
+				{
+					String rawUriParentPath;
+					if( pathSegments.size() > 1 )
+						rawUriParentPath = Uri.encode( pathSegments.get( pathSegments.size() - 2 ) );
+					else
+					{
+						String fullPath = pathSegments.get( 0 );
+						int separatorIndex = Math.max( fullPath.lastIndexOf( '/' ), fullPath.lastIndexOf( ':' ) + 1 );
+						rawUriParentPath = separatorIndex > 0 ? Uri.encode( fullPath.substring( 0, separatorIndex ) ) : null;
+					}
+
+					if( rawUriParentPath != null && rawUriParentPath.length() > 0 )
+					{
+						int rawUriLastPathSegmentIndex = rawUri.lastIndexOf( '/' ) + 1;
+						if( rawUriLastPathSegmentIndex > 0 )
+						{
+							String parentRawUri = rawUri.substring( 0, rawUriLastPathSegmentIndex ) + rawUriParentPath;
+							if( !parentRawUri.equals( rawUri ) && SAFEntryExists( context, parentRawUri, true ) )
+								return parentRawUri;
+						}
+					}
+				}
+			}
+
+			// Omit the last path segment (this method won't work for Downloads folder and probably some other ContentProviders, too)
+			int pathSeparatorIndex = rawUri.lastIndexOf( "%3A" ); // Encoded colon index
+			if( pathSeparatorIndex > 0 )
+				pathSeparatorIndex += 3; // Encoded colon shouldn't be omitted by substring
+
+			pathSeparatorIndex = Math.max( pathSeparatorIndex, Math.max( rawUri.lastIndexOf( '/' ), rawUri.lastIndexOf( "%2F" ) ) );
+			if( pathSeparatorIndex < 0 || pathSeparatorIndex >= rawUri.length() )
+				return "";
+
+			rawUri = rawUri.substring( 0, pathSeparatorIndex );
+
+			if( SAFEntryExists( context, rawUri, true ) )
+				return rawUri;
+
+			// When we form the SAF URI using a subfolder as root (i.e. /storage/SomeFolder/), that subfolder is reflected in SAF URI
+			// in the form /tree/primary%3ASomeFolder/ and restricts our access to SomeFolder's parent directories. However, if we
+			// actually have permission to access the /storage/ directory (parent folder), we can remove the subfolder from the URI
+			// (i.e. change it to /tree/primary%3A/) and voila!
+			int treeStartIndex = rawUri.indexOf( "/tree/" );
+			if( treeStartIndex >= 0 )
+			{
+				treeStartIndex += 6;
+				int treeEndIndex = rawUri.indexOf( '/', treeStartIndex );
+				if( treeEndIndex > treeStartIndex + 4 ) // +4: "/tree/SOMETHING/" here, SOMETHING should be able to contain at least 1 %2F/%3A and 1 other character
+				{
+					String treeComponent = rawUri.substring( treeStartIndex, treeEndIndex );
+					String preTreeComponent = rawUri.substring( 0, treeStartIndex );
+					String postTreeComponent = rawUri.substring( treeEndIndex );
+
+					String _treeComponent = treeComponent;
+					int treeSeparatorIndex = _treeComponent.length() - 3; // -3: if treeComponent ends with %2F, skip it
+					while( ( treeSeparatorIndex = _treeComponent.lastIndexOf( "%2F", treeSeparatorIndex - 1 ) ) > 0 )
+					{
+						_treeComponent = _treeComponent.substring( 0, treeSeparatorIndex );
+
+						String _rawUri = preTreeComponent + _treeComponent + postTreeComponent;
+						if( SAFEntryExists( context, _rawUri, true ) )
+							return _rawUri;
+					}
+
+					_treeComponent = treeComponent;
+					treeSeparatorIndex = _treeComponent.length() - 3; // -3: if treeComponent ends with %3A, skip it
+					while( ( treeSeparatorIndex = _treeComponent.lastIndexOf( "%3A", treeSeparatorIndex - 1 ) ) > 0 )
+					{
+						_treeComponent = _treeComponent.substring( 0, treeSeparatorIndex + 3 ); // Encoded colon (%3A) shouldn't be omitted by substring
+
+						String _rawUri = preTreeComponent + _treeComponent + postTreeComponent;
+						if( SAFEntryExists( context, _rawUri, true ) )
+							return _rawUri;
+					}
+				}
+			}
+		}
+		catch( Exception e )
+		{
+			Log.e( "Unity", "Exception:", e );
+		}
+
+		return "";
+	}
+
+	//// BEGIN UTILITY FUNCTIONS
+	@TargetApi( Build.VERSION_CODES.Q )
+	private static void CopyRawFile( String sourcePath, String destinationPath )
+	{
+		try
+		{
+			InputStream input = new FileInputStream( new File( sourcePath ) );
+			try
+			{
+				OutputStream output = new FileOutputStream( new File( destinationPath ), false );
+				try
+				{
+					byte[] buf = new byte[4096];
+					int len;
+					while( ( len = input.read( buf ) ) > 0 )
+						output.write( buf, 0, len );
+				}
+				finally
+				{
+					output.close();
+				}
+			}
+			finally
+			{
+				input.close();
+			}
+		}
+		catch( Exception e )
+		{
+			Log.e( "Unity", "Exception:", e );
+		}
+	}
+
+	@TargetApi( Build.VERSION_CODES.Q )
+	private static void CopySAFDirectoryRecursively( Context context, FileBrowserSAFEntry sourceDirectory, String destinationRawUri, boolean isDestinationSAFDirectory )
+	{
+		File destinationDirectory = null;
+		ArrayList<FileBrowserSAFEntry> destinationContents = null;
+		if( isDestinationSAFDirectory )
+			destinationContents = new FileBrowserSAFEntry( context, Uri.parse( destinationRawUri ) ).listFiles();
+		else
+		{
+			destinationDirectory = new File( destinationRawUri );
+			destinationDirectory.mkdirs();
+		}
+
+		ArrayList<FileBrowserSAFEntry> contents = sourceDirectory.listFiles();
+		for( int i = 0; i < contents.size(); i++ )
+		{
+			FileBrowserSAFEntry content = contents.get( i );
+			if( content.isDirectory() )
+			{
+				String targetRawUri;
+				if( isDestinationSAFDirectory )
+					targetRawUri = FindSAFEntryWithNameOrCreateNew( context, destinationRawUri, destinationContents, true, content.getName() );
+				else
+					targetRawUri = new File( destinationDirectory, content.getName() ).getPath();
+
+				CopySAFDirectoryRecursively( context, content, targetRawUri, isDestinationSAFDirectory );
+			}
+			else
+			{
+				if( isDestinationSAFDirectory )
+				{
+					String targetRawUri = FindSAFEntryWithNameOrCreateNew( context, destinationRawUri, destinationContents, false, content.getName() );
+					CopySAFEntry( context, content.getUri().toString(), targetRawUri );
+				}
+				else
+				{
+					String targetRawUri = new File( destinationDirectory, content.getName() ).getPath();
+					ReadFromSAFEntry( context, content.getUri().toString(), targetRawUri );
+				}
+			}
+		}
+	}
+
+	@TargetApi( Build.VERSION_CODES.Q )
+	private static void CopyRawDirectoryRecursively( Context context, File sourceDirectory, String destinationRawUri, boolean isDestinationSAFDirectory )
+	{
+		File destinationDirectory = null;
+		ArrayList<FileBrowserSAFEntry> destinationContents = null;
+		if( isDestinationSAFDirectory )
+			destinationContents = new FileBrowserSAFEntry( context, Uri.parse( destinationRawUri ) ).listFiles();
+		else
+		{
+			destinationDirectory = new File( destinationRawUri );
+			destinationDirectory.mkdirs();
+		}
+
+		File[] contents = sourceDirectory.listFiles();
+		if( contents != null )
+		{
+			for( int i = 0; i < contents.length; i++ )
+			{
+				File content = contents[i];
+				if( content.isDirectory() )
+				{
+					String targetRawUri;
+					if( isDestinationSAFDirectory )
+						targetRawUri = FindSAFEntryWithNameOrCreateNew( context, destinationRawUri, destinationContents, true, content.getName() );
+					else
+						targetRawUri = new File( destinationDirectory, content.getName() ).getPath();
+
+					CopyRawDirectoryRecursively( context, content, targetRawUri, isDestinationSAFDirectory );
+				}
+				else
+				{
+					if( isDestinationSAFDirectory )
+					{
+						String targetRawUri = FindSAFEntryWithNameOrCreateNew( context, destinationRawUri, destinationContents, false, content.getName() );
+						WriteToSAFEntry( context, targetRawUri, content.getPath(), false );
+					}
+					else
+					{
+						String targetRawUri = new File( destinationDirectory, content.getName() ).getPath();
+						CopyRawFile( content.getPath(), targetRawUri );
+					}
+				}
+			}
+		}
+	}
+
+	@TargetApi( Build.VERSION_CODES.Q )
+	private static void DeleteRawDirectoryRecursively( File directory )
+	{
+		File[] contents = directory.listFiles();
+		if( contents != null )
+		{
+			for( int i = 0; i < contents.length; i++ )
+			{
+				if( contents[i].isDirectory() )
+					DeleteRawDirectoryRecursively( contents[i] );
+				else
+					contents[i].delete();
+			}
+		}
+
+		directory.delete();
+	}
+
+	@TargetApi( Build.VERSION_CODES.Q )
+	private static String FindSAFEntryWithNameOrCreateNew( Context context, String folderRawUri, ArrayList<FileBrowserSAFEntry> folderContents, boolean isDirectory, String entryName )
+	{
+		for( int i = 0; i < folderContents.size(); i++ )
+		{
+			FileBrowserSAFEntry entry = folderContents.get( i );
+			if( entry.getName().equals( entryName ) )
+			{
+				if( entry.isDirectory() == isDirectory )
+					return entry.getUri().toString();
+				else
+				{
+					// SAF entry's type doesn't match the type we want, delete the entry
+					entry.delete();
+					break;
+				}
+			}
+		}
+
+		return CreateSAFEntry( context, folderRawUri, isDirectory, entryName );
+	}
+	//// END UTILITY FUNCTIONS
 }

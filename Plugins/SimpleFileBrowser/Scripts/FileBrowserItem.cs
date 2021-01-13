@@ -168,29 +168,32 @@ namespace SimpleFileBrowser
 			this.isSelected = isSelected;
 			background.color = isSelected ? fileBrowser.selectedFileColor : fileBrowser.normalFileColor;
 
-			if( fileBrowser.MultiSelectionToggleSelectionMode )
+			if( multiSelectionToggle ) // Quick links don't have multi selection toggle
 			{
-				if( !multiSelectionToggle.gameObject.activeSelf )
+				if( fileBrowser.MultiSelectionToggleSelectionMode )
 				{
-					multiSelectionToggle.gameObject.SetActive( true );
+					if( !multiSelectionToggle.gameObject.activeSelf )
+					{
+						multiSelectionToggle.gameObject.SetActive( true );
 
-					Vector2 shiftAmount = new Vector2( multiSelectionToggle.rectTransform.sizeDelta.x, 0f );
+						Vector2 shiftAmount = new Vector2( multiSelectionToggle.rectTransform.sizeDelta.x, 0f );
+						icon.rectTransform.anchoredPosition += shiftAmount;
+						nameText.rectTransform.anchoredPosition += shiftAmount;
+					}
+
+					multiSelectionToggle.sprite = isSelected ? fileBrowser.multiSelectionToggleOnIcon : fileBrowser.multiSelectionToggleOffIcon;
+				}
+				else if( multiSelectionToggle.gameObject.activeSelf )
+				{
+					multiSelectionToggle.gameObject.SetActive( false );
+
+					Vector2 shiftAmount = new Vector2( -multiSelectionToggle.rectTransform.sizeDelta.x, 0f );
 					icon.rectTransform.anchoredPosition += shiftAmount;
 					nameText.rectTransform.anchoredPosition += shiftAmount;
+
+					// Clicking a file shortly after disabling MultiSelectionToggleSelectionMode does nothing, this workaround fixes that issue
+					prevClickTime = 0f;
 				}
-
-				multiSelectionToggle.sprite = isSelected ? fileBrowser.multiSelectionToggleOnIcon : fileBrowser.multiSelectionToggleOffIcon;
-			}
-			else if( multiSelectionToggle.gameObject.activeSelf )
-			{
-				multiSelectionToggle.gameObject.SetActive( false );
-
-				Vector2 shiftAmount = new Vector2( -multiSelectionToggle.rectTransform.sizeDelta.x, 0f );
-				icon.rectTransform.anchoredPosition += shiftAmount;
-				nameText.rectTransform.anchoredPosition += shiftAmount;
-
-				// Clicking a file shortly after disabling MultiSelectionToggleSelectionMode does nothing, this workaround fixes that issue
-				prevClickTime = 0f;
 			}
 		}
 

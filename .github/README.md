@@ -114,6 +114,8 @@ When **showAllFilesFilter** is set to true, a filter by the name "*All Files (.\
 public static bool SetDefaultFilter( string defaultFilter );
 ```
 
+You can set whether or not hidden files should be shown in the file browser via **FileBrowser.ShowHiddenFiles** (has no effect when Storage Access Framework is used on Android 10+). This value can also be changed from the "*Show hidden files*" toggle in the user interface. To change the visibility of that toggle, you can use **FileBrowser.DisplayHiddenFilesToggle**. Note that this toggle is always hidden on Android 10+ when Storage Access Framework is used or on mobile devices when device is held in portrait orientation.
+
 To open files or directories in the file browser with a single click (instead of double clicking), you can set **FileBrowser.SingleClickMode** to *true*.
 
 File browser refreshes the list of drives at a regular interval to detect the insertion/removal of USB drives. This interval can be changed via **FileBrowser.DrivesRefreshInterval**. If its value is less than 0, list of drives won't be refreshed. By default, this value is 5 seconds on standalone platforms and -1 on mobile platforms.
@@ -144,18 +146,20 @@ The following file manipulation functions work on all platforms (including *Stor
 public static bool FileBrowserHelpers.FileExists( string path );
 public static bool FileBrowserHelpers.DirectoryExists( string path );
 public static bool FileBrowserHelpers.IsDirectory( string path );
+public static string FileBrowserHelpers.GetDirectoryName( string path );
 public static FileSystemEntry[] FileBrowserHelpers.GetEntriesInDirectory( string path ); // Returns all files and folders in a directory
 public static string FileBrowserHelpers.CreateFileInDirectory( string directoryPath, string filename ); // Returns the created file's path
 public static string FileBrowserHelpers.CreateFolderInDirectory( string directoryPath, string folderName ); // Returns the created folder's path
 public static void FileBrowserHelpers.WriteBytesToFile( string targetPath, byte[] bytes );
 public static void FileBrowserHelpers.WriteTextToFile( string targetPath, string text );
-public static void FileBrowserHelpers.WriteCopyToFile( string targetPath, string sourceFile ); // Copies the contents of sourceFile to target file. Here, sourceFile must be a file path (i.e. don't use a SAF path as sourceFile)
 public static void FileBrowserHelpers.AppendBytesToFile( string targetPath, byte[] bytes );
 public static void FileBrowserHelpers.AppendTextToFile( string targetPath, string text );
-public static void FileBrowserHelpers.AppendCopyToFile( string targetPath, string sourceFile ); // Appends the contents of sourceFile to target file. Here, sourceFile must be a file path
 public static byte[] FileBrowserHelpers.ReadBytesFromFile( string sourcePath );
 public static string FileBrowserHelpers.ReadTextFromFile( string sourcePath );
-public static void FileBrowserHelpers.ReadCopyFromFile( string sourcePath, string destinationFile ); // Copies the contents of source to destinationFile. Here, destinationFile must be a file path
+public static void FileBrowserHelpers.CopyFile( string sourcePath, string destinationPath );
+public static void FileBrowserHelpers.CopyDirectory( string sourcePath, string destinationPath );
+public static void FileBrowserHelpers.MoveFile( string sourcePath, string destinationPath );
+public static void FileBrowserHelpers.MoveDirectory( string sourcePath, string destinationPath );
 public static string FileBrowserHelpers.RenameFile( string path, string newName ); // Returns the new path of the file
 public static string FileBrowserHelpers.RenameDirectory( string path, string newName ); // Returns the new path of the directory
 public static void FileBrowserHelpers.DeleteFile( string path );
@@ -244,6 +248,10 @@ public class FileBrowserTest : MonoBehaviour
 			// Read the bytes of the first file via FileBrowserHelpers
 			// Contrary to File.ReadAllBytes, this function works on Android 10+, as well
 			byte[] bytes = FileBrowserHelpers.ReadBytesFromFile( FileBrowser.Result[0] );
+
+			// Or, copy the first file to persistentDataPath
+			string destinationPath = Path.Combine( Application.persistentDataPath, FileBrowserHelpers.GetFilename( FileBrowser.Result[0] ) );
+			FileBrowserHelpers.CopyFile( FileBrowser.Result[0], destinationPath );
 		}
 	}
 }

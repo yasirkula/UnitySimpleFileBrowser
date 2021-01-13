@@ -135,6 +135,38 @@ namespace SimpleFileBrowser
 			set { m_drivesRefreshInterval = value; }
 		}
 
+		public static bool ShowHiddenFiles
+		{
+			get { return Instance.showHiddenFilesToggle.isOn; }
+			set { Instance.showHiddenFilesToggle.isOn = value; }
+		}
+
+		private static bool m_displayHiddenFilesToggle = true;
+		public static bool DisplayHiddenFilesToggle
+		{
+			get { return m_displayHiddenFilesToggle; }
+			set
+			{
+				if( m_displayHiddenFilesToggle != value )
+				{
+					m_displayHiddenFilesToggle = value;
+
+					if( m_instance )
+					{
+						if( !value )
+							m_instance.showHiddenFilesToggle.gameObject.SetActive( false );
+						else if( m_instance.windowTR.sizeDelta.x >= m_instance.narrowScreenWidth )
+						{
+#if !UNITY_EDITOR && UNITY_ANDROID
+							if( !FileBrowserHelpers.ShouldUseSAF )
+#endif
+							m_instance.showHiddenFilesToggle.gameObject.SetActive( true );
+						}
+					}
+				}
+			}
+		}
+
 		private static string m_allFilesFilterText = "All Files (.*)";
 		public static string AllFilesFilterText
 		{
@@ -490,7 +522,9 @@ namespace SimpleFileBrowser
 					backButton.interactable = currentPathIndex > 0;
 					forwardButton.interactable = currentPathIndex < pathsFollowed.Count - 1;
 #if !UNITY_EDITOR && UNITY_ANDROID
-					if( !FileBrowserHelpers.ShouldUseSAF )
+					if( FileBrowserHelpers.ShouldUseSAF )
+						upButton.interactable = !string.IsNullOrEmpty( FileBrowserHelpers.GetDirectoryName( m_currentPath ) );
+					else
 #endif
 					upButton.interactable = Directory.GetParent( m_currentPath ) != null;
 
@@ -505,6 +539,31 @@ namespace SimpleFileBrowser
 					{
 						filenameInputField.text = string.Empty;
 						filenameInputField.interactable = true;
+					}
+
+					// If a quick link points to this directory, highlight it
+#if !UNITY_EDITOR && UNITY_ANDROID
+					// Path strings aren't deterministic on Storage Access Framework but the paths' absolute parts usually are
+					if( FileBrowserHelpers.ShouldUseSAF )
+					{
+						int SAFAbsolutePathSeparatorIndex = m_currentPath.LastIndexOf( '/' );
+						if( SAFAbsolutePathSeparatorIndex >= 0 )
+						{
+							string absoluteSAFPath = m_currentPath.Substring( SAFAbsolutePathSeparatorIndex );
+							for( int i = 0; i < allQuickLinks.Count; i++ )
+								allQuickLinks[i].SetSelected( allQuickLinks[i].TargetPath == m_currentPath || allQuickLinks[i].TargetPath.EndsWith( absoluteSAFPath ) );
+						}
+						else
+						{
+							for( int i = 0; i < allQuickLinks.Count; i++ )
+								allQuickLinks[i].SetSelected( allQuickLinks[i].TargetPath == m_currentPath );
+						}
+					}
+					else
+#endif
+					{
+						for( int i = 0; i < allQuickLinks.Count; i++ )
+							allQuickLinks[i].SetSelected( allQuickLinks[i].TargetPath == m_currentPath );
 					}
 				}
 
@@ -639,7 +698,6 @@ namespace SimpleFileBrowser
 			if( FileBrowserHelpers.ShouldUseSAF )
 			{
 				// These UI elements have no use in Storage Access Framework mode (Android 10+)
-				upButton.gameObject.SetActive( false );
 				pathInputField.gameObject.SetActive( false );
 				showHiddenFilesToggle.gameObject.SetActive( false );
 			}
@@ -1014,12 +1072,18 @@ namespace SimpleFileBrowser
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( FileBrowserHelpers.ShouldUseSAF )
-				return;
+			{
+				string parentPath = FileBrowserHelpers.GetDirectoryName( m_currentPath );
+				if( !string.IsNullOrEmpty( parentPath ) )
+					CurrentPath = parentPath;
+			}
+			else
 #endif
-			DirectoryInfo parentPath = Directory.GetParent( m_currentPath );
-
-			if( parentPath != null )
-				CurrentPath = parentPath.FullName;
+			{
+				DirectoryInfo parentPath = Directory.GetParent( m_currentPath );
+				if( parentPath != null )
+					CurrentPath = parentPath.FullName;
+			}
 		}
 
 		public void OnMoreOptionsButtonClicked()
@@ -1245,23 +1309,37 @@ namespace SimpleFileBrowser
 
 		public void OnPathChanged( string newPath )
 		{
+			// Fixes harmless NullReferenceException that occurs when Play button is clicked while SimpleFileBrowserCanvas prefab is open in prefab mode
+			// https://github.com/yasirkula/UnitySimpleFileBrowser/issues/30
+			if( !canvas )
+				return;
+
 			CurrentPath = newPath;
 		}
 
 		public void OnSearchStringChanged( string newSearchString )
 		{
+			if( !canvas ) // Same as OnPathChanged
+				return;
+
 			PersistFileEntrySelection();
 			SearchString = newSearchString;
 		}
 
 		public void OnFilterChanged()
 		{
+			if( !canvas ) // Same as OnPathChanged
+				return;
+
 			PersistFileEntrySelection();
 			RefreshFiles( false );
 		}
 
 		public void OnShowHiddenFilesToggleChanged()
 		{
+			if( !canvas ) // Same as OnPathChanged
+				return;
+
 			PersistFileEntrySelection();
 			RefreshFiles( false );
 		}
@@ -1827,8 +1905,12 @@ namespace SimpleFileBrowser
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( !FileBrowserHelpers.ShouldUseSAF )
 #endif
-			if( !Directory.Exists( path ) )
-				return false;
+			{
+				if( !Directory.Exists( path ) )
+					return false;
+
+				path = GetPathWithoutTrailingDirectorySeparator( path.Trim() );
+			}
 
 			// Don't add quick link if it already exists
 			for( int i = 0; i < allQuickLinks.Count; i++ )
@@ -1921,7 +2003,7 @@ namespace SimpleFileBrowser
 					middleView.anchoredPosition = middleViewOriginalPosition;
 					middleView.sizeDelta = middleViewOriginalSize;
 
-					showHiddenFilesToggle.gameObject.SetActive( true );
+					showHiddenFilesToggle.gameObject.SetActive( m_displayHiddenFilesToggle );
 
 					listView.OnViewportDimensionsChanged();
 					filesScrollRect.OnScroll( nullPointerEventData );
@@ -1975,7 +2057,6 @@ namespace SimpleFileBrowser
 			}
 			catch
 			{
-				return null;
 			}
 
 			return path;

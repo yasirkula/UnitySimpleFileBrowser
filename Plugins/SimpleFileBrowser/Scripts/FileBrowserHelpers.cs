@@ -94,7 +94,7 @@ namespace SimpleFileBrowser
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( ShouldUseSAF )
-				return AJC.CallStatic<bool>( "SAFEntryExists", Context, path );
+				return AJC.CallStatic<bool>( "SAFEntryExists", Context, path, false );
 #endif
 			return File.Exists( path );
 		}
@@ -103,7 +103,7 @@ namespace SimpleFileBrowser
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( ShouldUseSAF )
-				return AJC.CallStatic<bool>( "SAFEntryExists", Context, path );
+				return AJC.CallStatic<bool>( "SAFEntryExists", Context, path, true );
 #endif
 			return Directory.Exists( path );
 		}
@@ -121,6 +121,15 @@ namespace SimpleFileBrowser
 
 			string extension = Path.GetExtension( path );
 			return extension == null || extension.Length <= 1; // extension includes '.'
+		}
+
+		public static string GetDirectoryName( string path )
+		{
+#if !UNITY_EDITOR && UNITY_ANDROID
+			if( ShouldUseSAF )
+				return AJC.CallStatic<string>( "GetParentDirectory", Context, path );
+#endif
+			return Path.GetDirectoryName( path );
 		}
 
 		public static FileSystemEntry[] GetEntriesInDirectory( string path )
@@ -277,18 +286,6 @@ namespace SimpleFileBrowser
 			File.WriteAllText( targetPath, text );
 		}
 
-		public static void WriteCopyToFile( string targetPath, string sourceFile )
-		{
-#if !UNITY_EDITOR && UNITY_ANDROID
-			if( ShouldUseSAF )
-			{
-				AJC.CallStatic( "WriteToSAFEntry", Context, targetPath, sourceFile, false );
-				return;
-			}
-#endif
-			File.Copy( sourceFile, targetPath, true );
-		}
-
 		public static void AppendBytesToFile( string targetPath, byte[] bytes )
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
@@ -322,16 +319,16 @@ namespace SimpleFileBrowser
 			File.AppendAllText( targetPath, text );
 		}
 
-		public static void AppendCopyToFile( string targetPath, string sourceFile )
+		private static void AppendFileToFile( string targetPath, string sourceFileToAppend )
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( ShouldUseSAF )
 			{
-				AJC.CallStatic( "WriteToSAFEntry", Context, targetPath, sourceFile, true );
+				AJC.CallStatic( "WriteToSAFEntry", Context, targetPath, sourceFileToAppend, true );
 				return;
 			}
 #endif
-			using( Stream input = File.OpenRead( sourceFile ) )
+			using( Stream input = File.OpenRead( sourceFileToAppend ) )
 			using( Stream output = new FileStream( targetPath, FileMode.Append, FileAccess.Write ) )
 			{
 				byte[] buffer = new byte[4096];
@@ -369,16 +366,65 @@ namespace SimpleFileBrowser
 			return File.ReadAllText( sourcePath );
 		}
 
-		public static void ReadCopyFromFile( string sourcePath, string destinationFile )
+		public static void CopyFile( string sourcePath, string destinationPath )
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( ShouldUseSAF )
 			{
-				AJC.CallStatic( "ReadFromSAFEntry", Context, sourcePath, destinationFile );
+				AJC.CallStatic( "CopyFile", Context, sourcePath, destinationPath, false );
 				return;
 			}
 #endif
-			File.Copy( sourcePath, destinationFile, true );
+			File.Copy( sourcePath, destinationPath, true );
+		}
+
+		public static void CopyDirectory( string sourcePath, string destinationPath )
+		{
+#if !UNITY_EDITOR && UNITY_ANDROID
+			if( ShouldUseSAF )
+			{
+				AJC.CallStatic( "CopyDirectory", Context, sourcePath, destinationPath, false );
+				return;
+			}
+#endif
+			CopyDirectoryRecursively( new DirectoryInfo( sourcePath ), destinationPath );
+		}
+
+		private static void CopyDirectoryRecursively( DirectoryInfo sourceDirectory, string destinationPath )
+		{
+			Directory.CreateDirectory( destinationPath );
+
+			FileInfo[] files = sourceDirectory.GetFiles();
+			for( int i = 0; i < files.Length; i++ )
+				files[i].CopyTo( Path.Combine( destinationPath, files[i].Name ), true );
+
+			DirectoryInfo[] subDirectories = sourceDirectory.GetDirectories();
+			for( int i = 0; i < subDirectories.Length; i++ )
+				CopyDirectoryRecursively( subDirectories[i], Path.Combine( destinationPath, subDirectories[i].Name ) );
+		}
+
+		public static void MoveFile( string sourcePath, string destinationPath )
+		{
+#if !UNITY_EDITOR && UNITY_ANDROID
+			if( ShouldUseSAF )
+			{
+				AJC.CallStatic( "CopyFile", Context, sourcePath, destinationPath, true );
+				return;
+			}
+#endif
+			File.Move( sourcePath, destinationPath );
+		}
+
+		public static void MoveDirectory( string sourcePath, string destinationPath )
+		{
+#if !UNITY_EDITOR && UNITY_ANDROID
+			if( ShouldUseSAF )
+			{
+				AJC.CallStatic( "CopyDirectory", Context, sourcePath, destinationPath, true );
+				return;
+			}
+#endif
+			Directory.Move( sourcePath, destinationPath );
 		}
 
 		public static string RenameFile( string path, string newName )

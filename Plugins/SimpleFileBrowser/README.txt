@@ -34,7 +34,7 @@ using SimpleFileBrowser;
 public enum Permission { Denied = 0, Granted = 1, ShouldAsk = 2 };
 public enum PickMode { Files = 0, Folders = 1, FilesAndFolders = 2 };
 
-public delegate void OnSuccess( string path );
+public delegate void OnSuccess( string[] path );
 public delegate void OnCancel();
 
 // Showing dialog

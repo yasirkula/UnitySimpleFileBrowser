@@ -36,6 +36,10 @@ There are 5 ways to install this plugin:
 
 ## FAQ
 
+- **Android build fails, it says "error: attribute android:requestLegacyExternalStorage not found" in Console**
+
+`android:requestLegacyExternalStorage` attribute in _AndroidManifest.xml_ grants full access to device's storage on Android 10 but requires you to update your Android SDK to at least **SDK 29**. If this isn't possible for you, you should open *SimpleFileBrowser.aar* with WinRAR or 7-Zip and then remove the `<application ... />` tag from _AndroidManifest.xml_.
+
 - **Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat**
 
 If your project uses ProGuard, try adding the following line to ProGuard filters: `-keep class com.yasirkula.unity.* { *; }`

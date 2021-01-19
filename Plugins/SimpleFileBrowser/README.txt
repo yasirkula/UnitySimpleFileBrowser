@@ -12,6 +12,9 @@ The file browser can be shown either as a save dialog or a load dialog. In load 
 
 
 3. FAQ
+- Android build fails, it says "error: attribute android:requestLegacyExternalStorage not found" in Console
+"android:requestLegacyExternalStorage" attribute in AndroidManifest.xml grants full access to device's storage on Android 10 but requires you to update your Android SDK to at least SDK 29. If this isn't possible for you, you should open NativeGallery.aar with WinRAR or 7-Zip and then remove the "<application ... />" tag from AndroidManifest.xml.
+
 - Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat
 If your project uses ProGuard, try adding the following line to ProGuard filters: -keep class com.yasirkula.unity.* { *; }
 

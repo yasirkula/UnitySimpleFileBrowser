@@ -3,7 +3,7 @@
   "displayName": "Simple File Browser",
   "version": "1.4.2",
   "documentationUrl": "https://github.com/yasirkula/UnitySimpleFileBrowser",
-  "changelogUrl": "https://github.com/yasirkula/UnitySimpleFileBrowser/commits/master",
+  "changelogUrl": "https://github.com/yasirkula/UnitySimpleFileBrowser/releases",
   "licensesUrl": "https://github.com/yasirkula/UnitySimpleFileBrowser/blob/master/LICENSE.txt",
   "description": "This plugin helps you show save/load dialogs during gameplay with its uGUI based file browser."
 }

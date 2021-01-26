@@ -77,10 +77,7 @@ namespace SimpleFileBrowser
 			{
 				// Item is held for a while
 				pressTime = Mathf.Infinity;
-				fileBrowser.MultiSelectionToggleSelectionMode = true;
-
-				if( !isSelected )
-					fileBrowser.OnItemSelected( this, false );
+				fileBrowser.OnItemHeld( this );
 			}
 		}
 		#endregion
@@ -88,7 +85,7 @@ namespace SimpleFileBrowser
 		#region Pointer Events
 		public void OnPointerClick( PointerEventData eventData )
 		{
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 			if( eventData.button == PointerEventData.InputButton.Middle )
 				return;
 			else if( eventData.button == PointerEventData.InputButton.Right )
@@ -120,7 +117,7 @@ namespace SimpleFileBrowser
 
 		public void OnPointerDown( PointerEventData eventData )
 		{
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 			if( eventData.button != PointerEventData.InputButton.Left )
 				return;
 #endif
@@ -130,19 +127,19 @@ namespace SimpleFileBrowser
 
 		public void OnPointerUp( PointerEventData eventData )
 		{
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 			if( eventData.button != PointerEventData.InputButton.Left )
 				return;
 #endif
 
-			if( pressTime == Mathf.Infinity )
+			if( pressTime != Mathf.Infinity )
+				pressTime = Mathf.Infinity;
+			else if( fileBrowser.MultiSelectionToggleSelectionMode )
 			{
 				// We have activated MultiSelectionToggleSelectionMode with this press, processing the click would result in
 				// deselecting this item since its selected state would be toggled
 				eventData.eligibleForClick = false;
 			}
-			else
-				pressTime = Mathf.Infinity;
 		}
 
 #if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
@@ -168,9 +165,10 @@ namespace SimpleFileBrowser
 			this.isSelected = isSelected;
 			background.color = isSelected ? fileBrowser.selectedFileColor : fileBrowser.normalFileColor;
 
-			if( multiSelectionToggle ) // Quick links don't have multi selection toggle
+			if( multiSelectionToggle ) // Quick links don't have multi-selection toggle
 			{
-				if( fileBrowser.MultiSelectionToggleSelectionMode )
+				// Don't show multi-selection toggle for folders in file selection mode
+				if( fileBrowser.MultiSelectionToggleSelectionMode && ( !IsDirectory || fileBrowser.PickerMode != FileBrowser.PickMode.Files ) )
 				{
 					if( !multiSelectionToggle.gameObject.activeSelf )
 					{

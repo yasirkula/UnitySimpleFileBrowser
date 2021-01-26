@@ -596,10 +596,10 @@ namespace SimpleFileBrowser
 		}
 
 		private PickMode m_pickerMode = PickMode.Files;
-		private PickMode PickerMode
+		internal PickMode PickerMode
 		{
 			get { return m_pickerMode; }
-			set
+			private set
 			{
 				m_pickerMode = value;
 
@@ -633,7 +633,7 @@ namespace SimpleFileBrowser
 		internal bool MultiSelectionToggleSelectionMode
 		{
 			get { return m_multiSelectionToggleSelectionMode; }
-			set
+			private set
 			{
 				if( m_multiSelectionToggleSelectionMode != value )
 				{
@@ -754,7 +754,7 @@ namespace SimpleFileBrowser
 					contextMenu.Hide();
 			}
 
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 			// Handle keyboard shortcuts
 			if( !EventSystem.current.currentSelectedGameObject )
 			{
@@ -1361,9 +1361,15 @@ namespace SimpleFileBrowser
 				return;
 			}
 
-			// We want to toggle the selected states of the files even when they are double clicked
 			if( m_multiSelectionToggleSelectionMode )
+			{
+				// In file selection mode, we shouldn't include folders in the multi-selection
+				if( item.IsDirectory && m_pickerMode == PickMode.Files && !selectedFileEntries.Contains( item.Position ) )
+					return;
+
+				// If a file/folder is double clicked in multi-selection mode, instead of opening that file/folder, we want to toggle its selected state
 				isDoubleClick = false;
+			}
 
 			if( !isDoubleClick )
 			{
@@ -1374,7 +1380,7 @@ namespace SimpleFileBrowser
 				}
 				else
 				{
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 					// When Shift key is held, all items from the pivot item to the clicked item will be selected
 					if( Input.GetKey( KeyCode.LeftShift ) || Input.GetKey( KeyCode.RightShift ) )
 					{
@@ -1395,7 +1401,7 @@ namespace SimpleFileBrowser
 						multiSelectionPivotFileEntry = item.Position;
 
 						// When in toggle selection mode or Control key is held, individual items can be multi-selected
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 						if( m_multiSelectionToggleSelectionMode || Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.RightControl ) )
 #else
 						if( m_multiSelectionToggleSelectionMode )
@@ -1455,6 +1461,33 @@ namespace SimpleFileBrowser
 #endif
 					CurrentPath = Path.Combine( m_currentPath, item.Name );
 				}
+			}
+		}
+
+		public void OnItemHeld( FileBrowserItem item )
+		{
+			if( item is FileBrowserQuickLink )
+				OnItemSelected( item, false );
+			else if( m_allowMultiSelection && ( !item.IsDirectory || m_pickerMode != PickMode.Files ) ) // Holding a folder in file selection mode should do nothing
+			{
+				if( !MultiSelectionToggleSelectionMode )
+				{
+					if( m_pickerMode == PickMode.Files )
+					{
+						// If some folders are selected in file selection mode, deselect these folders before enabling the selection toggles because otherwise,
+						// user won't be able to deselect the selected folders without exiting MultiSelectionToggleSelectionMode
+						for( int i = selectedFileEntries.Count - 1; i >= 0; i-- )
+						{
+							if( validFileEntries[selectedFileEntries[i]].IsDirectory )
+								selectedFileEntries.RemoveAt( i );
+						}
+					}
+
+					MultiSelectionToggleSelectionMode = true;
+				}
+
+				if( !selectedFileEntries.Contains( item.Position ) )
+					OnItemSelected( item, false );
 			}
 		}
 

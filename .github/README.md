@@ -178,6 +178,7 @@ public static DateTime FileBrowserHelpers.GetLastModifiedDate( string path );
 ```csharp
 using UnityEngine;
 using System.Collections;
+using System.IO;
 using SimpleFileBrowser;
 
 public class FileBrowserTest : MonoBehaviour

@@ -1111,6 +1111,20 @@ namespace SimpleFileBrowser
 			bool deleteButtonVisible = contextMenuShowDeleteButton && selectedFileEntries.Count > 0;
 			bool renameButtonVisible = contextMenuShowRenameButton && selectedFileEntries.Count == 1;
 
+			if( selectAllButtonVisible && m_pickerMode == PickMode.Files )
+			{
+				// In file selection mode, if only folders exist in the current path, "Select All" option shouldn't be visible
+				selectAllButtonVisible = false;
+				for( int i = 0; i < validFileEntries.Count; i++ )
+				{
+					if( !validFileEntries[i].IsDirectory )
+					{
+						selectAllButtonVisible = true;
+						break;
+					}
+				}
+			}
+
 			contextMenu.Show( selectAllButtonVisible, deselectAllButtonVisible, deleteButtonVisible, renameButtonVisible, position, isMoreOptionsMenu );
 		}
 
@@ -1744,8 +1758,25 @@ namespace SimpleFileBrowser
 			multiSelectionPivotFileEntry = 0;
 
 			selectedFileEntries.Clear();
-			for( int i = 0; i < validFileEntries.Count; i++ )
-				selectedFileEntries.Add( i );
+
+			if( m_pickerMode != PickMode.Files )
+			{
+				for( int i = 0; i < validFileEntries.Count; i++ )
+					selectedFileEntries.Add( i );
+			}
+			else
+			{
+				// Don't select folders in file picking mode if MultiSelectionToggleSelectionMode is enabled or about to be enabled
+				for( int i = 0; i < validFileEntries.Count; i++ )
+				{
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+					if( !m_multiSelectionToggleSelectionMode || !validFileEntries[i].IsDirectory )
+#else
+					if( !validFileEntries[i].IsDirectory )
+#endif
+						selectedFileEntries.Add( i );
+				}
+			}
 
 #if !UNITY_EDITOR && !UNITY_STANDALONE && !UNITY_WSA && !UNITY_WSA_10_0
 			MultiSelectionToggleSelectionMode = true;

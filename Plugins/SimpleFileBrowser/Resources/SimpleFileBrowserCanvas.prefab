@@ -2001,7 +2001,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.9338235, g: 0.9338235, b: 0.9338235, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -3811,6 +3811,7 @@ MonoBehaviour:
   minHeight: 300
   narrowScreenWidth: 380
   quickLinksMaxWidthPercentage: 0.4
+  sortFilesByName: 1
   excludeExtensions:
   - .lnk
   - .tmp

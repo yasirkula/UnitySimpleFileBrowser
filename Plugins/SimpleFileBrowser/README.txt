@@ -25,7 +25,7 @@ This plugin supports Unity's new Input System but it requires some manual modifi
 "android:requestLegacyExternalStorage" attribute in AndroidManifest.xml grants full access to device's storage on Android 10 but requires you to update your Android SDK to at least SDK 29. If this isn't possible for you, you should open SimpleFileBrowser.aar with WinRAR or 7-Zip and then remove the "<application ... />" tag from AndroidManifest.xml.
 
 - Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat
-If your project uses ProGuard, try adding the following line to ProGuard filters: -keep class com.yasirkula.unity.* { *; }
+If you are sure that your plugin is up-to-date, then enable "Custom Proguard File" option from Player Settings and add the following line to that file: -keep class com.yasirkula.unity.* { *; }
 
 - File browser doesn't show any files on Android 10+
 File browser uses Storage Access Framework on these Android versions and users must first click the "Pick Folder" button in the quick links section

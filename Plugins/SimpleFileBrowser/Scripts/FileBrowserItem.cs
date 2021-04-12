@@ -31,7 +31,9 @@ namespace SimpleFileBrowser
 		private Text nameText;
 #pragma warning restore 0649
 
+#pragma warning disable 0414
 		private bool isSelected;
+#pragma warning restore 0414
 
 		private float pressTime = Mathf.Infinity;
 		private float prevClickTime;
@@ -98,7 +100,7 @@ namespace SimpleFileBrowser
 				}
 
 				// Then, show the context menu
-				fileBrowser.OnContextMenuTriggered();
+				fileBrowser.OnContextMenuTriggered( eventData.position );
 				return;
 			}
 #endif

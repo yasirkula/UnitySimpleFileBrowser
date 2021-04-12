@@ -231,7 +231,7 @@ namespace SimpleFileBrowser
 			if( eventData.button == PointerEventData.InputButton.Left )
 				fileBrowser.DeselectAllFiles();
 			else if( eventData.button == PointerEventData.InputButton.Right )
-				fileBrowser.OnContextMenuTriggered();
+				fileBrowser.OnContextMenuTriggered( eventData.position );
 		}
 #endif
 	}

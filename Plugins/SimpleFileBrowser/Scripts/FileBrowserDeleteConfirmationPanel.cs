@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+using UnityEngine.InputSystem;
+#endif
 
 namespace SimpleFileBrowser
 {
@@ -80,12 +83,25 @@ namespace SimpleFileBrowser
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
 		private void LateUpdate()
 		{
-			// Handle keyboard shortcuts
-			if( Input.GetKeyDown( KeyCode.Return ) || Input.GetKeyDown( KeyCode.KeypadEnter ) )
-				YesButtonClicked();
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+			if( Keyboard.current != null )
+#endif
+			{
+				// Handle keyboard shortcuts
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+				if( Keyboard.current[Key.Enter].wasPressedThisFrame || Keyboard.current[Key.NumpadEnter].wasPressedThisFrame )
+#else
+				if( Input.GetKeyDown( KeyCode.Return ) || Input.GetKeyDown( KeyCode.KeypadEnter ) )
+#endif
+					YesButtonClicked();
 
-			if( Input.GetKeyDown( KeyCode.Escape ) )
-				NoButtonClicked();
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+				if( Keyboard.current[Key.Escape].wasPressedThisFrame )
+#else
+				if( Input.GetKeyDown( KeyCode.Escape ) )
+#endif
+					NoButtonClicked();
+			}
 		}
 #endif
 

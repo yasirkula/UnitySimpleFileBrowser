@@ -6,6 +6,9 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+using UnityEngine.InputSystem;
+#endif
 
 namespace SimpleFileBrowser
 {
@@ -730,6 +733,13 @@ namespace SimpleFileBrowser
 
 			if( !showResizeCursor )
 				Destroy( resizeCursorHandler );
+
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+			// On new Input System, scroll sensitivity is much higher than legacy Input system
+			filesScrollRect.scrollSensitivity *= 0.25f;
+			quickLinksContainer.GetComponentInParent<ScrollRect>().scrollSensitivity *= 0.25f;
+			filtersDropdownContainer.GetComponent<ScrollRect>().scrollSensitivity *= 0.25f;
+#endif
 		}
 
 		private void OnRectTransformDimensionsChange()
@@ -758,14 +768,31 @@ namespace SimpleFileBrowser
 			// Handle keyboard shortcuts
 			if( !EventSystem.current.currentSelectedGameObject )
 			{
-				if( Input.GetKeyDown( KeyCode.Delete ) )
-					DeleteSelectedFiles();
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+				if( Keyboard.current != null )
+#endif
+				{
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+					if( Keyboard.current[Key.Delete].wasPressedThisFrame )
+#else
+					if( Input.GetKeyDown( KeyCode.Delete ) )
+#endif
+						DeleteSelectedFiles();
 
-				if( Input.GetKeyDown( KeyCode.F2 ) )
-					RenameSelectedFile();
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+					if( Keyboard.current[Key.F2].wasPressedThisFrame )
+#else
+					if( Input.GetKeyDown( KeyCode.F2 ) )
+#endif
+						RenameSelectedFile();
 
-				if( Input.GetKeyDown( KeyCode.A ) && ( Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.LeftCommand ) ) )
-					SelectAllFiles();
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+					if( Keyboard.current[Key.A].wasPressedThisFrame && Keyboard.current.ctrlKey.isPressed )
+#else
+					if( Input.GetKeyDown( KeyCode.A ) && ( Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.LeftCommand ) ) )
+#endif
+						SelectAllFiles();
+				}
 			}
 #endif
 
@@ -1091,12 +1118,12 @@ namespace SimpleFileBrowser
 			ShowContextMenuAt( rectTransform.InverseTransformPoint( moreOptionsContextMenuPosition.position ), true );
 		}
 
-		internal void OnContextMenuTriggered()
+		internal void OnContextMenuTriggered( Vector2 pointerPos )
 		{
 			filesScrollRect.velocity = Vector2.zero;
 
 			Vector2 position;
-			RectTransformUtility.ScreenPointToLocalPointInRectangle( rectTransform, Input.mousePosition, canvas.worldCamera, out position );
+			RectTransformUtility.ScreenPointToLocalPointInRectangle( rectTransform, pointerPos, canvas.worldCamera, out position );
 
 			ShowContextMenuAt( position, false );
 		}
@@ -1396,7 +1423,11 @@ namespace SimpleFileBrowser
 				{
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 					// When Shift key is held, all items from the pivot item to the clicked item will be selected
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+					if( Keyboard.current != null && Keyboard.current.shiftKey.isPressed )
+#else
 					if( Input.GetKey( KeyCode.LeftShift ) || Input.GetKey( KeyCode.RightShift ) )
+#endif
 					{
 						multiSelectionPivotFileEntry = Mathf.Clamp( multiSelectionPivotFileEntry, 0, validFileEntries.Count - 1 );
 
@@ -1416,7 +1447,11 @@ namespace SimpleFileBrowser
 
 						// When in toggle selection mode or Control key is held, individual items can be multi-selected
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+						if( m_multiSelectionToggleSelectionMode || ( Keyboard.current != null && Keyboard.current.ctrlKey.isPressed ) )
+#else
 						if( m_multiSelectionToggleSelectionMode || Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.RightControl ) )
+#endif
 #else
 						if( m_multiSelectionToggleSelectionMode )
 #endif

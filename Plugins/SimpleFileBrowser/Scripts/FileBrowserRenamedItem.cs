@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+using UnityEngine.InputSystem;
+#endif
 
 namespace SimpleFileBrowser
 {
@@ -38,7 +41,11 @@ namespace SimpleFileBrowser
 		private void LateUpdate()
 		{
 			// Don't allow scrolling with mouse wheel while renaming a file or creating a folder
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+			if( Mouse.current != null && Mouse.current.scroll.ReadValue().y != 0f )
+#else
 			if( Input.mouseScrollDelta.y != 0f )
+#endif
 				nameInputField.DeactivateInputField();
 		}
 #endif

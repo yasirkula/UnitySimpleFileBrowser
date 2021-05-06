@@ -939,7 +939,7 @@ namespace SimpleFileBrowser
 		{
 			// Check if drives has changed since the last refresh
 #if !UNITY_EDITOR && UNITY_ANDROID
-			string drivesList = FileBrowserHelpers.AJC.CallStatic<string>( "GetExternalDrives" );
+			string drivesList = FileBrowserHelpers.AJC.CallStatic<string>( "GetExternalDrives", FileBrowserHelpers.Context );
 			if( drivesList == driveQuickLinks || ( string.IsNullOrEmpty( drivesList ) && string.IsNullOrEmpty( driveQuickLinks ) ) )
 				return;
 

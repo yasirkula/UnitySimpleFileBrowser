@@ -11,6 +11,8 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import android.provider.DocumentsContract;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -20,8 +22,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -48,13 +52,23 @@ public class FileBrowser
 
 	private static final StringBuilder stringBuilder = new StringBuilder();
 
-	public static String GetExternalDrives()
+	public static String GetExternalDrives( Context context )
 	{
 		File primary = Environment.getExternalStorageDirectory();
 		String primaryPath = primary.getAbsolutePath();
+		String primaryCanonicalPath = primaryPath;
+		try
+		{
+			primaryCanonicalPath = primary.getCanonicalPath();
+		}
+		catch( Exception e )
+		{
+		}
 
 		stringBuilder.setLength( 0 );
 		stringBuilder.append( primaryPath ).append( ":" );
+
+		HashSet<String> potentialDrives = new HashSet<String>( 16 );
 
 		// Try paths saved at system environments
 		// Credit: https://stackoverflow.com/a/32088396/2373034
@@ -69,25 +83,7 @@ public class FileBrowser
 			{
 				String path = externalPaths[i];
 				if( path != null && path.length() > 0 )
-				{
-					File file = new File( path );
-					if( file.exists() && file.isDirectory() && file.canRead() && !file.getAbsolutePath().equalsIgnoreCase( primaryPath ) )
-					{
-						String absolutePath = file.getAbsolutePath() + File.separator + "Android";
-						if( new File( absolutePath ).exists() )
-						{
-							try
-							{
-								// Check if two paths lead to same storage (aliases)
-								if( !primary.getCanonicalPath().equals( file.getCanonicalPath() ) )
-									stringBuilder.append( file.getAbsolutePath() ).append( ":" );
-							}
-							catch( Exception e )
-							{
-							}
-						}
-					}
-				}
+					potentialDrives.add( path );
 			}
 		}
 
@@ -102,26 +98,48 @@ public class FileBrowser
 				File[] fileList = new File( root ).listFiles();
 				for( File file : fileList )
 				{
-					if( file.exists() && file.isDirectory() && file.canRead() && !file.getAbsolutePath().equalsIgnoreCase( primaryPath ) )
-					{
-						String absolutePath = file.getAbsolutePath() + File.separator + "Android";
-						if( new File( absolutePath ).exists() )
-						{
-							try
-							{
-								// Check if two paths lead to same storage (aliases)
-								if( !primary.getCanonicalPath().equals( file.getCanonicalPath() ) )
-									stringBuilder.append( file.getAbsolutePath() ).append( ":" );
-							}
-							catch( Exception ex )
-							{
-							}
-						}
-					}
+					if( file.exists() && file.isDirectory() && file.canRead() )
+						potentialDrives.add( file.getAbsolutePath() );
 				}
 			}
 			catch( Exception e )
 			{
+			}
+		}
+
+		// This is the only working method on some Android 11+ devices (when Storage Access Framework isn't used)
+		if( android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N )
+		{
+			try
+			{
+				Method getPath = StorageVolume.class.getMethod( "getPath" );
+				StorageManager storageManager = (StorageManager) context.getSystemService( Context.STORAGE_SERVICE );
+				for( StorageVolume volume : storageManager.getStorageVolumes() )
+					potentialDrives.add( (String) getPath.invoke( volume ) );
+			}
+			catch( Exception e )
+			{
+			}
+		}
+
+		for( String potentialDrive : potentialDrives )
+		{
+			File file = new File( potentialDrive );
+			if( file.exists() && file.isDirectory() && file.canRead() && !file.getAbsolutePath().equalsIgnoreCase( primaryPath ) )
+			{
+				String absolutePath = file.getAbsolutePath() + File.separator + "Android";
+				if( new File( absolutePath ).exists() )
+				{
+					try
+					{
+						// Check if two paths lead to same storage (aliases)
+						if( !primaryCanonicalPath.equals( file.getCanonicalPath() ) )
+							stringBuilder.append( file.getAbsolutePath() ).append( ":" );
+					}
+					catch( Exception ex )
+					{
+					}
+				}
 			}
 		}
 

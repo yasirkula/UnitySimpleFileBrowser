@@ -2187,7 +2187,11 @@ namespace SimpleFileBrowser
 			filenameInputField.interactable = selectedFileEntries.Count <= 1;
 
 			if( filenameContributingFileCount == 0 )
-				filenameInputField.text = string.Empty;
+			{
+				// If multiple files were previously selected, clear the input field. If a single file was selected, preserve the filename
+				if( filenameInputField.text.StartsWith( "\"" ) )
+					filenameInputField.text = string.Empty;
+			}
 			else
 			{
 				if( filenameContributingFileCount > 1 )

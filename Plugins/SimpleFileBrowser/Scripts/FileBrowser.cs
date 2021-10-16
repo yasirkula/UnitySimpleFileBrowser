@@ -43,7 +43,10 @@ namespace SimpleFileBrowser
 		{
 			public readonly string name;
 			public readonly HashSet<string> extensions;
+			public readonly ItemPassesFilter itemPassesFilter;
 			public readonly string defaultExtension;
+
+			public delegate bool ItemPassesFilter( FileSystemEntry item );
 
 			internal Filter( string name )
 			{
@@ -70,6 +73,41 @@ namespace SimpleFileBrowser
 
 				this.extensions = new HashSet<string>( extensions );
 				defaultExtension = extensions[0];
+			}
+
+			public Filter( string name, ItemPassesFilter filterDelegate, string defaultExtension = null)
+			{
+				this.name = name;
+				this.itemPassesFilter = filterDelegate;
+				this.defaultExtension = defaultExtension;
+			}
+			
+			public bool PassesFilter( FileSystemEntry item ) {
+			
+				if (extensions != null && extensions.Contains( item.Extension.ToLowerInvariant() ) == false ) {
+					return false;
+				}
+				
+				if (itemPassesFilter != null && itemPassesFilter(item) == false ) {
+					return false;
+				}
+				
+				return true;
+			}
+			public string AdjustFilename( string filename ) {
+				if (defaultExtension != null) {
+						
+					string ext = Path.GetExtension( filename );
+					bool extValid = string.IsNullOrEmpty( ext ) == false;
+					if (extValid && extensions != null)
+						extValid = extensions.Contains( ext.ToLowerInvariant() );
+						
+					if (extValid == false) {
+						filename = Path.ChangeExtension( filename, defaultExtension );
+					}
+				}
+				
+				return filename; 
 			}
 
 			public override string ToString()
@@ -1274,13 +1312,8 @@ namespace SimpleFileBrowser
 						{
 							// This is a nonexisting file
 							string filename = filenameInput.Substring( startIndex, filenameLength );
-							if( m_pickerMode != PickMode.Folders && filters[filtersDropdown.value].defaultExtension != null )
-							{
-								// In file selection mode, make sure that nonexisting files' extensions match one of the required extensions
-								string fileExtension = Path.GetExtension( filename );
-								if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].extensions.Contains( fileExtension.ToLowerInvariant() ) )
-									filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
-							}
+							if( m_pickerMode != PickMode.Folders)
+								filename = filters[filtersDropdown.value].AdjustFilename(filename);
 
 #if !UNITY_EDITOR && UNITY_ANDROID
 							if( FileBrowserHelpers.ShouldUseSAF )
@@ -1731,8 +1764,7 @@ namespace SimpleFileBrowser
 							if( excludedExtensionsSet.Contains( extension ) )
 								continue;
 
-							HashSet<string> extensions = filters[filtersDropdown.value].extensions;
-							if( extensions != null && !extensions.Contains( extension ) )
+							if (filters[filtersDropdown.value].PassesFilter(item) == false)
 								continue;
 						}
 						else
@@ -2490,7 +2522,7 @@ namespace SimpleFileBrowser
 			{
 				foreach( Filter filter in filters )
 				{
-					if( filter != null && filter.defaultExtension.Length > 0 )
+					if( filter != null )
 						Instance.filters.Add( filter );
 				}
 			}
@@ -2506,7 +2538,7 @@ namespace SimpleFileBrowser
 			{
 				for( int i = 0; i < filters.Length; i++ )
 				{
-					if( filters[i] != null && filters[i].defaultExtension.Length > 0 )
+					if( filters[i] != null )
 						Instance.filters.Add( filters[i] );
 				}
 			}

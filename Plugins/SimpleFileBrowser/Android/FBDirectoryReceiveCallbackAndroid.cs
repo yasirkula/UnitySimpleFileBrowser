@@ -1,14 +1,14 @@
-﻿#if !UNITY_EDITOR && UNITY_ANDROID
+﻿#if UNITY_EDITOR || UNITY_ANDROID
 using UnityEngine;
 
 namespace SimpleFileBrowser
 {
 	public class FBDirectoryReceiveCallbackAndroid : AndroidJavaProxy
 	{
-		private readonly FileBrowser.DirectoryPickCallback callback;
+		private readonly FileBrowser.AndroidSAFDirectoryPickCallback callback;
 		private readonly FBCallbackHelper callbackHelper;
 
-		public FBDirectoryReceiveCallbackAndroid( FileBrowser.DirectoryPickCallback callback ) : base( "com.yasirkula.unity.FileBrowserDirectoryReceiver" )
+		public FBDirectoryReceiveCallbackAndroid( FileBrowser.AndroidSAFDirectoryPickCallback callback ) : base( "com.yasirkula.unity.FileBrowserDirectoryReceiver" )
 		{
 			this.callback = callback;
 			callbackHelper = new GameObject( "FBCallbackHelper" ).AddComponent<FBCallbackHelper>();

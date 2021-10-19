@@ -667,8 +667,8 @@ namespace SimpleFileBrowser
 		#region Delegates
 		public delegate void OnSuccess( string[] paths );
 		public delegate void OnCancel();
-#if !UNITY_EDITOR && UNITY_ANDROID
-		public delegate void DirectoryPickCallback( string rawUri, string name );
+#if UNITY_EDITOR || UNITY_ANDROID
+		public delegate void AndroidSAFDirectoryPickCallback( string rawUri, string name );
 #endif
 
 		private OnSuccess onSuccess;

@@ -81,7 +81,7 @@ bool FileBrowserHelpers.FileExists( string path );
 bool FileBrowserHelpers.DirectoryExists( string path );
 bool FileBrowserHelpers.IsDirectory( string path );
 string FileBrowserHelpers.GetDirectoryName( string path );
-FileSystemEntry[] FileBrowserHelpers.GetEntriesInDirectory( string path ); // Returns all files and folders in a directory
+FileSystemEntry[] FileBrowserHelpers.GetEntriesInDirectory( string path, bool extractOnlyLastSuffixFromExtensions ); // Returns all files and folders in a directory. If you want "File.tar.gz"s extension to be extracted as ".tar.gz" instead of ".gz", set 'extractOnlyLastSuffixFromExtensions' to false
 string FileBrowserHelpers.CreateFileInDirectory( string directoryPath, string filename ); // Returns the created file's path
 string FileBrowserHelpers.CreateFolderInDirectory( string directoryPath, string folderName ); // Returns the created folder's path
 void FileBrowserHelpers.WriteBytesToFile( string targetPath, byte[] bytes );

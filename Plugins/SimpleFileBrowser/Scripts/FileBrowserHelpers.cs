@@ -12,19 +12,19 @@ namespace SimpleFileBrowser
 
 		public bool IsDirectory { get { return ( Attributes & FileAttributes.Directory ) == FileAttributes.Directory; } }
 
-		public FileSystemEntry( string path, string name, bool isDirectory )
+		public FileSystemEntry( string path, string name, string extension, bool isDirectory )
 		{
 			Path = path;
 			Name = name;
-			Extension = isDirectory ? null : System.IO.Path.GetExtension( name );
+			Extension = extension;
 			Attributes = isDirectory ? FileAttributes.Directory : FileAttributes.Normal;
 		}
 
-		public FileSystemEntry( FileSystemInfo fileInfo )
+		public FileSystemEntry( FileSystemInfo fileInfo, string extension )
 		{
 			Path = fileInfo.FullName;
 			Name = fileInfo.Name;
-			Extension = fileInfo.Extension;
+			Extension = extension;
 			Attributes = fileInfo.Attributes;
 		}
 	}
@@ -132,7 +132,7 @@ namespace SimpleFileBrowser
 			return Path.GetDirectoryName( path );
 		}
 
-		public static FileSystemEntry[] GetEntriesInDirectory( string path )
+		public static FileSystemEntry[] GetEntriesInDirectory( string path, bool extractOnlyLastSuffixFromExtensions )
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( ShouldUseSAF )
@@ -195,7 +195,7 @@ namespace SimpleFileBrowser
 
 					separatorIndex = nextSeparatorIndex;
 
-					result[i] = new FileSystemEntry( rawUri, entryName, isDirectory );
+					result[i] = new FileSystemEntry( rawUri, entryName, isDirectory ? null : FileBrowser.GetExtensionFromFilename( entryName, extractOnlyLastSuffixFromExtensions ), isDirectory );
 				}
 
 				return result;
@@ -211,7 +211,7 @@ namespace SimpleFileBrowser
 				{
 					try
 					{
-						result[index] = new FileSystemEntry( items[i] );
+						result[index] = new FileSystemEntry( items[i], FileBrowser.GetExtensionFromFilename( items[i].Name, extractOnlyLastSuffixFromExtensions ) );
 						index++;
 					}
 					catch( System.Exception e )

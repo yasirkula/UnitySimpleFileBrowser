@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
 using UnityEngine.InputSystem;
@@ -42,14 +43,18 @@ namespace SimpleFileBrowser
 		public class Filter
 		{
 			public readonly string name;
-			public readonly HashSet<string> extensions;
+			public readonly string[] extensions;
+			public readonly HashSet<string> extensionsSet;
 			public readonly string defaultExtension;
+			public readonly bool allExtensionsHaveSingleSuffix; // 'false' when some extensions have multiple suffixes like ".tar.gz"
 
 			internal Filter( string name )
 			{
 				this.name = name;
 				extensions = null;
+				extensionsSet = null;
 				defaultExtension = null;
+				allExtensionsHaveSingleSuffix = true;
 			}
 
 			public Filter( string name, string extension )
@@ -57,19 +62,51 @@ namespace SimpleFileBrowser
 				this.name = name;
 
 				extension = extension.ToLowerInvariant();
-				extensions = new HashSet<string>() { extension };
+				if( extension[0] != '.' )
+					extension = "." + extension;
+
+				extensions = new string[1] { extension };
+				extensionsSet = new HashSet<string>() { extension };
 				defaultExtension = extension;
+				allExtensionsHaveSingleSuffix = ( extension.LastIndexOf( '.' ) == 0 );
 			}
 
 			public Filter( string name, params string[] extensions )
 			{
 				this.name = name;
+				allExtensionsHaveSingleSuffix = true;
 
 				for( int i = 0; i < extensions.Length; i++ )
+				{
 					extensions[i] = extensions[i].ToLowerInvariant();
+					if( extensions[i][0] != '.' )
+						extensions[i] = "." + extensions[i];
 
-				this.extensions = new HashSet<string>( extensions );
+					allExtensionsHaveSingleSuffix &= ( extensions[i].LastIndexOf( '.' ) == 0 );
+				}
+
+				this.extensions = extensions;
+				extensionsSet = new HashSet<string>( extensions );
 				defaultExtension = extensions[0];
+			}
+
+			public bool MatchesExtension( string extension, bool extensionMayHaveMultipleSuffixes )
+			{
+				if( extensionsSet == null || extensionsSet.Contains( extension ) )
+					return true;
+
+				// When the provided extension may have multiple suffixes (e.g. ".tar.gz"), check if it ends with any of the
+				// extensions in this filter (e.g. return true when this Filter has ".gz" and the provided extension is ".tar.gz")
+				if( extensionMayHaveMultipleSuffixes )
+				{
+					for( int i = 0; i < extensions.Length; i++ )
+					{
+						if( extension.EndsWith( extensions[i], StringComparison.Ordinal ) )
+							return true;
+					}
+				}
+
+				return false;
 			}
 
 			public override string ToString()
@@ -84,13 +121,12 @@ namespace SimpleFileBrowser
 					if( name != null )
 						result += " (";
 
-					int index = 0;
-					foreach( string extension in extensions )
+					for( int i = 0; i < extensions.Length; i++ )
 					{
-						if( index++ > 0 )
-							result += ", " + extension;
+						if( i > 0 )
+							result += ", " + extensions[i];
 						else
-							result += extension;
+							result += extensions[i];
 					}
 
 					if( name != null )
@@ -285,8 +321,8 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private bool sortFilesByName = true;
 
-		[SerializeField]
-		private string[] excludeExtensions;
+		[SerializeField, UnityEngine.Serialization.FormerlySerializedAs( "excludeExtensions" )]
+		private string[] excludedExtensions;
 
 #pragma warning disable 0414
 		[SerializeField]
@@ -458,6 +494,13 @@ namespace SimpleFileBrowser
 
 		private bool showAllFilesFilter = true;
 
+		// Single suffix: ".mp4", ".txt", etc.
+		// Multiple suffixes: ".tar.gz", etc.
+		private bool allFiltersHaveSingleSuffix = true;
+		private bool allExcludedExtensionsHaveSingleSuffix = true;
+		private bool allIconExtensionsHaveSingleSuffix = true;
+		private bool allExtensionsHaveSingleSuffix = true; // Is a combination of the previous 3 fields. When its value is 'true', file extensions will be handled in a more optimized way
+
 		private string defaultInitialPath;
 
 		private int currentPathIndex = -1;
@@ -474,6 +517,9 @@ namespace SimpleFileBrowser
 		private int numberOfDriveQuickLinks;
 
 		private bool canvasDimensionsChanged;
+
+		private readonly CompareInfo textComparer = new CultureInfo( "en-US" ).CompareInfo;
+		private readonly CompareOptions textCompareOptions = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
 
 		// Required in RefreshFiles() function
 		private PointerEventData nullPointerEventData;
@@ -707,10 +753,7 @@ namespace SimpleFileBrowser
 #endif
 
 			InitializeFiletypeIcons();
-			filetypeIcons = null;
-
-			SetExcludedExtensions( excludeExtensions );
-			excludeExtensions = null;
+			SetExcludedExtensions( excludedExtensions );
 
 			backButton.interactable = false;
 			forwardButton.interactable = false;
@@ -871,11 +914,20 @@ namespace SimpleFileBrowser
 		private void InitializeFiletypeIcons()
 		{
 			filetypeToIcon = new Dictionary<string, Sprite>();
+			allIconExtensionsHaveSingleSuffix = true;
+
 			for( int i = 0; i < filetypeIcons.Length; i++ )
 			{
-				FiletypeIcon thisIcon = filetypeIcons[i];
-				filetypeToIcon[thisIcon.extension] = thisIcon.icon;
+				filetypeIcons[i].extension = filetypeIcons[i].extension.ToLowerInvariant();
+				if( filetypeIcons[i].extension[0] != '.' )
+					filetypeIcons[i].extension = "." + filetypeIcons[i].extension;
+
+				filetypeToIcon[filetypeIcons[i].extension] = filetypeIcons[i].icon;
+
+				allIconExtensionsHaveSingleSuffix &= ( filetypeIcons[i].extension.LastIndexOf( '.' ) == 0 );
 			}
+
+			allExtensionsHaveSingleSuffix = allFiltersHaveSingleSuffix && allExcludedExtensionsHaveSingleSuffix && allIconExtensionsHaveSingleSuffix;
 		}
 
 		private void InitializeQuickLinks()
@@ -1274,11 +1326,11 @@ namespace SimpleFileBrowser
 						{
 							// This is a nonexisting file
 							string filename = filenameInput.Substring( startIndex, filenameLength );
-							if( m_pickerMode != PickMode.Folders && filters[filtersDropdown.value].defaultExtension != null )
+							if( m_pickerMode != PickMode.Folders && filters[filtersDropdown.value].extensions != null )
 							{
 								// In file selection mode, make sure that nonexisting files' extensions match one of the required extensions
-								string fileExtension = Path.GetExtension( filename );
-								if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].extensions.Contains( fileExtension.ToLowerInvariant() ) )
+								string fileExtension = GetExtensionFromFilename( filename, allExtensionsHaveSingleSuffix );
+								if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].MatchesExtension( fileExtension, !allExtensionsHaveSingleSuffix ) )
 									filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
 							}
 
@@ -1372,8 +1424,20 @@ namespace SimpleFileBrowser
 			if( !canvas ) // Same as OnPathChanged
 				return;
 
+			bool filtersSingleSuffixModeChanged = false;
+
+			if( filters != null && filtersDropdown.value < filters.Count )
+			{
+				bool _allExtensionsHaveSingleSuffix = allExtensionsHaveSingleSuffix;
+
+				allFiltersHaveSingleSuffix = filters[filtersDropdown.value].allExtensionsHaveSingleSuffix;
+				allExtensionsHaveSingleSuffix = allFiltersHaveSingleSuffix && allExcludedExtensionsHaveSingleSuffix && allIconExtensionsHaveSingleSuffix;
+
+				filtersSingleSuffixModeChanged = ( allExtensionsHaveSingleSuffix != _allExtensionsHaveSingleSuffix );
+			}
+
 			PersistFileEntrySelection();
-			RefreshFiles( false );
+			RefreshFiles( filtersSingleSuffixModeChanged );
 		}
 
 		public void OnShowHiddenFilesToggleChanged()
@@ -1681,7 +1745,7 @@ namespace SimpleFileBrowser
 			if( pathChanged )
 			{
 				if( !string.IsNullOrEmpty( m_currentPath ) )
-					allFileEntries = FileBrowserHelpers.GetEntriesInDirectory( m_currentPath );
+					allFileEntries = FileBrowserHelpers.GetEntriesInDirectory( m_currentPath, allExtensionsHaveSingleSuffix );
 				else
 					allFileEntries = null;
 			}
@@ -1692,8 +1756,6 @@ namespace SimpleFileBrowser
 				ignoredFileAttributes |= FileAttributes.Hidden;
 			else
 				ignoredFileAttributes &= ~FileAttributes.Hidden;
-
-			string searchStringLowercase = m_searchString.ToLower();
 
 			validFileEntries.Clear();
 
@@ -1727,12 +1789,19 @@ namespace SimpleFileBrowser
 							if( ( item.Attributes & ignoredFileAttributes ) != 0 )
 								continue;
 
-							string extension = item.Extension.ToLowerInvariant();
+							string extension = item.Extension;
 							if( excludedExtensionsSet.Contains( extension ) )
 								continue;
+							else if( !allExtensionsHaveSingleSuffix )
+							{
+								for( int j = 0; j < excludedExtensions.Length; j++ )
+								{
+									if( extension.EndsWith( excludedExtensions[j], StringComparison.Ordinal ) )
+										continue;
+								}
+							}
 
-							HashSet<string> extensions = filters[filtersDropdown.value].extensions;
-							if( extensions != null && !extensions.Contains( extension ) )
+							if( !filters[filtersDropdown.value].MatchesExtension( extension, !allExtensionsHaveSingleSuffix ) )
 								continue;
 						}
 						else
@@ -1741,7 +1810,7 @@ namespace SimpleFileBrowser
 								continue;
 						}
 
-						if( m_searchString.Length == 0 || item.Name.ToLower().Contains( searchStringLowercase ) )
+						if( m_searchString.Length == 0 || textComparer.IndexOf( item.Name, m_searchString, textCompareOptions ) >= 0 )
 							validFileEntries.Add( item );
 					}
 					catch( Exception e )
@@ -2132,11 +2201,45 @@ namespace SimpleFileBrowser
 		{
 			Sprite icon;
 			if( fileInfo.IsDirectory )
-				icon = folderIcon;
-			else if( !filetypeToIcon.TryGetValue( fileInfo.Extension.ToLowerInvariant(), out icon ) )
-				icon = defaultIcon;
+				return folderIcon;
+			else if( filetypeToIcon.TryGetValue( fileInfo.Extension, out icon ) )
+				return icon;
+			else if( !allExtensionsHaveSingleSuffix )
+			{
+				for( int i = 0; i < filetypeIcons.Length; i++ )
+				{
+					if( fileInfo.Extension.EndsWith( filetypeIcons[i].extension, StringComparison.Ordinal ) )
+						return filetypeIcons[i].icon;
+				}
+			}
 
-			return icon;
+			return defaultIcon;
+		}
+
+		internal static string GetExtensionFromFilename( string filename, bool extractOnlyLastSuffix )
+		{
+			int length = filename.Length;
+
+			if( extractOnlyLastSuffix )
+			{
+				// We are only interested in the last suffix of the extension
+				for( int i = length - 2; i >= 0; i-- )
+				{
+					if( filename[i] == '.' )
+						return filename.Substring( i, length - i ).ToLowerInvariant();
+				}
+			}
+			else
+			{
+				// We are interested in all suffixes of the extension
+				for( int i = 0, upperLimit = length - 2; i <= upperLimit; i++ )
+				{
+					if( filename[i] == '.' )
+						return filename.Substring( i, length - i ).ToLowerInvariant();
+				}
+			}
+
+			return string.Empty;
 		}
 
 		private string GetPathWithoutTrailingDirectorySeparator( string path )
@@ -2441,13 +2544,29 @@ namespace SimpleFileBrowser
 
 		public static void SetExcludedExtensions( params string[] excludedExtensions )
 		{
+			Instance.excludedExtensions = excludedExtensions ?? new string[0];
 			Instance.excludedExtensionsSet.Clear();
+			Instance.allExcludedExtensionsHaveSingleSuffix = true;
 
 			if( excludedExtensions != null )
 			{
 				for( int i = 0; i < excludedExtensions.Length; i++ )
-					Instance.excludedExtensionsSet.Add( excludedExtensions[i].ToLowerInvariant() );
+				{
+					excludedExtensions[i] = excludedExtensions[i].ToLowerInvariant();
+					if( excludedExtensions[i][0] != '.' )
+						excludedExtensions[i] = "." + excludedExtensions[i];
+
+					Instance.excludedExtensionsSet.Add( excludedExtensions[i] );
+					Instance.allExcludedExtensionsHaveSingleSuffix &= ( excludedExtensions[i].LastIndexOf( '.' ) == 0 );
+				}
 			}
+
+			Instance.allExtensionsHaveSingleSuffix = Instance.allFiltersHaveSingleSuffix && Instance.allExcludedExtensionsHaveSingleSuffix && Instance.allIconExtensionsHaveSingleSuffix;
+		}
+
+		public static void SetFilters( bool showAllFilesFilter )
+		{
+			SetFilters( showAllFilesFilter, (string[]) null );
 		}
 
 		public static void SetFilters( bool showAllFilesFilter, IEnumerable<string> filters )
@@ -2458,7 +2577,7 @@ namespace SimpleFileBrowser
 			{
 				foreach( string filter in filters )
 				{
-					if( filter != null && filter.Length > 0 )
+					if( !string.IsNullOrEmpty( filter ) )
 						Instance.filters.Add( new Filter( null, filter ) );
 				}
 			}
@@ -2474,7 +2593,7 @@ namespace SimpleFileBrowser
 			{
 				for( int i = 0; i < filters.Length; i++ )
 				{
-					if( filters[i] != null && filters[i].Length > 0 )
+					if( !string.IsNullOrEmpty( filters[i] ) )
 						Instance.filters.Add( new Filter( null, filters[i] ) );
 				}
 			}
@@ -2548,11 +2667,14 @@ namespace SimpleFileBrowser
 			Instance.filtersDropdown.ClearOptions();
 			Instance.filtersDropdown.AddOptions( dropdownValues );
 			Instance.filtersDropdown.value = 0;
+
+			Instance.allFiltersHaveSingleSuffix = filters[0].allExtensionsHaveSingleSuffix;
+			Instance.allExtensionsHaveSingleSuffix = Instance.allFiltersHaveSingleSuffix && Instance.allExcludedExtensionsHaveSingleSuffix && Instance.allIconExtensionsHaveSingleSuffix;
 		}
 
 		public static bool SetDefaultFilter( string defaultFilter )
 		{
-			if( defaultFilter == null )
+			if( string.IsNullOrEmpty( defaultFilter ) )
 			{
 				if( Instance.showAllFilesFilter )
 				{
@@ -2566,10 +2688,12 @@ namespace SimpleFileBrowser
 			}
 
 			defaultFilter = defaultFilter.ToLowerInvariant();
+			if( defaultFilter[0] != '.' )
+				defaultFilter = "." + defaultFilter;
 
 			for( int i = 0; i < Instance.filters.Count; i++ )
 			{
-				HashSet<string> extensions = Instance.filters[i].extensions;
+				HashSet<string> extensions = Instance.filters[i].extensionsSet;
 				if( extensions != null && extensions.Contains( defaultFilter ) )
 				{
 					Instance.filtersDropdown.value = i;

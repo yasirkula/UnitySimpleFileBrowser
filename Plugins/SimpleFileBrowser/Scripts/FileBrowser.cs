@@ -102,7 +102,10 @@ namespace SimpleFileBrowser
 					for( int i = 0; i < extensions.Length; i++ )
 					{
 						if( extension.EndsWith( extensions[i], StringComparison.Ordinal ) )
+						{
+							extensionsSet.Add( extension );
 							return true;
+						}
 					}
 				}
 
@@ -358,7 +361,7 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private FiletypeIcon[] filetypeIcons;
 
-		private Dictionary<string, Sprite> filetypeToIcon;
+		private readonly Dictionary<string, Sprite> filetypeToIcon = new Dictionary<string, Sprite>( 128 );
 
 		[SerializeField]
 		internal Sprite multiSelectionToggleOffIcon;
@@ -913,7 +916,7 @@ namespace SimpleFileBrowser
 		#region Initialization Functions
 		private void InitializeFiletypeIcons()
 		{
-			filetypeToIcon = new Dictionary<string, Sprite>();
+			filetypeToIcon.Clear();
 			allIconExtensionsHaveSingleSuffix = true;
 
 			for( int i = 0; i < filetypeIcons.Length; i++ )
@@ -1797,7 +1800,10 @@ namespace SimpleFileBrowser
 								for( int j = 0; j < excludedExtensions.Length; j++ )
 								{
 									if( extension.EndsWith( excludedExtensions[j], StringComparison.Ordinal ) )
+									{
+										excludedExtensionsSet.Add( extension );
 										continue;
+									}
 								}
 							}
 
@@ -2209,10 +2215,14 @@ namespace SimpleFileBrowser
 				for( int i = 0; i < filetypeIcons.Length; i++ )
 				{
 					if( fileInfo.Extension.EndsWith( filetypeIcons[i].extension, StringComparison.Ordinal ) )
+					{
+						filetypeToIcon[fileInfo.Extension] = filetypeIcons[i].icon;
 						return filetypeIcons[i].icon;
+					}
 				}
 			}
 
+			filetypeToIcon[fileInfo.Extension] = defaultIcon;
 			return defaultIcon;
 		}
 

@@ -1973,7 +1973,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -2255,7 +2255,7 @@ MonoBehaviour:
     m_TypeName: UnityEngine.UI.InputField+OnChangeEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
   m_CaretColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_CustomCaretColor: 0
+  m_CustomCaretColor: 1
   m_SelectionColor: {r: 0.65882355, g: 0.80784315, b: 1, a: 0.7529412}
   m_Text: 
   m_CaretBlinkRate: 0.85
@@ -2326,7 +2326,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 114000010382772448}
   m_HandleRect: {fileID: 224000013440901968}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -2901,7 +2901,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -3417,7 +3417,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -3500,7 +3500,7 @@ MonoBehaviour:
     m_TypeName: UnityEngine.UI.InputField+OnChangeEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
   m_CaretColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_CustomCaretColor: 0
+  m_CustomCaretColor: 1
   m_SelectionColor: {r: 0.65882355, g: 0.80784315, b: 1, a: 0.7529412}
   m_Text: 
   m_CaretBlinkRate: 0.85
@@ -3784,7 +3784,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 114000011769758306}
   m_HandleRect: {fileID: 224000011063755118}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -3803,18 +3803,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f51dc09bf9e35804ba0f5e76c527025e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalFileColor: {r: 1, g: 1, b: 1, a: 1}
-  hoveredFileColor: {r: 0.88235295, g: 0.88235295, b: 1, a: 1}
-  selectedFileColor: {r: 0, g: 0.5882353, b: 1, a: 1}
-  wrongFilenameColor: {r: 1, g: 0.39215687, b: 0.39215687, a: 1}
+  m_skin: {fileID: 11400000, guid: 758becaa4751c514ab3abd821b4078bb, type: 2}
   minWidth: 380
   minHeight: 300
   narrowScreenWidth: 380
   quickLinksMaxWidthPercentage: 0.4
   sortFilesByName: 1
-  excludeExtensions:
+  excludedExtensions:
   - .lnk
   - .tmp
+  - .url
   quickLinks:
   - target: 5
     name: Documents
@@ -3826,26 +3824,6 @@ MonoBehaviour:
   contextMenuShowDeleteButton: 1
   contextMenuShowRenameButton: 1
   showResizeCursor: 1
-  folderIcon: {fileID: 21300000, guid: 05e18bb0a86cfdb4dbf887d382b69249, type: 3}
-  driveIcon: {fileID: 21300000, guid: c3f6bb04213791646b2e4824be1436dc, type: 3}
-  defaultIcon: {fileID: 21300000, guid: 372a6728b63455845bdad04ffc8a323b, type: 3}
-  filetypeIcons:
-  - extension: .txt
-    icon: {fileID: 21300000, guid: d9b30118e14d81742a606dac7cc44d7e, type: 3}
-  - extension: .doc
-    icon: {fileID: 21300000, guid: d9b30118e14d81742a606dac7cc44d7e, type: 3}
-  - extension: .docx
-    icon: {fileID: 21300000, guid: d9b30118e14d81742a606dac7cc44d7e, type: 3}
-  - extension: .jpg
-    icon: {fileID: 21300000, guid: d95a00b6cdb17884682cd580102f14e0, type: 3}
-  - extension: .jpeg
-    icon: {fileID: 21300000, guid: d95a00b6cdb17884682cd580102f14e0, type: 3}
-  - extension: .png
-    icon: {fileID: 21300000, guid: d95a00b6cdb17884682cd580102f14e0, type: 3}
-  multiSelectionToggleOffIcon: {fileID: 21300000, guid: d6beaeac8de2af749a48581db778df3e,
-    type: 3}
-  multiSelectionToggleOnIcon: {fileID: 21300000, guid: 30a2566f94f937b4998542121050e68b,
-    type: 3}
   window: {fileID: 114000011184475620}
   topViewNarrowScreen: {fileID: 224000012236837694}
   middleView: {fileID: 224000012041644098}
@@ -3860,11 +3838,13 @@ MonoBehaviour:
   backButton: {fileID: 114000010360865314}
   forwardButton: {fileID: 114000012076811388}
   upButton: {fileID: 114000013838333444}
+  moreOptionsButton: {fileID: 114144994822079520}
   pathInputField: {fileID: 114000013413615576}
   pathInputFieldSlotTop: {fileID: 224811477075121130}
   pathInputFieldSlotBottom: {fileID: 224127867913948392}
   searchInputField: {fileID: 114000010785476448}
   quickLinksContainer: {fileID: 224000010383356806}
+  quickLinksScrollRect: {fileID: 114000013198154200}
   filesContainer: {fileID: 224000012931849942}
   filesScrollRect: {fileID: 114000011744356224}
   listView: {fileID: 114985255881820402}
@@ -3876,6 +3856,9 @@ MonoBehaviour:
   filterItemTemplate: {fileID: 114000013840550810}
   showHiddenFilesToggle: {fileID: 114000011511084512}
   submitButtonText: {fileID: 114000013382491478}
+  allButtons:
+  - {fileID: 114000014005904746}
+  - {fileID: 114000013207029700}
   moreOptionsContextMenuPosition: {fileID: 224838098161518584}
   renameItem: {fileID: 114205106981145908}
   contextMenu: {fileID: 114581495326313396}
@@ -5419,7 +5402,7 @@ MonoBehaviour:
     m_TypeName: UnityEngine.UI.InputField+OnChangeEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
   m_CaretColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_CustomCaretColor: 0
+  m_CustomCaretColor: 1
   m_SelectionColor: {r: 0.65882355, g: 0.80784315, b: 1, a: 0.7529412}
   m_Text: 
   m_CaretBlinkRate: 0.85
@@ -5909,9 +5892,20 @@ MonoBehaviour:
   rectTransform: {fileID: 224387572643228028}
   selectAllButton: {fileID: 114370003170116688}
   deselectAllButton: {fileID: 114364461900096894}
+  createFolderButton: {fileID: 114346774628667646}
   deleteButton: {fileID: 114128867067796106}
   renameButton: {fileID: 114411366083395940}
   selectAllButtonSeparator: {fileID: 1743655712281856}
+  allButtonTexts:
+  - {fileID: 114522847327260972}
+  - {fileID: 114565051423253148}
+  - {fileID: 114314828806938924}
+  - {fileID: 114302359538897432}
+  - {fileID: 114353583898203612}
+  allButtonSeparators:
+  - {fileID: 114076502751505788}
+  - {fileID: 114041711672230222}
+  - {fileID: 114633891711833786}
   minDistanceToEdges: 10
 --- !u!114 &114582105816722586
 MonoBehaviour:
@@ -6521,6 +6515,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e63253265f9892b4f903968d5f58c0f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  titleLabel: {fileID: 114875424048882362}
   deletedItems:
   - {fileID: 1993517787700380}
   - {fileID: 1662553362089260}
@@ -7331,7 +7326,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0000076293945}
+  m_AnchoredPosition: {x: 0, y: -0.000015258789}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!224 &224000010499347580
@@ -7425,7 +7420,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -0.5}
-  m_SizeDelta: {x: -20, y: -13}
+  m_SizeDelta: {x: -14, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224000010798928374
 RectTransform:
@@ -7560,7 +7555,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -0.5}
-  m_SizeDelta: {x: -20, y: -13}
+  m_SizeDelta: {x: -14, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224000011367034048
 RectTransform:
@@ -7616,8 +7611,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -7.5, y: -0.5}
-  m_SizeDelta: {x: -35, y: -13}
+  m_AnchoredPosition: {x: -9, y: -0.5}
+  m_SizeDelta: {x: -32, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224000011406587750
 RectTransform:
@@ -7963,7 +7958,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -0.5}
-  m_SizeDelta: {x: -20, y: -13}
+  m_SizeDelta: {x: -14, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224000012931849942
 RectTransform:
@@ -7981,7 +7976,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000061035156}
+  m_AnchoredPosition: {x: 0, y: 300}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!224 &224000013035464314
@@ -8018,7 +8013,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 9, y: -0.5}
-  m_SizeDelta: {x: -28, y: -3}
+  m_SizeDelta: {x: -28, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224000013343736860
 RectTransform:
@@ -8036,7 +8031,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 5, y: -0.5}
-  m_SizeDelta: {x: -30, y: -3}
+  m_SizeDelta: {x: -30, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224000013440901968
 RectTransform:
@@ -8342,7 +8337,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: -0.5}
-  m_SizeDelta: {x: -20, y: -13}
+  m_SizeDelta: {x: -14, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224009688569940338
 RectTransform:
@@ -8606,8 +8601,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 4, y: -0.5}
-  m_SizeDelta: {x: -12, y: -13}
+  m_AnchoredPosition: {x: 2.5, y: -0.5}
+  m_SizeDelta: {x: -9, y: -1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224366934613293246
 RectTransform:
@@ -8811,7 +8806,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 508.22507, y: -250}
+  m_AnchoredPosition: {x: 508.22495, y: -250}
   m_SizeDelta: {x: 490.6815, y: 290.21393}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224579978660468938

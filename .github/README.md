@@ -17,6 +17,7 @@
 - Draggable and resizable
 - Ability to choose folders instead of files
 - Supports selecting multiple files/folders
+- Can easily be reskinned
 - Supports runtime permissions on Android M+ and *Storage Access Framework* on Android Q+
 - Optimized using a recycled list view (makes *Instantiate* calls sparingly)
 
@@ -132,6 +133,11 @@ You can set whether or not hidden files should be shown in the file browser via 
 To open files or directories in the file browser with a single click (instead of double clicking), you can set **FileBrowser.SingleClickMode** to *true*.
 
 File browser refreshes the list of drives at a regular interval to detect the insertion/removal of USB drives. This interval can be changed via **FileBrowser.DrivesRefreshInterval**. If its value is less than 0, list of drives won't be refreshed. By default, this value is 5 seconds on standalone platforms and -1 on mobile platforms.
+
+File browser comes bundled with two premade skins in the *Skins* directory: *LightSkin* and *DarkSkin*. New **UISkin**s can be created via `Assets-Create-yasirkula-SimpleFileBrowser-UI Skin`. A UISkin can be assigned to the file browser in two ways:
+
+- By changing *SimpleFileBrowserCanvas* prefab's *Skin* field
+- By changing the value of `FileBrowser.Skin` property from a C# script
 
 On Android, file browser requires external storage access to function properly. You can use the following function to check if we have runtime permission to access the external storage:
 

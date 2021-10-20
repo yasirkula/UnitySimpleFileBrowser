@@ -152,6 +152,27 @@ namespace SimpleFileBrowser
 		public static bool Success { get; private set; }
 		public static string[] Result { get; private set; }
 
+		[SerializeField]
+		private UISkin m_skin;
+#if UNITY_EDITOR
+		private UISkin prevSkin;
+#endif
+		private int m_skinVersion = 0;
+		private Sprite m_skinPrevDriveIcon, m_skinPrevFolderIcon;
+		public static UISkin Skin
+		{
+			get { return Instance.m_skin; }
+			set
+			{
+				if( value && Instance.m_skin != value )
+				{
+					Instance.m_skin = value;
+					Instance.m_skinVersion = Instance.m_skin.Version;
+					Instance.RefreshSkin();
+				}
+			}
+		}
+
 		private static bool m_askPermissions = true;
 		public static bool AskPermissions
 		{
@@ -235,7 +256,6 @@ namespace SimpleFileBrowser
 			}
 		}
 
-
 		private static string m_foldersFilterText = "Folders";
 		public static string FoldersFilterText
 		{
@@ -252,7 +272,6 @@ namespace SimpleFileBrowser
 				}
 			}
 		}
-
 
 		private static string m_pickFolderQuickLinkText = "Browse...";
 		public static string PickFolderQuickLinkText
@@ -271,7 +290,7 @@ namespace SimpleFileBrowser
 							FileBrowserQuickLink quickLink = m_instance.allQuickLinks[i];
 							if( quickLink && quickLink.TargetPath == SAF_PICK_FOLDER_QUICK_LINK_PATH )
 							{
-								quickLink.SetQuickLink( m_instance.driveIcon, value, SAF_PICK_FOLDER_QUICK_LINK_PATH );
+								quickLink.SetQuickLink( Skin.DriveIcon, value, SAF_PICK_FOLDER_QUICK_LINK_PATH );
 								break;
 							}
 						}
@@ -300,16 +319,6 @@ namespace SimpleFileBrowser
 		#region Variables
 #pragma warning disable 0649
 		[Header( "Settings" )]
-
-		[SerializeField]
-		internal Color normalFileColor = Color.white;
-		[SerializeField]
-		internal Color hoveredFileColor = new Color32( 225, 225, 255, 255 );
-		[SerializeField]
-		internal Color selectedFileColor = new Color32( 0, 175, 255, 255 );
-		[SerializeField]
-		internal Color wrongFilenameColor = new Color32( 255, 100, 100, 255 );
-
 		[SerializeField]
 		internal int minWidth = 380;
 		[SerializeField]
@@ -347,27 +356,6 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private bool showResizeCursor = true;
 
-		[Header( "Icons" )]
-
-		[SerializeField]
-		private Sprite folderIcon;
-
-		[SerializeField]
-		private Sprite driveIcon;
-
-		[SerializeField]
-		private Sprite defaultIcon;
-
-		[SerializeField]
-		private FiletypeIcon[] filetypeIcons;
-
-		private readonly Dictionary<string, Sprite> filetypeToIcon = new Dictionary<string, Sprite>( 128 );
-
-		[SerializeField]
-		internal Sprite multiSelectionToggleOffIcon;
-		[SerializeField]
-		internal Sprite multiSelectionToggleOnIcon;
-
 		[Header( "Internal References" )]
 
 		[SerializeField]
@@ -395,7 +383,6 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private FileBrowserItem itemPrefab;
 		private readonly List<FileBrowserItem> allItems = new List<FileBrowserItem>( 16 );
-		private float itemHeight;
 
 		[SerializeField]
 		private FileBrowserQuickLink quickLinkPrefab;
@@ -414,6 +401,9 @@ namespace SimpleFileBrowser
 		private Button upButton;
 
 		[SerializeField]
+		private Button moreOptionsButton;
+
+		[SerializeField]
 		private InputField pathInputField;
 
 		[SerializeField]
@@ -427,6 +417,9 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private RectTransform quickLinksContainer;
+
+		[SerializeField]
+		private ScrollRect quickLinksScrollRect;
 
 		[SerializeField]
 		private RectTransform filesContainer;
@@ -460,6 +453,9 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private Text submitButtonText;
+
+		[SerializeField]
+		private Button[] allButtons;
 
 		[SerializeField]
 		private RectTransform moreOptionsContextMenuPosition;
@@ -501,8 +497,8 @@ namespace SimpleFileBrowser
 		// Multiple suffixes: ".tar.gz", etc.
 		private bool allFiltersHaveSingleSuffix = true;
 		private bool allExcludedExtensionsHaveSingleSuffix = true;
-		private bool allIconExtensionsHaveSingleSuffix = true;
-		private bool allExtensionsHaveSingleSuffix = true; // Is a combination of the previous 3 fields. When its value is 'true', file extensions will be handled in a more optimized way
+		// When its value is 'true', file extensions will be handled in a more optimized way
+		private bool AllExtensionsHaveSingleSuffix { get { return allFiltersHaveSingleSuffix && allExcludedExtensionsHaveSingleSuffix && m_skin.AllIconExtensionsHaveSingleSuffix; } }
 
 		private string defaultInitialPath;
 
@@ -586,7 +582,7 @@ namespace SimpleFileBrowser
 					multiSelectionPivotFileEntry = 0;
 					filesScrollRect.verticalNormalizedPosition = 1;
 
-					filenameImage.color = Color.white;
+					filenameImage.color = m_skin.InputFieldNormalBackgroundColor;
 					if( m_pickerMode != PickMode.Files )
 					{
 						filenameInputField.text = string.Empty;
@@ -711,6 +707,12 @@ namespace SimpleFileBrowser
 			get { return submitButtonText.text; }
 			set { submitButtonText.text = value; }
 		}
+
+		private string LastBrowsedFolder
+		{
+			get { return PlayerPrefs.GetString( "FBLastPath", null ); }
+			set { PlayerPrefs.SetString( "FBLastPath", value ); }
+		}
 		#endregion
 
 		#region Delegates
@@ -737,7 +739,6 @@ namespace SimpleFileBrowser
 			middleViewOriginalSize = middleView.sizeDelta;
 			middleViewQuickLinksOriginalSize = middleViewQuickLinks.sizeDelta;
 
-			itemHeight = ( (RectTransform) itemPrefab.transform ).sizeDelta.y;
 			nullPointerEventData = new PointerEventData( null );
 
 #if !UNITY_EDITOR && ( UNITY_ANDROID || UNITY_IOS || UNITY_WSA || UNITY_WSA_10_0 )
@@ -755,7 +756,6 @@ namespace SimpleFileBrowser
 			}
 #endif
 
-			InitializeFiletypeIcons();
 			SetExcludedExtensions( excludedExtensions );
 
 			backButton.interactable = false;
@@ -777,6 +777,10 @@ namespace SimpleFileBrowser
 			window.Initialize( this );
 			listView.SetAdapter( this );
 
+			// Refresh the skin immediately
+			m_skinVersion = m_skin.Version;
+			RefreshSkin();
+
 			if( !showResizeCursor )
 				Destroy( resizeCursorHandler );
 
@@ -791,6 +795,33 @@ namespace SimpleFileBrowser
 		private void OnRectTransformDimensionsChange()
 		{
 			canvasDimensionsChanged = true;
+		}
+
+#if UNITY_EDITOR
+		protected virtual void OnValidate()
+		{
+			// Refresh the skin in the next Update if it is changed via Unity Inspector at runtime
+			if( UnityEditor.EditorApplication.isPlaying && m_skin != prevSkin )
+			{
+				if( !m_skin ) // Don't allow null UISkin
+					m_skin = prevSkin;
+				else
+					m_skinVersion = m_skin.Version - 1;
+			}
+		}
+#endif
+
+		private void Update()
+		{
+			if( m_skin && m_skinVersion != m_skin.Version )
+			{
+				m_skinVersion = m_skin.Version;
+				RefreshSkin();
+
+#if UNITY_EDITOR
+				prevSkin = m_skin;
+#endif
+			}
 		}
 
 		private void LateUpdate()
@@ -850,17 +881,14 @@ namespace SimpleFileBrowser
 				if( filenameInputFieldOverlayText.enabled )
 				{
 					filenameInputFieldOverlayText.enabled = false;
-
-					Color c = filenameInputField.textComponent.color;
-					c.a = 1f;
-					filenameInputField.textComponent.color = c;
+					filenameInputField.textComponent.color = m_skin.InputFieldTextColor;
 				}
 			}
 			else if( !filenameInputFieldOverlayText.enabled )
 			{
 				filenameInputFieldOverlayText.enabled = true;
 
-				Color c = filenameInputField.textComponent.color;
+				Color c = m_skin.InputFieldTextColor;
 				c.a = 0f;
 				filenameInputField.textComponent.color = c;
 			}
@@ -891,12 +919,12 @@ namespace SimpleFileBrowser
 		OnItemClickedHandler IListViewAdapter.OnItemClicked { get { return null; } set { } }
 
 		int IListViewAdapter.Count { get { return validFileEntries.Count; } }
-		float IListViewAdapter.ItemHeight { get { return itemHeight; } }
+		float IListViewAdapter.ItemHeight { get { return m_skin.FileHeight; } }
 
 		ListItem IListViewAdapter.CreateItem()
 		{
 			FileBrowserItem item = (FileBrowserItem) Instantiate( itemPrefab, filesContainer, false );
-			item.SetFileBrowser( this );
+			item.SetFileBrowser( this, m_skin );
 			allItems.Add( item );
 
 			return item;
@@ -914,25 +942,6 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Initialization Functions
-		private void InitializeFiletypeIcons()
-		{
-			filetypeToIcon.Clear();
-			allIconExtensionsHaveSingleSuffix = true;
-
-			for( int i = 0; i < filetypeIcons.Length; i++ )
-			{
-				filetypeIcons[i].extension = filetypeIcons[i].extension.ToLowerInvariant();
-				if( filetypeIcons[i].extension[0] != '.' )
-					filetypeIcons[i].extension = "." + filetypeIcons[i].extension;
-
-				filetypeToIcon[filetypeIcons[i].extension] = filetypeIcons[i].icon;
-
-				allIconExtensionsHaveSingleSuffix &= ( filetypeIcons[i].extension.LastIndexOf( '.' ) == 0 );
-			}
-
-			allExtensionsHaveSingleSuffix = allFiltersHaveSingleSuffix && allExcludedExtensionsHaveSingleSuffix && allIconExtensionsHaveSingleSuffix;
-		}
-
 		private void InitializeQuickLinks()
 		{
 			quickLinksInitialized = true;
@@ -941,7 +950,7 @@ namespace SimpleFileBrowser
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( FileBrowserHelpers.ShouldUseSAF )
 			{
-				AddQuickLink( driveIcon, PickFolderQuickLinkText, SAF_PICK_FOLDER_QUICK_LINK_PATH );
+				AddQuickLink( m_skin.DriveIcon, PickFolderQuickLinkText, SAF_PICK_FOLDER_QUICK_LINK_PATH );
 				
 				try
 				{
@@ -961,14 +970,14 @@ namespace SimpleFileBrowser
 #if UNITY_EDITOR || ( !UNITY_IOS && !UNITY_WSA && !UNITY_WSA_10_0 )
 				RefreshDriveQuickLinks();
 #else
-				AddQuickLink( driveIcon, "Files", Application.persistentDataPath );
+				AddQuickLink( m_skin.DriveIcon, "Files", Application.persistentDataPath );
 #endif
 
 #if UNITY_STANDALONE_OSX
 				// Add a quick link for user directory on Mac OS
 				string userDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
 				if( !string.IsNullOrEmpty( userDirectory ) )
-					AddQuickLink( driveIcon, userDirectory.Substring( userDirectory.LastIndexOf( '/' ) + 1 ), userDirectory );
+					AddQuickLink( m_skin.DriveIcon, userDirectory.Substring( userDirectory.LastIndexOf( '/' ) + 1 ), userDirectory );
 #endif
 			}
 
@@ -1075,7 +1084,7 @@ namespace SimpleFileBrowser
 							driveIndex++;
 						}
 
-						if( AddQuickLink( driveIcon, driveName, drives[i] ) )
+						if( AddQuickLink( m_skin.DriveIcon, driveName, drives[i] ) )
 							numberOfDriveQuickLinks++;
 					}
 					catch { }
@@ -1091,16 +1100,16 @@ namespace SimpleFileBrowser
 				// There are a number of useless drives listed on Mac OS, filter them
 				if( drives[i] == "/" )
 				{
-					if( AddQuickLink( driveIcon, "Root", drives[i] ) )
+					if( AddQuickLink( m_skin.DriveIcon, "Root", drives[i] ) )
 						numberOfDriveQuickLinks++;
 				}
 				else if( drives[i].StartsWith( "/Volumes/" ) && drives[i] != "/Volumes/Recovery" )
 				{
-					if( AddQuickLink( driveIcon, drives[i].Substring( drives[i].LastIndexOf( '/' ) + 1 ), drives[i] ) )
+					if( AddQuickLink( m_skin.DriveIcon, drives[i].Substring( drives[i].LastIndexOf( '/' ) + 1 ), drives[i] ) )
 						numberOfDriveQuickLinks++;
 				}
 #else
-				if( AddQuickLink( driveIcon, drives[i], drives[i] ) )
+				if( AddQuickLink( m_skin.DriveIcon, drives[i], drives[i] ) )
 					numberOfDriveQuickLinks++;
 #endif
 			}
@@ -1113,7 +1122,7 @@ namespace SimpleFileBrowser
 				for( int i = 0; i < customQuickLinks.Length; i++ )
 				{
 					customQuickLinks[i].TransformComponent.anchoredPosition = anchoredPos;
-					anchoredPos.y -= itemHeight;
+					anchoredPos.y -= m_skin.FileHeight;
 
 					allQuickLinks.Add( customQuickLinks[i] );
 				}
@@ -1134,6 +1143,79 @@ namespace SimpleFileBrowser
 				}
 			}
 			catch { }
+		}
+
+		private void RefreshSkin()
+		{
+			window.GetComponent<Image>().color = m_skin.WindowColor;
+			middleView.GetComponent<Image>().color = m_skin.FilesListColor;
+			middleViewSeparator.GetComponent<Image>().color = m_skin.FilesVerticalSeparatorColor;
+
+			titleText.transform.parent.GetComponent<Image>().color = m_skin.TitleBackgroundColor;
+			m_skin.ApplyTo( titleText, m_skin.TitleTextColor );
+
+			backButton.image.color = m_skin.HeaderButtonsColor;
+			forwardButton.image.color = m_skin.HeaderButtonsColor;
+			upButton.image.color = m_skin.HeaderButtonsColor;
+			moreOptionsButton.image.color = m_skin.HeaderButtonsColor;
+
+			backButton.image.sprite = m_skin.HeaderBackButton;
+			forwardButton.image.sprite = m_skin.HeaderForwardButton;
+			upButton.image.sprite = m_skin.HeaderUpButton;
+			moreOptionsButton.image.sprite = m_skin.HeaderContextMenuButton;
+
+			Image windowResizeGizmo = resizeCursorHandler.GetComponent<Image>();
+			windowResizeGizmo.color = m_skin.WindowResizeGizmoColor;
+			windowResizeGizmo.sprite = m_skin.WindowResizeGizmo;
+
+			m_skin.ApplyTo( filenameInputField );
+			m_skin.ApplyTo( pathInputField );
+			m_skin.ApplyTo( searchInputField );
+			m_skin.ApplyTo( renameItem.InputField );
+			m_skin.ApplyTo( filenameInputFieldOverlayText, m_skin.InputFieldTextColor );
+
+			if( EventSystem.current.currentSelectedGameObject != filenameInputField.gameObject )
+			{
+				Color c = m_skin.InputFieldTextColor;
+				c.a = 0f;
+				filenameInputField.textComponent.color = c;
+			}
+
+			for( int i = 0; i < allButtons.Length; i++ )
+				m_skin.ApplyTo( allButtons[i] );
+
+			m_skin.ApplyTo( filtersDropdown );
+			m_skin.ApplyTo( showHiddenFilesToggle );
+
+			m_skin.ApplyTo( quickLinksScrollRect.verticalScrollbar );
+			m_skin.ApplyTo( filesScrollRect.verticalScrollbar );
+			m_skin.ApplyTo( filtersDropdown.template.GetComponent<ScrollRect>().verticalScrollbar );
+
+			for( int i = 0; i < allQuickLinks.Count; i++ )
+			{
+				allQuickLinks[i].OnSkinRefreshed( m_skin );
+				allQuickLinks[i].TransformComponent.anchoredPosition = new Vector2( 0f, allQuickLinks[i].TransformComponent.GetSiblingIndex() * -m_skin.FileHeight );
+
+				if( allQuickLinks[i].Icon.sprite == m_skinPrevDriveIcon )
+					allQuickLinks[i].Icon.sprite = m_skin.DriveIcon;
+				else if( allQuickLinks[i].Icon.sprite == m_skinPrevFolderIcon )
+					allQuickLinks[i].Icon.sprite = m_skin.FolderIcon;
+			}
+
+			quickLinksContainer.sizeDelta = new Vector2( 0f, allQuickLinks.Count * m_skin.FileHeight );
+
+			for( int i = 0; i < allItems.Count; i++ )
+				allItems[i].OnSkinRefreshed( m_skin );
+
+			renameItem.TransformComponent.sizeDelta = new Vector2( renameItem.TransformComponent.sizeDelta.x, m_skin.FileHeight );
+
+			contextMenu.RefreshSkin( m_skin );
+			deleteConfirmationPanel.RefreshSkin( m_skin );
+
+			listView.OnSkinRefreshed();
+
+			m_skinPrevDriveIcon = m_skin.DriveIcon;
+			m_skinPrevFolderIcon = m_skin.FolderIcon;
 		}
 		#endregion
 
@@ -1218,7 +1300,7 @@ namespace SimpleFileBrowser
 				if( m_pickerMode != PickMode.Files )
 					OnOperationSuccessful( new string[1] { m_currentPath } );
 				else
-					filenameImage.color = wrongFilenameColor;
+					filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 
 				return;
 			}
@@ -1266,7 +1348,7 @@ namespace SimpleFileBrowser
 					if( !VerifyFilenameInput( filenameInput, startIndex, filenameLength ) )
 					{
 						// Filename contains invalid characters or is completely whitespace
-						filenameImage.color = wrongFilenameColor;
+						filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 						return;
 					}
 
@@ -1278,7 +1360,7 @@ namespace SimpleFileBrowser
 						if( fileEntryIndex < 0 )
 						{
 							// File doesn't exist
-							filenameImage.color = wrongFilenameColor;
+							filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 							return;
 						}
 
@@ -1302,7 +1384,7 @@ namespace SimpleFileBrowser
 
 				if( fileCount == 0 )
 				{
-					filenameImage.color = wrongFilenameColor;
+					filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 					return;
 				}
 
@@ -1332,8 +1414,8 @@ namespace SimpleFileBrowser
 							if( m_pickerMode != PickMode.Folders && filters[filtersDropdown.value].extensions != null )
 							{
 								// In file selection mode, make sure that nonexisting files' extensions match one of the required extensions
-								string fileExtension = GetExtensionFromFilename( filename, allExtensionsHaveSingleSuffix );
-								if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].MatchesExtension( fileExtension, !allExtensionsHaveSingleSuffix ) )
+								string fileExtension = GetExtensionFromFilename( filename, AllExtensionsHaveSingleSuffix );
+								if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].MatchesExtension( fileExtension, !AllExtensionsHaveSingleSuffix ) )
 									filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
 							}
 
@@ -1353,7 +1435,7 @@ namespace SimpleFileBrowser
 						}
 						catch( ArgumentException e )
 						{
-							filenameImage.color = wrongFilenameColor;
+							filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 							Debug.LogException( e );
 							return;
 						}
@@ -1380,6 +1462,9 @@ namespace SimpleFileBrowser
 
 			Hide();
 
+			if( !string.IsNullOrEmpty( m_currentPath ) )
+				LastBrowsedFolder = m_currentPath;
+
 			OnSuccess _onSuccess = onSuccess;
 			onSuccess = null;
 			onCancel = null;
@@ -1394,6 +1479,9 @@ namespace SimpleFileBrowser
 			Result = null;
 
 			Hide();
+
+			if( !string.IsNullOrEmpty( m_currentPath ) )
+				LastBrowsedFolder = m_currentPath;
 
 			OnCancel _onCancel = onCancel;
 			onSuccess = null;
@@ -1427,20 +1515,17 @@ namespace SimpleFileBrowser
 			if( !canvas ) // Same as OnPathChanged
 				return;
 
-			bool filtersSingleSuffixModeChanged = false;
+			bool extensionsSingleSuffixModeChanged = false;
 
 			if( filters != null && filtersDropdown.value < filters.Count )
 			{
-				bool _allExtensionsHaveSingleSuffix = allExtensionsHaveSingleSuffix;
-
+				bool allExtensionsHadSingleSuffix = AllExtensionsHaveSingleSuffix;
 				allFiltersHaveSingleSuffix = filters[filtersDropdown.value].allExtensionsHaveSingleSuffix;
-				allExtensionsHaveSingleSuffix = allFiltersHaveSingleSuffix && allExcludedExtensionsHaveSingleSuffix && allIconExtensionsHaveSingleSuffix;
-
-				filtersSingleSuffixModeChanged = ( allExtensionsHaveSingleSuffix != _allExtensionsHaveSingleSuffix );
+				extensionsSingleSuffixModeChanged = ( AllExtensionsHaveSingleSuffix != allExtensionsHadSingleSuffix );
 			}
 
 			PersistFileEntrySelection();
-			RefreshFiles( filtersSingleSuffixModeChanged );
+			RefreshFiles( extensionsSingleSuffixModeChanged );
 		}
 
 		public void OnShowHiddenFilesToggleChanged()
@@ -1612,7 +1697,7 @@ namespace SimpleFileBrowser
 		{
 			if( !string.IsNullOrEmpty( rawUri ) )
 			{
-				if( AddQuickLink( folderIcon, name, rawUri ) )
+				if( AddQuickLink( m_skin.FolderIcon, name, rawUri ) )
 					CurrentPath = rawUri;
 			}
 		}
@@ -1672,7 +1757,7 @@ namespace SimpleFileBrowser
 
 				separatorIndex = nextSeparatorIndex + 2;
 
-				if( AddQuickLink( folderIcon, entryName, rawUri ) && !defaultPathInitialized )
+				if( AddQuickLink( m_skin.FolderIcon, entryName, rawUri ) && !defaultPathInitialized )
 				{
 					defaultInitialPath = rawUri;
 					defaultPathInitialized = true;
@@ -1695,7 +1780,7 @@ namespace SimpleFileBrowser
 		private void OnFilenameInputChanged( string text )
 		{
 			filenameInputFieldOverlayText.text = text;
-			filenameImage.color = Color.white;
+			filenameImage.color = m_skin.InputFieldNormalBackgroundColor;
 		}
 		#endregion
 
@@ -1726,7 +1811,7 @@ namespace SimpleFileBrowser
 
 			filenameInputField.text = initialFilename ?? string.Empty;
 			filenameInputField.interactable = true;
-			filenameImage.color = Color.white;
+			filenameImage.color = m_skin.InputFieldNormalBackgroundColor;
 		}
 
 		public void Hide()
@@ -1745,6 +1830,8 @@ namespace SimpleFileBrowser
 
 		public void RefreshFiles( bool pathChanged )
 		{
+			bool allExtensionsHaveSingleSuffix = AllExtensionsHaveSingleSuffix;
+
 			if( pathChanged )
 			{
 				if( !string.IsNullOrEmpty( m_currentPath ) )
@@ -1938,12 +2025,12 @@ namespace SimpleFileBrowser
 			// The easiest way to insert a new item to the top of the list view is to just shift
 			// the list view downwards. However, it doesn't always work if we don't shift it twice
 			yield return null;
-			filesContainer.anchoredPosition = new Vector2( 0f, -itemHeight );
+			filesContainer.anchoredPosition = new Vector2( 0f, -m_skin.FileHeight );
 			yield return null;
-			filesContainer.anchoredPosition = new Vector2( 0f, -itemHeight );
+			filesContainer.anchoredPosition = new Vector2( 0f, -m_skin.FileHeight );
 
-			( (RectTransform) renameItem.transform ).anchoredPosition = new Vector2( 1f, itemHeight );
-			renameItem.Show( string.Empty, selectedFileColor, folderIcon, ( folderName ) =>
+			( (RectTransform) renameItem.transform ).anchoredPosition = new Vector2( 1f, m_skin.FileHeight );
+			renameItem.Show( string.Empty, m_skin.FileSelectedBackgroundColor, m_skin.FolderIcon, ( folderName ) =>
 			{
 				filesScrollRect.movementType = ScrollRect.MovementType.Clamped;
 				filesContainer.anchoredPosition = Vector2.zero;
@@ -2016,8 +2103,8 @@ namespace SimpleFileBrowser
 
 			filesScrollRect.velocity = Vector2.zero;
 
-			( (RectTransform) renameItem.transform ).anchoredPosition = new Vector2( 1f, -fileEntryIndex * itemHeight );
-			renameItem.Show( fileInfo.Name, selectedFileColor, GetIconForFileEntry( fileInfo ), ( newName ) =>
+			( (RectTransform) renameItem.transform ).anchoredPosition = new Vector2( 1f, -fileEntryIndex * m_skin.FileHeight );
+			renameItem.Show( fileInfo.Name, m_skin.FileSelectedBackgroundColor, GetIconForFileEntry( fileInfo ), ( newName ) =>
 			{
 				if( string.IsNullOrEmpty( newName ) || newName == fileInfo.Name )
 					return;
@@ -2094,17 +2181,17 @@ namespace SimpleFileBrowser
 			}
 
 			FileBrowserQuickLink quickLink = (FileBrowserQuickLink) Instantiate( quickLinkPrefab, quickLinksContainer, false );
-			quickLink.SetFileBrowser( this );
+			quickLink.SetFileBrowser( this, m_skin );
 
 			if( icon != null )
 				quickLink.SetQuickLink( icon, name, path );
 			else
-				quickLink.SetQuickLink( folderIcon, name, path );
+				quickLink.SetQuickLink( m_skin.FolderIcon, name, path );
 
 			Vector2 anchoredPos = new Vector2( 0f, -quickLinksContainer.sizeDelta.y );
 
 			quickLink.TransformComponent.anchoredPosition = anchoredPos;
-			anchoredPos.y -= itemHeight;
+			anchoredPos.y -= m_skin.FileHeight;
 
 			quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
 
@@ -2205,25 +2292,7 @@ namespace SimpleFileBrowser
 
 		internal Sprite GetIconForFileEntry( FileSystemEntry fileInfo )
 		{
-			Sprite icon;
-			if( fileInfo.IsDirectory )
-				return folderIcon;
-			else if( filetypeToIcon.TryGetValue( fileInfo.Extension, out icon ) )
-				return icon;
-			else if( !allExtensionsHaveSingleSuffix )
-			{
-				for( int i = 0; i < filetypeIcons.Length; i++ )
-				{
-					if( fileInfo.Extension.EndsWith( filetypeIcons[i].extension, StringComparison.Ordinal ) )
-					{
-						filetypeToIcon[fileInfo.Extension] = filetypeIcons[i].icon;
-						return filetypeIcons[i].icon;
-					}
-				}
-			}
-
-			filetypeToIcon[fileInfo.Extension] = defaultIcon;
-			return defaultIcon;
+			return m_skin.GetIconForFileEntry( fileInfo, !AllExtensionsHaveSingleSuffix );
 		}
 
 		internal static string GetExtensionFromFilename( string filename, bool extractOnlyLastSuffix )
@@ -2444,18 +2513,24 @@ namespace SimpleFileBrowser
 
 		private string GetInitialPath( string initialPath )
 		{
-			if( !string.IsNullOrEmpty( initialPath ) && !Directory.Exists( initialPath ) && File.Exists( initialPath ) )
+			if( !string.IsNullOrEmpty( initialPath ) && !FileBrowserHelpers.DirectoryExists( initialPath ) && FileBrowserHelpers.FileExists( initialPath ) )
 			{
 				// Path points to a file, use its parent directory's path instead
-				initialPath = Path.GetDirectoryName( initialPath );
+				initialPath = FileBrowserHelpers.GetDirectoryName( initialPath );
 			}
 
-			if( string.IsNullOrEmpty( initialPath ) || !Directory.Exists( initialPath ) )
+			if( string.IsNullOrEmpty( initialPath ) || !FileBrowserHelpers.DirectoryExists( initialPath ) )
 			{
-				if( CurrentPath.Length == 0 )
-					initialPath = defaultInitialPath;
-				else
+				if( CurrentPath.Length > 0 )
 					initialPath = CurrentPath;
+				else
+				{
+					string lastBrowsedFolder = LastBrowsedFolder;
+					if( !string.IsNullOrEmpty( lastBrowsedFolder ) && FileBrowserHelpers.DirectoryExists( lastBrowsedFolder ) )
+						initialPath = lastBrowsedFolder;
+					else
+						initialPath = defaultInitialPath;
+				}
 			}
 
 			m_currentPath = string.Empty; // Needed to correctly reset the pathsFollowed
@@ -2570,8 +2645,6 @@ namespace SimpleFileBrowser
 					Instance.allExcludedExtensionsHaveSingleSuffix &= ( excludedExtensions[i].LastIndexOf( '.' ) == 0 );
 				}
 			}
-
-			Instance.allExtensionsHaveSingleSuffix = Instance.allFiltersHaveSingleSuffix && Instance.allExcludedExtensionsHaveSingleSuffix && Instance.allIconExtensionsHaveSingleSuffix;
 		}
 
 		public static void SetFilters( bool showAllFilesFilter )
@@ -2679,7 +2752,6 @@ namespace SimpleFileBrowser
 			Instance.filtersDropdown.value = 0;
 
 			Instance.allFiltersHaveSingleSuffix = filters[0].allExtensionsHaveSingleSuffix;
-			Instance.allExtensionsHaveSingleSuffix = Instance.allFiltersHaveSingleSuffix && Instance.allExcludedExtensionsHaveSingleSuffix && Instance.allIconExtensionsHaveSingleSuffix;
 		}
 
 		public static bool SetDefaultFilter( string defaultFilter )

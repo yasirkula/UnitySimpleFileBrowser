@@ -23,6 +23,7 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private Image icon;
+		public Image Icon { get { return icon; } }
 
 		[SerializeField]
 		private Image multiSelectionToggle;
@@ -32,8 +33,10 @@ namespace SimpleFileBrowser
 #pragma warning restore 0649
 
 #pragma warning disable 0414
-		private bool isSelected;
+		private bool isSelected, isHidden;
 #pragma warning restore 0414
+
+		private UISkin skin;
 
 		private float pressTime = Mathf.Infinity;
 		private float prevClickTime;
@@ -57,10 +60,10 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Initialization Functions
-		public void SetFileBrowser( FileBrowser fileBrowser )
+		public void SetFileBrowser( FileBrowser fileBrowser, UISkin skin )
 		{
 			this.fileBrowser = fileBrowser;
-			background.color = fileBrowser.normalFileColor;
+			OnSkinRefreshed( skin, false );
 		}
 
 		public void SetFile( Sprite icon, string name, bool isDirectory )
@@ -148,7 +151,7 @@ namespace SimpleFileBrowser
 		public void OnPointerEnter( PointerEventData eventData )
 		{
 			if( !isSelected )
-				background.color = fileBrowser.hoveredFileColor;
+				background.color = skin.FileHoveredBackgroundColor;
 		}
 #endif
 
@@ -156,7 +159,7 @@ namespace SimpleFileBrowser
 		public void OnPointerExit( PointerEventData eventData )
 		{
 			if( !isSelected )
-				background.color = fileBrowser.normalFileColor;
+				background.color = ( Position % 2 ) == 0 ? skin.FileNormalBackgroundColor : skin.FileAlternatingBackgroundColor;
 		}
 #endif
 		#endregion
@@ -165,7 +168,16 @@ namespace SimpleFileBrowser
 		public void SetSelected( bool isSelected )
 		{
 			this.isSelected = isSelected;
-			background.color = isSelected ? fileBrowser.selectedFileColor : fileBrowser.normalFileColor;
+
+			background.color = isSelected ? skin.FileSelectedBackgroundColor : ( ( Position % 2 ) == 0 ? skin.FileNormalBackgroundColor : skin.FileAlternatingBackgroundColor );
+			nameText.color = isSelected ? skin.FileSelectedTextColor : skin.FileNormalTextColor;
+
+			if( isHidden )
+			{
+				Color c = nameText.color;
+				c.a = 0.55f;
+				nameText.color = c;
+			}
 
 			if( multiSelectionToggle ) // Quick links don't have multi-selection toggle
 			{
@@ -181,7 +193,7 @@ namespace SimpleFileBrowser
 						nameText.rectTransform.anchoredPosition += shiftAmount;
 					}
 
-					multiSelectionToggle.sprite = isSelected ? fileBrowser.multiSelectionToggleOnIcon : fileBrowser.multiSelectionToggleOffIcon;
+					multiSelectionToggle.sprite = isSelected ? skin.FileMultiSelectionToggleOnIcon : skin.FileMultiSelectionToggleOffIcon;
 				}
 				else if( multiSelectionToggle.gameObject.activeSelf )
 				{
@@ -199,13 +211,27 @@ namespace SimpleFileBrowser
 
 		public void SetHidden( bool isHidden )
 		{
+			this.isHidden = isHidden;
+
 			Color c = icon.color;
 			c.a = isHidden ? 0.5f : 1f;
 			icon.color = c;
 
 			c = nameText.color;
-			c.a = isHidden ? 0.55f : 1f;
+			c.a = isHidden ? 0.55f : ( isSelected ? skin.FileSelectedTextColor.a : skin.FileNormalTextColor.a );
 			nameText.color = c;
+		}
+
+		public void OnSkinRefreshed( UISkin skin, bool isInitialized = true )
+		{
+			this.skin = skin;
+
+			TransformComponent.sizeDelta = new Vector2( TransformComponent.sizeDelta.x, skin.FileHeight );
+			skin.ApplyTo( nameText, isSelected ? skin.FileSelectedTextColor : skin.FileNormalTextColor );
+			icon.rectTransform.sizeDelta = new Vector2( icon.rectTransform.sizeDelta.x, -skin.FileIconsPadding );
+
+			if( isInitialized )
+				SetSelected( isSelected );
 		}
 		#endregion
 	}

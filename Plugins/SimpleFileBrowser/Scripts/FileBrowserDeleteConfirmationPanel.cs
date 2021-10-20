@@ -13,6 +13,9 @@ namespace SimpleFileBrowser
 
 #pragma warning disable 0649
 		[SerializeField]
+		private Text titleLabel;
+
+		[SerializeField]
 		private GameObject[] deletedItems;
 
 		[SerializeField]
@@ -104,6 +107,25 @@ namespace SimpleFileBrowser
 			}
 		}
 #endif
+
+		internal void RefreshSkin( UISkin skin )
+		{
+			Image background = GetComponentInChildren<Image>();
+			background.color = skin.DeletePanelBackgroundColor;
+			background.sprite = skin.DeletePanelBackground;
+
+			skin.ApplyTo( yesButtonTransform.GetComponent<Button>() );
+			skin.ApplyTo( noButtonTransform.GetComponent<Button>() );
+
+			skin.ApplyTo( titleLabel, skin.DeletePanelTextColor );
+			skin.ApplyTo( deletedItemsRestLabel, skin.DeletePanelTextColor );
+
+			for( int i = 0; i < deletedItemNames.Length; i++ )
+				skin.ApplyTo( deletedItemNames[i], skin.DeletePanelTextColor );
+
+			for( int i = 0; i < deletedItems.Length; i++ )
+				deletedItems[i].GetComponent<LayoutElement>().preferredHeight = skin.FileHeight;
+		}
 
 		public void YesButtonClicked()
 		{

@@ -20,9 +20,22 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private InputField nameInputField;
+		public InputField InputField { get { return nameInputField; } }
 #pragma warning restore 0649
 
 		private OnRenameCompleted onRenameCompleted;
+
+		private RectTransform m_transform;
+		public RectTransform TransformComponent
+		{
+			get
+			{
+				if( m_transform == null )
+					m_transform = (RectTransform) transform;
+
+				return m_transform;
+			}
+		}
 
 		public void Show( string initialFilename, Color backgroundColor, Sprite icon, OnRenameCompleted onRenameCompleted )
 		{

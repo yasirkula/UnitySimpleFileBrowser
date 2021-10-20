@@ -73,6 +73,7 @@ GameObject:
   - component: {fileID: 224447975432582502}
   - component: {fileID: 222113778025760416}
   - component: {fileID: 114807149938652920}
+  - component: {fileID: 114942441918357790}
   m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
@@ -209,6 +210,20 @@ MonoBehaviour:
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
+--- !u!114 &114942441918357790
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1268973638054374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1573420865, guid: f70555f144d8491a825f0804e09c671c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.1764706}
+  m_EffectDistance: {x: 0.75, y: -0.75}
+  m_UseGraphicAlpha: 1
 --- !u!222 &222000010857273394
 CanvasRenderer:
   m_ObjectHideFlags: 1
@@ -267,7 +282,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 19, y: 0}
-  m_SizeDelta: {x: -38, y: -4}
+  m_SizeDelta: {x: -38, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &224000013952242090
 RectTransform:

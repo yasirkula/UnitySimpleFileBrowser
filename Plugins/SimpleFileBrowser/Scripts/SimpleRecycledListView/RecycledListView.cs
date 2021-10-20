@@ -49,6 +49,20 @@ namespace SimpleFileBrowser
 			_1OverItemHeight = 1f / itemHeight;
 		}
 
+		public void OnSkinRefreshed()
+		{
+			if( currentTopIndex >= 0 )
+			{
+				DestroyItemsBetweenIndices( currentTopIndex, currentBottomIndex );
+				currentTopIndex = currentBottomIndex = -1;
+			}
+
+			itemHeight = adapter.ItemHeight;
+			_1OverItemHeight = 1f / itemHeight;
+
+			UpdateList();
+		}
+
 		// Update the list
 		public void UpdateList()
 		{

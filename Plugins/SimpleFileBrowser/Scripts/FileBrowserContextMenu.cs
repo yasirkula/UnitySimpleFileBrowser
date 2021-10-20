@@ -17,12 +17,19 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private Button deselectAllButton;
 		[SerializeField]
+		private Button createFolderButton;
+		[SerializeField]
 		private Button deleteButton;
 		[SerializeField]
 		private Button renameButton;
 
 		[SerializeField]
 		private GameObject selectAllButtonSeparator;
+
+		[SerializeField]
+		private Text[] allButtonTexts;
+		[SerializeField]
+		private Image[] allButtonSeparators;
 
 		[SerializeField]
 		private float minDistanceToEdges = 10f;
@@ -80,9 +87,26 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		public void Hide()
+		internal void Hide()
 		{
 			gameObject.SetActive( false );
+		}
+
+		internal void RefreshSkin( UISkin skin )
+		{
+			rectTransform.GetComponent<Image>().color = skin.ContextMenuBackgroundColor;
+
+			deselectAllButton.image.color = skin.ContextMenuBackgroundColor;
+			selectAllButton.image.color = skin.ContextMenuBackgroundColor;
+			createFolderButton.image.color = skin.ContextMenuBackgroundColor;
+			deleteButton.image.color = skin.ContextMenuBackgroundColor;
+			renameButton.image.color = skin.ContextMenuBackgroundColor;
+
+			for( int i = 0; i < allButtonTexts.Length; i++ )
+				skin.ApplyTo( allButtonTexts[i], skin.ContextMenuTextColor );
+
+			for( int i = 0; i < allButtonSeparators.Length; i++ )
+				allButtonSeparators[i].color = skin.ContextMenuSeparatorColor;
 		}
 
 		public void OnSelectAllButtonClicked()

@@ -3,11 +3,13 @@ package com.yasirkula.unity;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
+import android.widget.Toast;
 
 @TargetApi( Build.VERSION_CODES.Q )
 public class FileBrowserDirectoryPickerFragment extends Fragment
@@ -44,7 +46,15 @@ public class FileBrowserDirectoryPickerFragment extends Fragment
 			intent.putExtra( "android.content.extra.SHOW_FILESIZE", true );
 			intent.putExtra( Intent.EXTRA_LOCAL_ONLY, true );
 
-			startActivityForResult( intent, DIRECTORY_PICK_REQUEST_CODE );
+			try
+			{
+				startActivityForResult( intent, DIRECTORY_PICK_REQUEST_CODE );
+			}
+			catch( ActivityNotFoundException e )
+			{
+				Toast.makeText( getActivity(), "No apps can perform this action.", Toast.LENGTH_LONG ).show();
+				onActivityResult( DIRECTORY_PICK_REQUEST_CODE, Activity.RESULT_CANCELED, null );
+			}
 		}
 	}
 

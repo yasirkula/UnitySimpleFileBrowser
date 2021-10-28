@@ -6,6 +6,8 @@
 
 **Forum Thread:** https://forum.unity.com/threads/simple-file-browser-open-source.441908/
 
+**Discord:** https://discord.gg/UJJt549AaV
+
 **[Support the Developer ☕](https://yasirkula.itch.io/unity3d)**
 
 ## FEATURES

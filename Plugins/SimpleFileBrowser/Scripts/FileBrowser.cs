@@ -2468,8 +2468,13 @@ namespace SimpleFileBrowser
 		{
 			for( int i = 0; i < validFileEntries.Count; i++ )
 			{
-				if( validFileEntries[i].Name.Length == length && input.IndexOf( validFileEntries[i].Name, startIndex, length ) == startIndex )
-					return i;
+				bool bFileExists;
+				if (IsCaseSensitiveFileSystem(m_currentPath))
+					bFileExists = validFileEntries[i].Name.Length == length && input.IndexOf(validFileEntries[i].Name, startIndex, length, StringComparison.Ordinal) == startIndex; 
+				else
+					bFileExists = string.Equals(validFileEntries[i].Name, input, StringComparison.CurrentCultureIgnoreCase);
+				
+				if (bFileExists) return i;
 			}
 
 			return -1;
@@ -2786,6 +2791,11 @@ namespace SimpleFileBrowser
 			}
 
 			return false;
+		}
+
+		private static bool IsCaseSensitiveFileSystem(string path)
+		{
+			return !Directory.Exists(path.ToUpper()) || !Directory.Exists(path.ToLower());
 		}
 
 		public static Permission CheckPermission()

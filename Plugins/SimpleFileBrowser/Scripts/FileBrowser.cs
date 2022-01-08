@@ -2247,6 +2247,29 @@ namespace SimpleFileBrowser
 			return true;
 		}
 
+		private void ClearQuickLinksInternal()
+		{
+			Vector2 anchoredPos = Vector2.zero;
+			for( int i = 0; i < allQuickLinks.Count; i++ )
+			{
+				if( allQuickLinks[i].TargetPath == SAF_PICK_FOLDER_QUICK_LINK_PATH )
+				{
+					allQuickLinks[i].TransformComponent.anchoredPosition = anchoredPos;
+					anchoredPos.y -= m_skin.FileHeight;
+				}
+				else
+				{
+					Destroy( allQuickLinks[i].gameObject );
+					allQuickLinks.RemoveAt( i-- );
+				}
+			}
+
+			quickLinksContainer.sizeDelta = new Vector2( 0f, -anchoredPos.y );
+
+			quickLinksInitialized = true;
+			generateQuickLinksForDrives = false;
+		}
+
 		// Makes sure that scroll view's contents are within scroll view's bounds
 		private void EnsureScrollViewIsWithinBounds()
 		{
@@ -2682,6 +2705,11 @@ namespace SimpleFileBrowser
 			}
 
 			return Instance.AddQuickLink( icon, name, path );
+		}
+
+		public static void ClearQuickLinks()
+		{
+			Instance.ClearQuickLinksInternal();
 		}
 
 		public static void SetExcludedExtensions( params string[] excludedExtensions )

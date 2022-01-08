@@ -101,7 +101,7 @@ public static void HideDialog( bool invokeCancelCallback = false );
 
 If there is an open dialog and the **invokeCancelCallback** parameter is set to *true*, the *onCancel* callback of the dialog will be invoked. This function can also be used to initialize the file browser ahead of time, which in turn will reduce the lag when you first open a dialog.
 
-To add a quick link to the browser, you can use the following function:
+To add a quick link to the browser, you can use the following function (to clear all quick links, use `ClearQuickLinks()`):
 
 ```csharp
 public static bool AddQuickLink( string name, string path, Sprite icon = null );

@@ -557,11 +557,14 @@ namespace SimpleFileBrowser
 			get { return m_currentPath; }
 			set
 			{
-#if !UNITY_EDITOR && UNITY_ANDROID
-				if( !FileBrowserHelpers.ShouldUseSAF )
-#endif
 				if( value != null )
-					value = GetPathWithoutTrailingDirectorySeparator( value.Trim() );
+				{
+					value = value.Trim();
+#if !UNITY_EDITOR && UNITY_ANDROID
+					if( !FileBrowserHelpers.ShouldUseSAFForPath( value ) )
+#endif
+					value = GetPathWithoutTrailingDirectorySeparator( value );
+				}
 
 				if( string.IsNullOrEmpty( value ) )
 				{
@@ -597,7 +600,10 @@ namespace SimpleFileBrowser
 					forwardButton.interactable = currentPathIndex < pathsFollowed.Count - 1;
 #if !UNITY_EDITOR && UNITY_ANDROID
 					if( FileBrowserHelpers.ShouldUseSAF )
-						upButton.interactable = !string.IsNullOrEmpty( FileBrowserHelpers.GetDirectoryName( m_currentPath ) );
+					{
+						string parentPath = FileBrowserHelpers.GetDirectoryName( m_currentPath );
+						upButton.interactable = !string.IsNullOrEmpty( parentPath ) && ( FileBrowserHelpers.ShouldUseSAFForPath( parentPath ) || FileBrowserHelpers.DirectoryExists( parentPath ) ); // DirectoryExists: Directory may not be accessible on Android 10+, this function checks that
+					}
 					else
 #endif
 					{
@@ -627,7 +633,7 @@ namespace SimpleFileBrowser
 					// If a quick link points to this directory, highlight it
 #if !UNITY_EDITOR && UNITY_ANDROID
 					// Path strings aren't deterministic on Storage Access Framework but the paths' absolute parts usually are
-					if( FileBrowserHelpers.ShouldUseSAF )
+					if( FileBrowserHelpers.ShouldUseSAFForPath( m_currentPath ) )
 					{
 						int SAFAbsolutePathSeparatorIndex = m_currentPath.LastIndexOf( '/' );
 						if( SAFAbsolutePathSeparatorIndex >= 0 )
@@ -1274,7 +1280,7 @@ namespace SimpleFileBrowser
 			if( FileBrowserHelpers.ShouldUseSAF )
 			{
 				string parentPath = FileBrowserHelpers.GetDirectoryName( m_currentPath );
-				if( !string.IsNullOrEmpty( parentPath ) )
+				if( !string.IsNullOrEmpty( parentPath ) && ( FileBrowserHelpers.ShouldUseSAFForPath( parentPath ) || FileBrowserHelpers.DirectoryExists( parentPath ) ) ) // DirectoryExists: Directory may not be accessible on Android 10+, this function checks that
 					CurrentPath = parentPath;
 			}
 			else
@@ -1462,7 +1468,7 @@ namespace SimpleFileBrowser
 							}
 
 #if !UNITY_EDITOR && UNITY_ANDROID
-							if( FileBrowserHelpers.ShouldUseSAF )
+							if( FileBrowserHelpers.ShouldUseSAFForPath( m_currentPath ) )
 							{
 								if( m_pickerMode == PickMode.Folders )
 									result[fileCount++] = FileBrowserHelpers.CreateFolderInDirectory( m_currentPath, filename );
@@ -1688,7 +1694,7 @@ namespace SimpleFileBrowser
 				{
 					// Enter the directory
 #if !UNITY_EDITOR && UNITY_ANDROID
-					if( FileBrowserHelpers.ShouldUseSAF )
+					if( FileBrowserHelpers.ShouldUseSAFForPath( m_currentPath ) )
 					{
 						for( int i = 0; i < validFileEntries.Count; i++ )
 						{
@@ -2211,7 +2217,7 @@ namespace SimpleFileBrowser
 				return false;
 
 #if !UNITY_EDITOR && UNITY_ANDROID
-			if( !FileBrowserHelpers.ShouldUseSAF )
+			if( !FileBrowserHelpers.ShouldUseSAFForPath( path ) )
 #endif
 			{
 				if( !Directory.Exists( path ) )
@@ -2690,10 +2696,8 @@ namespace SimpleFileBrowser
 
 		public static bool AddQuickLink( string name, string path, Sprite icon = null )
 		{
-#if !UNITY_EDITOR && UNITY_ANDROID
-			if( FileBrowserHelpers.ShouldUseSAF )
+			if( string.IsNullOrEmpty( path ) || !FileBrowserHelpers.DirectoryExists( path ) )
 				return false;
-#endif
 
 			if( !quickLinksInitialized )
 			{

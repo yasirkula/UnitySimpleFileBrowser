@@ -69,6 +69,8 @@ void HideDialog( bool invokeCancelCallback = false );
 
 // Customizing the dialog
 bool AddQuickLink( string name, string path, Sprite icon = null );
+void ClearQuickLinks();
+
 void SetExcludedExtensions( params string[] excludedExtensions );
 
 // Filters should include the period (e.g. ".jpg" instead of "jpg")
@@ -78,6 +80,10 @@ void SetFilters( bool showAllFilesFilter, IEnumerable<FileBrowser.Filter> filter
 void SetFilters( bool showAllFilesFilter, params FileBrowser.Filter[] filters );
 
 bool SetDefaultFilter( string defaultFilter );
+
+// Filtering displayed files/folders programmatically
+delegate bool FileSystemEntryFilter( FileSystemEntry entry );
+event FileSystemEntryFilter DisplayedEntriesFilter;
 
 // Android runtime permissions
 FileBrowser.Permission CheckPermission();

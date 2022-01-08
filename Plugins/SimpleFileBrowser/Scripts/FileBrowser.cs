@@ -574,7 +574,16 @@ namespace SimpleFileBrowser
 						upButton.interactable = !string.IsNullOrEmpty( FileBrowserHelpers.GetDirectoryName( m_currentPath ) );
 					else
 #endif
-					upButton.interactable = Directory.GetParent( m_currentPath ) != null;
+					{
+						try // When "C:/" or "C:" is typed instead of "C:\", an exception is thrown
+						{
+							upButton.interactable = Directory.GetParent( m_currentPath ) != null;
+						}
+						catch
+						{
+							upButton.interactable = false;
+						}
+					}
 
 					m_searchString = string.Empty;
 					searchInputField.text = m_searchString;
@@ -1244,9 +1253,15 @@ namespace SimpleFileBrowser
 			else
 #endif
 			{
-				DirectoryInfo parentPath = Directory.GetParent( m_currentPath );
-				if( parentPath != null )
-					CurrentPath = parentPath.FullName;
+				try // When "C:/" or "C:" is typed instead of "C:\", an exception is thrown
+				{
+					DirectoryInfo parentPath = Directory.GetParent( m_currentPath );
+					if( parentPath != null )
+						CurrentPath = parentPath.FullName;
+				}
+				catch
+				{
+				}
 			}
 		}
 
@@ -1943,7 +1958,7 @@ namespace SimpleFileBrowser
 			listView.UpdateList();
 
 			// Prevent the case where all the content stays offscreen after changing the search string
-			filesScrollRect.OnScroll( nullPointerEventData );
+			EnsureScrollViewIsWithinBounds();
 		}
 
 		// Quickly selects all files and folders in the current directory
@@ -2200,6 +2215,16 @@ namespace SimpleFileBrowser
 			return true;
 		}
 
+		// Makes sure that scroll view's contents are within scroll view's bounds
+		private void EnsureScrollViewIsWithinBounds()
+		{
+			// When scrollbar is snapped to the very bottom of the scroll view, sometimes OnScroll alone doesn't work
+			if( filesScrollRect.verticalNormalizedPosition <= Mathf.Epsilon )
+				filesScrollRect.verticalNormalizedPosition = 0.0001f;
+
+			filesScrollRect.OnScroll( nullPointerEventData );
+		}
+
 		internal void EnsureWindowIsWithinBounds()
 		{
 			Vector2 canvasSize = rectTransform.sizeDelta;
@@ -2267,7 +2292,7 @@ namespace SimpleFileBrowser
 					showHiddenFilesToggle.gameObject.SetActive( m_displayHiddenFilesToggle );
 
 					listView.OnViewportDimensionsChanged();
-					filesScrollRect.OnScroll( nullPointerEventData );
+					EnsureScrollViewIsWithinBounds();
 				}
 			}
 			else
@@ -2285,7 +2310,7 @@ namespace SimpleFileBrowser
 					showHiddenFilesToggle.gameObject.SetActive( false );
 
 					listView.OnViewportDimensionsChanged();
-					filesScrollRect.OnScroll( nullPointerEventData );
+					EnsureScrollViewIsWithinBounds();
 				}
 			}
 		}

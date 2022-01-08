@@ -187,6 +187,32 @@ namespace SimpleFileBrowser
 			set { m_singleClickMode = value; }
 		}
 
+		private static FileSystemEntryFilter m_displayedEntriesFilter;
+		public static event FileSystemEntryFilter DisplayedEntriesFilter
+		{
+			add
+			{
+				m_displayedEntriesFilter -= value;
+				m_displayedEntriesFilter += value;
+
+				if( m_instance )
+				{
+					m_instance.PersistFileEntrySelection();
+					m_instance.RefreshFiles( false );
+				}
+			}
+			remove
+			{
+				m_displayedEntriesFilter -= value;
+
+				if( m_instance )
+				{
+					m_instance.PersistFileEntrySelection();
+					m_instance.RefreshFiles( false );
+				}
+			}
+		}
+
 #if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS && !UNITY_WSA && !UNITY_WSA_10_0 )
 		private static float m_drivesRefreshInterval = 5f;
 #else
@@ -727,6 +753,7 @@ namespace SimpleFileBrowser
 		#region Delegates
 		public delegate void OnSuccess( string[] paths );
 		public delegate void OnCancel();
+		public delegate bool FileSystemEntryFilter( FileSystemEntry entry );
 #if UNITY_EDITOR || UNITY_ANDROID
 		public delegate void AndroidSAFDirectoryPickCallback( string rawUri, string name );
 #endif
@@ -1918,8 +1945,13 @@ namespace SimpleFileBrowser
 								continue;
 						}
 
-						if( m_searchString.Length == 0 || textComparer.IndexOf( item.Name, m_searchString, textCompareOptions ) >= 0 )
-							validFileEntries.Add( item );
+						if( m_searchString.Length > 0 && textComparer.IndexOf( item.Name, m_searchString, textCompareOptions ) < 0 )
+							continue;
+
+						if( m_displayedEntriesFilter != null && !m_displayedEntriesFilter( item ) )
+							continue;
+
+						validFileEntries.Add( item );
 					}
 					catch( Exception e )
 					{

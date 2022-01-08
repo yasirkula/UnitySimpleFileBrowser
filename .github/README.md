@@ -130,6 +130,18 @@ When **showAllFilesFilter** is set to true, a filter by the name "*All Files (.\
 public static bool SetDefaultFilter( string defaultFilter );
 ```
 
+You can programmatically filter the files/folders displayed in the file browser via the **DisplayedEntriesFilter** event:
+
+```csharp
+FileBrowser.DisplayedEntriesFilter += ( entry ) =>
+{
+	if( !entry.IsDirectory )
+		return true; // Don't filter files
+
+	return entry.Name.StartsWith( "Save" ); // Show only the directories whose name start with "Save"
+};
+```
+
 You can set whether or not hidden files should be shown in the file browser via **FileBrowser.ShowHiddenFiles** (has no effect when Storage Access Framework is used on Android 10+). This value can also be changed from the "*Show hidden files*" toggle in the user interface. To change the visibility of that toggle, you can use **FileBrowser.DisplayHiddenFilesToggle**. Note that this toggle is always hidden on Android 10+ when Storage Access Framework is used or on mobile devices when device is held in portrait orientation.
 
 To open files or directories in the file browser with a single click (instead of double clicking), you can set **FileBrowser.SingleClickMode** to *true*.

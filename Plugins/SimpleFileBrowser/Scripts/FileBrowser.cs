@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿//#define WIN_DIR_CHECK_WITHOUT_TIMEOUT // When uncommented, Directory.Exists won't be wrapped inside a Task/Thread on Windows but we won't be able to set a timeout for unreachable directories/drives
+
+using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using System;
@@ -541,6 +543,10 @@ namespace SimpleFileBrowser
 #endif
 		private int numberOfDriveQuickLinks;
 
+#if !WIN_DIR_CHECK_WITHOUT_TIMEOUT && ( UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN )
+		private readonly List<string> timedOutDirectoryExistsRequests = new List<string>( 2 );
+#endif
+
 		private bool canvasDimensionsChanged;
 
 		private readonly CompareInfo textComparer = new CultureInfo( "en-US" ).CompareInfo;
@@ -1058,6 +1064,11 @@ namespace SimpleFileBrowser
 				bool drivesListHasntChanged = true;
 				for( int i = 0; i < drives.Length; i++ )
 				{
+#if !WIN_DIR_CHECK_WITHOUT_TIMEOUT && ( UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN )
+					if( timedOutDirectoryExistsRequests.Contains( drives[i] ) )
+						continue;
+#endif
+
 					if( drives[i] != driveQuickLinks[i] )
 					{
 						drivesListHasntChanged = false;
@@ -1175,10 +1186,10 @@ namespace SimpleFileBrowser
 			// Verify that current directory still exists
 			try
 			{
-				if( !string.IsNullOrEmpty( m_currentPath ) && !Directory.Exists( m_currentPath ) )
+				if( !string.IsNullOrEmpty( m_currentPath ) && !FileBrowserHelpers.DirectoryExists( m_currentPath ) )
 				{
 					string currentPathRoot = Path.GetPathRoot( m_currentPath );
-					if( !string.IsNullOrEmpty( currentPathRoot ) && Directory.Exists( currentPathRoot ) )
+					if( !string.IsNullOrEmpty( currentPathRoot ) && FileBrowserHelpers.DirectoryExists( currentPathRoot ) )
 						CurrentPath = currentPathRoot;
 					else if( allQuickLinks.Count > 0 )
 						CurrentPath = allQuickLinks[0].TargetPath;
@@ -2220,7 +2231,11 @@ namespace SimpleFileBrowser
 			if( !FileBrowserHelpers.ShouldUseSAFForPath( path ) )
 #endif
 			{
+#if !WIN_DIR_CHECK_WITHOUT_TIMEOUT && ( UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN )
+				if( !CheckDirectoryExistsWithTimeout( path ) )
+#else
 				if( !Directory.Exists( path ) )
+#endif
 					return false;
 
 				path = GetPathWithoutTrailingDirectorySeparator( path.Trim() );
@@ -2623,6 +2638,42 @@ namespace SimpleFileBrowser
 
 			return initialPath;
 		}
+
+#if !WIN_DIR_CHECK_WITHOUT_TIMEOUT && ( UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN )
+		private bool CheckDirectoryExistsWithTimeout( string path, int timeout = 750 )
+		{
+			if( timedOutDirectoryExistsRequests.Contains( path ) )
+				return false;
+
+			// Directory.Exists freezes for ~15 seconds for unreachable network drives on Windows, set a timeout using threads
+			bool directoryExists = false;
+			try
+			{
+#if NET_STANDARD_2_0 || NET_4_6
+				// Credit: https://stackoverflow.com/a/52661569/2373034
+				System.Threading.Tasks.Task task = new System.Threading.Tasks.Task( () => directoryExists = Directory.Exists( path ) );
+				task.Start();
+				if( !task.Wait( timeout ) )
+					timedOutDirectoryExistsRequests.Add( path );
+#else
+				// Credit: https://stackoverflow.com/q/1232953/2373034
+				System.Threading.Thread thread = new System.Threading.Thread( new System.Threading.ThreadStart( () => directoryExists = Directory.Exists( path ) ) );
+				thread.Start();
+				if( !thread.Join( timeout ) )
+				{
+					timedOutDirectoryExistsRequests.Add( path );
+					thread.Abort();
+				}
+#endif
+			}
+			catch
+			{
+				directoryExists = Directory.Exists( path );
+			}
+
+			return directoryExists;
+		}
+#endif
 		#endregion
 
 		#region File Browser Functions (static)

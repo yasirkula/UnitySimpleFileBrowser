@@ -42,13 +42,42 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Inner Classes
-		public class Filter
+
+		public interface IFilter {
+			/// <summary>Default extension for this filter.</summary>
+			string defaultExtension { get; }
+			
+			/// <summary>'false' when some extensions have multiple suffixes like ".tar.gz"</summary>
+			bool allExtensionsHaveSingleSuffix { get; }
+
+			/// <summary>
+			/// Returns true if this filter is the default 'all files' filter. All custom filters should return false here.
+			/// </summary>
+			bool isAllFilesFilter { get; }
+
+			/// <summary>Returns true if this is one of the supported extensions for this filter.</summary>
+			bool isValidExtension( string extension );
+			
+			/// <summary>
+			/// Returns true if the filter matches the given <see cref="extension"/>.
+			/// </summary>
+			/// <param name="extension">a file extension, like '.tar' or '.tar.gz'</param>
+			/// <param name="extensionMayHaveMultipleSuffixes">
+			/// true if <see cref="extension"/> may have multiple suffixes, like '.tar.gz'
+			/// </param>
+			bool MatchesExtension( string extension, bool extensionMayHaveMultipleSuffixes );
+
+			/// <summary>Shown in the user interface.</summary>
+			string ToString();
+		}
+		
+		public class Filter : IFilter
 		{
 			public readonly string name;
 			public readonly string[] extensions;
 			public readonly HashSet<string> extensionsSet;
-			public readonly string defaultExtension;
-			public readonly bool allExtensionsHaveSingleSuffix; // 'false' when some extensions have multiple suffixes like ".tar.gz"
+			public string defaultExtension { get; private set; }
+			public bool allExtensionsHaveSingleSuffix { get; private set; }
 
 			internal Filter( string name )
 			{
@@ -90,6 +119,19 @@ namespace SimpleFileBrowser
 				this.extensions = extensions;
 				extensionsSet = new HashSet<string>( extensions );
 				defaultExtension = extensions[0];
+			}
+
+			public bool isAllFilesFilter 
+			{
+				get 
+				{
+					return extensions == null;
+				}
+			}
+
+			public bool isValidExtension( string extension ) 
+			{
+				return extensionsSet != null && extensionsSet.Contains( extension );
 			}
 
 			public bool MatchesExtension( string extension, bool extensionMayHaveMultipleSuffixes )
@@ -271,7 +313,7 @@ namespace SimpleFileBrowser
 
 					if( m_instance )
 					{
-						Filter oldAllFilesFilter = m_instance.allFilesFilter;
+						IFilter oldAllFilesFilter = m_instance.allFilesFilter;
 						m_instance.allFilesFilter = new Filter( value );
 
 						if( m_instance.filters.Count > 0 && m_instance.filters[0] == oldAllFilesFilter )
@@ -516,8 +558,8 @@ namespace SimpleFileBrowser
 #pragma warning restore 0414
 		private StringBuilder multiSelectionFilenameBuilder;
 
-		private readonly List<Filter> filters = new List<Filter>();
-		private Filter allFilesFilter;
+		private readonly List<IFilter> filters = new List<IFilter>();
+		private IFilter allFilesFilter;
 
 		private bool showAllFilesFilter = true;
 
@@ -1470,7 +1512,7 @@ namespace SimpleFileBrowser
 						{
 							// This is a nonexisting file
 							string filename = filenameInput.Substring( startIndex, filenameLength );
-							if( m_pickerMode != PickMode.Folders && filters[filtersDropdown.value].extensions != null )
+							if( m_pickerMode != PickMode.Folders && !filters[filtersDropdown.value].isAllFilesFilter )
 							{
 								// In file selection mode, make sure that nonexisting files' extensions match one of the required extensions
 								string fileExtension = GetExtensionFromFilename( filename, AllExtensionsHaveSingleSuffix );
@@ -2840,7 +2882,7 @@ namespace SimpleFileBrowser
 			SetFiltersPostProcessing();
 		}
 
-		public static void SetFilters( bool showAllFilesFilter, params Filter[] filters )
+		public static void SetFilters( bool showAllFilesFilter, params IFilter[] filters )
 		{
 			SetFiltersPreProcessing( showAllFilesFilter );
 
@@ -2868,7 +2910,7 @@ namespace SimpleFileBrowser
 
 		private static void SetFiltersPostProcessing()
 		{
-			List<Filter> filters = Instance.filters;
+			List<IFilter> filters = Instance.filters;
 
 			if( filters.Count == 0 )
 				filters.Add( Instance.allFilesFilter );
@@ -2915,8 +2957,7 @@ namespace SimpleFileBrowser
 
 			for( int i = 0; i < Instance.filters.Count; i++ )
 			{
-				HashSet<string> extensions = Instance.filters[i].extensionsSet;
-				if( extensions != null && extensions.Contains( defaultFilter ) )
+				if( Instance.filters[i].isValidExtension( defaultFilter ) )
 				{
 					Instance.filtersDropdown.value = i;
 					Instance.filtersDropdown.RefreshShownValue();

@@ -55,9 +55,10 @@ public class FileBrowserPermissionFragment extends Fragment
 			getFragmentManager().beginTransaction().remove( this ).commit();
 		else
 		{
-			requestPermissions( new String[]
-				{ Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE },
-				PERMISSIONS_REQUEST_CODE );
+			if( Build.VERSION.SDK_INT < 30 )
+				requestPermissions( new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE }, PERMISSIONS_REQUEST_CODE );
+			else
+				requestPermissions( new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, PERMISSIONS_REQUEST_CODE );
 		}
 	}
 

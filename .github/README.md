@@ -60,6 +60,10 @@ If you are sure that your plugin is up-to-date, then enable **Custom Proguard Fi
 
 File browser uses *Storage Access Framework* on these Android versions and users must first click the *Browse...* button in the quick links section
 
+- **File browser doesn't show any files on Unity 2021.3.x**
+
+Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/70
+
 - **RequestPermission returns Permission.Denied on Android**
 
 Declare the `WRITE_EXTERNAL_STORAGE` permission manually in your [**Plugins/Android/AndroidManifest.xml** file](https://answers.unity.com/questions/982710/where-is-the-manifest-file-in-unity.html) with the `tools:node="replace"` attribute as follows: `<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="replace"/>` (you'll need to add the `xmlns:tools="http://schemas.android.com/tools"` attribute to the `<manifest ...>` element).

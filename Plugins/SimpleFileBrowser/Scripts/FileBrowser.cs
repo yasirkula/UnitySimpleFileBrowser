@@ -1227,7 +1227,7 @@ namespace SimpleFileBrowser
 			m_skin.ApplyTo( renameItem.InputField );
 			m_skin.ApplyTo( filenameInputFieldOverlayText, m_skin.InputFieldTextColor );
 
-			if( EventSystem.current.currentSelectedGameObject != filenameInputField.gameObject )
+			if( !EventSystem.current || EventSystem.current.currentSelectedGameObject != filenameInputField.gameObject )
 			{
 				Color c = m_skin.InputFieldTextColor;
 				c.a = 0f;

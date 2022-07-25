@@ -495,6 +495,7 @@ GameObject:
   - component: {fileID: 114000011218353566}
   - component: {fileID: 114000010865040046}
   - component: {fileID: 114000013689746302}
+  - component: {fileID: 114889154042981792}
   m_Layer: 5
   m_Name: SimpleFileBrowserCanvas
   m_TagString: Untagged
@@ -1619,7 +1620,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &1641356320230866
 GameObject:
   m_ObjectHideFlags: 1
@@ -6365,6 +6366,18 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Are you sure you want to delete these files? This operation cannot be undone.
+--- !u!114 &114889154042981792
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000011817404238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0868341868a4a4641b4d272d2fc5f538, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  embeddedEventSystem: {fileID: 1639969918461738}
 --- !u!114 &114900374411104580
 MonoBehaviour:
   m_ObjectHideFlags: 1

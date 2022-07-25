@@ -69,7 +69,7 @@ namespace SimpleFileBrowser
 
 			// If we don't deselect the InputField manually, FileBrowser's keyboard shortcuts
 			// no longer work until user clicks on a UI element and thus, deselects the InputField
-			if( !EventSystem.current.alreadySelecting && EventSystem.current.currentSelectedGameObject == nameInputField.gameObject )
+			if( EventSystem.current && !EventSystem.current.alreadySelecting && EventSystem.current.currentSelectedGameObject == nameInputField.gameObject )
 				EventSystem.current.SetSelectedGameObject( null );
 
 			if( onRenameCompleted != null )

@@ -301,16 +301,9 @@ public class FileBrowser
 	public static String OpenSAFFolder( Context context, String rawUri )
 	{
 		FileBrowserSAFEntry directory = new FileBrowserSAFEntry( context, Uri.parse( rawUri ) );
-		ArrayList<FileBrowserSAFEntry> entries = directory.listFiles();
 
 		stringBuilder.setLength( 0 );
-		stringBuilder.append( entries.size() ).append( "<>" );
-
-		for( int i = 0; i < entries.size(); i++ )
-		{
-			FileBrowserSAFEntry entry = entries.get( i );
-			stringBuilder.append( entry.isDirectory() ? "d" : "f" ).append( entry.getName() ).append( "<>" ).append( entry.getUri().toString() ).append( "<>" );
-		}
+		directory.appendFilesToStringBuilder( stringBuilder );
 
 		return stringBuilder.toString();
 	}

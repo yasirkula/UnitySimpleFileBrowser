@@ -271,6 +271,49 @@ public class FileBrowserSAFEntry
 		return results;
 	}
 
+	public void appendFilesToStringBuilder( StringBuilder stringBuilder )
+	{
+		final ContentResolver resolver = mContext.getContentResolver();
+		final Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree( mUri, DocumentsContract.getDocumentId( mUri ) );
+		Cursor c = null;
+		try
+		{
+			c = resolver.query( childrenUri, new String[] { DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_DISPLAY_NAME }, null, null, null );
+			stringBuilder.append( c.getCount() ).append( "<>" );
+			if( c.moveToNext() )
+			{
+				int documentIdIndex = c.getColumnIndex( DocumentsContract.Document.COLUMN_DOCUMENT_ID );
+				int mimeTypeIndex = c.getColumnIndex( DocumentsContract.Document.COLUMN_MIME_TYPE );
+				int nameIndex = c.getColumnIndex( DocumentsContract.Document.COLUMN_DISPLAY_NAME );
+
+				do
+				{
+					final boolean isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals( c.getString( mimeTypeIndex ) );
+					final String name = c.getString( nameIndex );
+					final String uri = DocumentsContract.buildDocumentUriUsingTree( mUri, c.getString( documentIdIndex ) ).toString();
+
+					stringBuilder.append( isDirectory ? "d" : "f" ).append( name ).append( "<>" ).append( uri ).append( "<>" );
+				} while( c.moveToNext() );
+			}
+		}
+		catch( Exception e )
+		{
+			Log.w( "Unity", "Failed query: " + e );
+		}
+		finally
+		{
+			try
+			{
+				if( c != null )
+					c.close();
+			}
+			catch( Exception e )
+			{
+				Log.e( TAG, "Exception:", e );
+			}
+		}
+	}
+
 	public String renameTo( String displayName )
 	{
 		try

@@ -278,7 +278,10 @@ namespace SimpleFileBrowser
 							m_instance.filters[0] = m_instance.allFilesFilter;
 
 						if( m_instance.filtersDropdown.options[0].text == oldValue )
+						{
 							m_instance.filtersDropdown.options[0].text = value;
+							m_instance.filtersDropdown.RefreshShownValue();
+						}
 					}
 				}
 			}
@@ -296,7 +299,10 @@ namespace SimpleFileBrowser
 					m_foldersFilterText = value;
 
 					if( m_instance && m_instance.filtersDropdown.options[0].text == oldValue )
+					{
 						m_instance.filtersDropdown.options[0].text = value;
+						m_instance.filtersDropdown.RefreshShownValue();
+					}
 				}
 			}
 		}
@@ -702,7 +708,6 @@ namespace SimpleFileBrowser
 				{
 					filtersDropdown.options[0].text = FoldersFilterText;
 					filtersDropdown.value = 0;
-					filtersDropdown.RefreshShownValue();
 					filtersDropdown.interactable = false;
 				}
 				else
@@ -710,6 +715,8 @@ namespace SimpleFileBrowser
 					filtersDropdown.options[0].text = filters[0].ToString();
 					filtersDropdown.interactable = true;
 				}
+
+				filtersDropdown.RefreshShownValue();
 
 				Text placeholder = filenameInputField.placeholder as Text;
 				if( placeholder )

@@ -1414,6 +1414,38 @@ namespace SimpleFileBrowser
 					string filename = filenameInput.Substring( startIndex, filenameLength ).Trim();
 					if( !VerifyFilename( filename ) )
 					{
+						// Check if user has entered a full path to input field instead of just a filename. Even if it's the case, don't immediately accept the full path,
+						// first verify that it doesn't point to a file/folder that is ignored by the file browser
+						try
+						{
+							if( FileBrowserHelpers.DirectoryExists( filename ) )
+							{
+								if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, FileBrowserHelpers.GetFilename( filename ), "", true ), AllExtensionsHaveSingleSuffix ) )
+								{
+									if( m_pickerMode == PickMode.Files )
+									{
+										CurrentPath = filename;
+										return;
+									}
+									else
+									{
+										submittedFilePaths.Add( filename );
+										continue;
+									}
+								}
+							}
+							else if( m_pickerMode != PickMode.Folders && FileBrowserHelpers.FileExists( filename ) )
+							{
+								string fullPathFilename = FileBrowserHelpers.GetFilename( filename );
+								if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, fullPathFilename, GetExtensionFromFilename( fullPathFilename, AllExtensionsHaveSingleSuffix ), false ), AllExtensionsHaveSingleSuffix ) )
+								{
+									submittedFilePaths.Add( filename );
+									continue;
+								}
+							}
+						}
+						catch { }
+
 						// Filename contains invalid characters or is completely whitespace
 						filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 						return;
@@ -1937,46 +1969,8 @@ namespace SimpleFileBrowser
 					try
 					{
 						FileSystemEntry item = allFileEntries[i];
-
-						if( !item.IsDirectory )
-						{
-							if( m_pickerMode == PickMode.Folders )
-								continue;
-
-							if( ( item.Attributes & ignoredFileAttributes ) != 0 )
-								continue;
-
-							string extension = item.Extension;
-							if( excludedExtensionsSet.Contains( extension ) )
-								continue;
-							else if( !allExtensionsHaveSingleSuffix )
-							{
-								for( int j = 0; j < excludedExtensions.Length; j++ )
-								{
-									if( extension.EndsWith( excludedExtensions[j], StringComparison.Ordinal ) )
-									{
-										excludedExtensionsSet.Add( extension );
-										continue;
-									}
-								}
-							}
-
-							if( !filters[filtersDropdown.value].MatchesExtension( extension, !allExtensionsHaveSingleSuffix ) )
-								continue;
-						}
-						else
-						{
-							if( ( item.Attributes & ignoredFileAttributes ) != 0 )
-								continue;
-						}
-
-						if( m_searchString.Length > 0 && textComparer.IndexOf( item.Name, m_searchString, textCompareOptions ) < 0 )
-							continue;
-
-						if( m_displayedEntriesFilter != null && !m_displayedEntriesFilter( item ) )
-							continue;
-
-						validFileEntries.Add( item );
+						if( FileSystemEntryMatchesFilters( item, allExtensionsHaveSingleSuffix ) )
+							validFileEntries.Add( item );
 					}
 					catch( Exception e )
 					{
@@ -2016,6 +2010,50 @@ namespace SimpleFileBrowser
 
 			// Prevent the case where all the content stays offscreen after changing the search string
 			EnsureScrollViewIsWithinBounds();
+		}
+
+		// Returns whether or not the FileSystemEntry passes the file browser's filters and should be displayed in the files list
+		private bool FileSystemEntryMatchesFilters( FileSystemEntry item, bool allExtensionsHaveSingleSuffix )
+		{
+			if( !item.IsDirectory )
+			{
+				if( m_pickerMode == PickMode.Folders )
+					return false;
+
+				if( ( item.Attributes & ignoredFileAttributes ) != 0 )
+					return false;
+
+				string extension = item.Extension;
+				if( excludedExtensionsSet.Contains( extension ) )
+					return false;
+				else if( !allExtensionsHaveSingleSuffix )
+				{
+					for( int j = 0; j < excludedExtensions.Length; j++ )
+					{
+						if( extension.EndsWith( excludedExtensions[j], StringComparison.Ordinal ) )
+						{
+							excludedExtensionsSet.Add( extension );
+							continue;
+						}
+					}
+				}
+
+				if( !filters[filtersDropdown.value].MatchesExtension( extension, !allExtensionsHaveSingleSuffix ) )
+					return false;
+			}
+			else
+			{
+				if( ( item.Attributes & ignoredFileAttributes ) != 0 )
+					return false;
+			}
+
+			if( m_searchString.Length > 0 && textComparer.IndexOf( item.Name, m_searchString, textCompareOptions ) < 0 )
+				return false;
+
+			if( m_displayedEntriesFilter != null && !m_displayedEntriesFilter( item ) )
+				return false;
+
+			return true;
 		}
 
 		// Quickly selects all files and folders in the current directory

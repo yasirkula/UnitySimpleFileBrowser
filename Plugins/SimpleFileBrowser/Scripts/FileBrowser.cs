@@ -517,6 +517,8 @@ namespace SimpleFileBrowser
 		private readonly List<int> selectedFileEntries = new List<int>( 4 );
 		private readonly List<string> pendingFileEntrySelection = new List<string>();
 
+		private readonly List<string> submittedFilePaths = new List<string>( 4 );
+
 #pragma warning disable 0414 // Value is assigned but never used on Android & iOS
 		private int multiSelectionPivotFileEntry;
 #pragma warning restore 0414
@@ -1401,116 +1403,115 @@ namespace SimpleFileBrowser
 				// When multiple files aren't selected via file browser UI, we must consider the rare case where user manually enters
 				// multiple filenames to filenameInputField in format "file1" "file2" and so on. So, we must parse filenameInputField
 
-				// In the first iteration, verify that all filenames entered to the input field are valid
-				// ExtractFilenameFromInput doesn't use Substring, so this iteration is GC-free
-				int fileCount = 0;
-				int startIndex = 0, nextStartIndex;
-				while( startIndex < filenameInput.Length )
+				submittedFilePaths.Clear();
+
+				for( int startIndex = 0, nextStartIndex = 0; startIndex < filenameInput.Length; startIndex = nextStartIndex )
 				{
 					int filenameLength = ExtractFilenameFromInput( filenameInput, ref startIndex, out nextStartIndex );
 					if( filenameLength == 0 )
 						continue;
 
-					if( !VerifyFilenameInput( filenameInput, startIndex, filenameLength ) )
+					string filename = filenameInput.Substring( startIndex, filenameLength ).Trim();
+					if( !VerifyFilename( filename ) )
 					{
 						// Filename contains invalid characters or is completely whitespace
 						filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 						return;
 					}
 
-					if( m_acceptNonExistingFilename )
-						fileCount++;
-					else
+					try
 					{
-						int fileEntryIndex = FilenameInputToFileEntryIndex( filenameInput, startIndex, filenameLength );
+						int fileEntryIndex = FilenameToFileEntryIndex( filename );
 						if( fileEntryIndex < 0 )
 						{
-							// File doesn't exist
-							filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-							return;
+							if( m_pickerMode != PickMode.Folders )
+							{
+								bool isAllFilesFilterActive = filters[filtersDropdown.value].extensions == null;
+								if( !m_acceptNonExistingFilename || !isAllFilesFilterActive )
+								{
+									// File couldn't be found but perhaps filename is missing the extension, check if any of the files match the filename without extension
+									for( int i = 0; i < validFileEntries.Count; i++ )
+									{
+										if( !validFileEntries[i].IsDirectory && validFileEntries[i].Name.Length >= filename.Length + 2 && validFileEntries[i].Name[filename.Length] == '.' )
+										{
+											if( validFileEntries[i].Name.StartsWith( filename ) ) // Case-sensitive filename query
+											{
+												fileEntryIndex = i;
+												break;
+											}
+											else if( textComparer.IsPrefix( validFileEntries[i].Name, filename, textCompareOptions ) ) // Case-insensitive filename query
+											{
+												// Don't exit the loop immediately because case-sensitive query takes precedence, we need to check all files to see if there's a case-sensitive match
+												fileEntryIndex = i;
+											}
+										}
+									}
+								}
+
+								if( m_acceptNonExistingFilename && fileEntryIndex < 0 && !isAllFilesFilterActive )
+								{
+									// In file saving mode, make sure that nonexisting files' extensions match one of the required extensions
+									string fileExtension = GetExtensionFromFilename( filename, AllExtensionsHaveSingleSuffix );
+									if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].MatchesExtension( fileExtension, !AllExtensionsHaveSingleSuffix ) )
+									{
+										filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
+										fileEntryIndex = FilenameToFileEntryIndex( filename );
+									}
+								}
+							}
 						}
 
-						if( !validFileEntries[fileEntryIndex].IsDirectory )
-							fileCount++;
-						else
+						if( fileEntryIndex >= 0 ) // This is an existing file/folder
 						{
-							if( m_pickerMode != PickMode.Files )
-								fileCount++;
-							else
+							if( validFileEntries[fileEntryIndex].IsDirectory && m_pickerMode == PickMode.Files )
 							{
 								// Selected a directory in file selection mode, open that directory
 								CurrentPath = validFileEntries[fileEntryIndex].Path;
 								return;
 							}
+							else
+								submittedFilePaths.Add( validFileEntries[fileEntryIndex].Path );
+						}
+						else // File/folder doesn't exist
+						{
+							if( !m_acceptNonExistingFilename )
+							{
+								filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
+								return;
+							}
+							else
+							{
+#if !UNITY_EDITOR && UNITY_ANDROID
+								if( FileBrowserHelpers.ShouldUseSAFForPath( m_currentPath ) )
+								{
+									if( m_pickerMode == PickMode.Folders )
+										submittedFilePaths.Add( FileBrowserHelpers.CreateFolderInDirectory( m_currentPath, filename ) );
+									else
+										submittedFilePaths.Add( FileBrowserHelpers.CreateFileInDirectory( m_currentPath, filename ) );
+								}
+								else
+#endif
+								{
+									submittedFilePaths.Add( Path.Combine( m_currentPath, filename ) );
+								}
+							}
 						}
 					}
-
-					startIndex = nextStartIndex;
+					catch( ArgumentException e )
+					{
+						filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
+						Debug.LogException( e );
+						return;
+					}
 				}
 
-				if( fileCount == 0 )
+				if( submittedFilePaths.Count == 0 )
 				{
 					filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
 					return;
 				}
 
-				// In the second iteration, extract filenames from the input field
-				string[] result = new string[fileCount];
-
-				startIndex = 0;
-				fileCount = 0;
-				while( startIndex < filenameInput.Length )
-				{
-					int filenameLength = ExtractFilenameFromInput( filenameInput, ref startIndex, out nextStartIndex );
-					if( filenameLength == 0 )
-						continue;
-
-					int fileEntryIndex = FilenameInputToFileEntryIndex( filenameInput, startIndex, filenameLength );
-					if( fileEntryIndex >= 0 )
-					{
-						// This is an existing file
-						result[fileCount++] = validFileEntries[fileEntryIndex].Path;
-					}
-					else
-					{
-						try
-						{
-							// This is a nonexisting file
-							string filename = filenameInput.Substring( startIndex, filenameLength );
-							if( m_pickerMode != PickMode.Folders && filters[filtersDropdown.value].extensions != null )
-							{
-								// In file selection mode, make sure that nonexisting files' extensions match one of the required extensions
-								string fileExtension = GetExtensionFromFilename( filename, AllExtensionsHaveSingleSuffix );
-								if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].MatchesExtension( fileExtension, !AllExtensionsHaveSingleSuffix ) )
-									filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
-							}
-
-#if !UNITY_EDITOR && UNITY_ANDROID
-							if( FileBrowserHelpers.ShouldUseSAFForPath( m_currentPath ) )
-							{
-								if( m_pickerMode == PickMode.Folders )
-									result[fileCount++] = FileBrowserHelpers.CreateFolderInDirectory( m_currentPath, filename );
-								else
-									result[fileCount++] = FileBrowserHelpers.CreateFileInDirectory( m_currentPath, filename );
-							}
-							else
-#endif
-							{
-								result[fileCount++] = Path.Combine( m_currentPath, filename );
-							}
-						}
-						catch( ArgumentException e )
-						{
-							filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-							Debug.LogException( e );
-							return;
-						}
-					}
-
-					startIndex = nextStartIndex;
-				}
-
-				OnOperationSuccessful( result );
+				OnOperationSuccessful( submittedFilePaths.ToArray() );
 			}
 		}
 
@@ -2120,16 +2121,7 @@ namespace SimpleFileBrowser
 					filenameInputField.text = folderName;
 
 				// Focus on the newly created folder
-				int fileEntryIndex = 0;
-				for( int i = 0; i < validFileEntries.Count; i++ )
-				{
-					if( validFileEntries[i].Name == folderName )
-					{
-						fileEntryIndex = i;
-						break;
-					}
-				}
-
+				int fileEntryIndex = Mathf.Max( 0, FilenameToFileEntryIndex( folderName ) );
 				filesScrollRect.verticalNormalizedPosition = validFileEntries.Count > 1 ? ( 1f - (float) fileEntryIndex / ( validFileEntries.Count - 1 ) ) : 1f;
 			} );
 		}
@@ -2572,24 +2564,31 @@ namespace SimpleFileBrowser
 		}
 
 		// Checks if a substring of the input field points to an existing file
-		private int FilenameInputToFileEntryIndex( string input, int startIndex, int length )
+		private int FilenameToFileEntryIndex( string filename )
 		{
+			// Case-sensitive search result takes precedence, so case-insensitive search result is returned only if a case-sensitive match isn't found
+			int caseInsensitiveResult = -1;
 			for( int i = 0; i < validFileEntries.Count; i++ )
 			{
-				if( validFileEntries[i].Name.Length == length && input.IndexOf( validFileEntries[i].Name, startIndex, length ) == startIndex )
-					return i;
+				if( validFileEntries[i].Name.Length == filename.Length )
+				{
+					if( filename == validFileEntries[i].Name ) // Case-sensitive filename query
+						return i;
+					else if( textComparer.Compare( filename, validFileEntries[i].Name, textCompareOptions ) == 0 ) // Case-insensitive filename query
+						caseInsensitiveResult = i;
+				}
 			}
 
-			return -1;
+			return caseInsensitiveResult;
 		}
 
 		// Verifies that filename doesn't contain any invalid characters
-		private bool VerifyFilenameInput( string input, int startIndex, int length )
+		private bool VerifyFilename( string filename )
 		{
 			bool isWhitespace = true;
-			for( int i = startIndex, endIndex = startIndex + length; i < endIndex; i++ )
+			for( int i = 0; i < filename.Length; i++ )
 			{
-				char ch = input[i];
+				char ch = filename[i];
 				if( invalidFilenameChars.Contains( ch ) )
 					return false;
 

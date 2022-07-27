@@ -242,11 +242,13 @@ namespace SimpleFileBrowser
 
 				return result;
 			}
+			catch( System.UnauthorizedAccessException ) { }
 			catch( System.Exception e )
 			{
 				Debug.LogException( e );
-				return null;
 			}
+
+			return null;
 		}
 
 		public static string CreateFileInDirectory( string directoryPath, string filename )

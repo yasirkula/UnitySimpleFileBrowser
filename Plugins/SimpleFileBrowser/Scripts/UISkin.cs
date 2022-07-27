@@ -509,29 +509,29 @@ namespace SimpleFileBrowser
 			set { if( m_contextMenuSeparatorColor != value ) { m_contextMenuSeparatorColor = value; m_version++; } }
 		}
 
-		[Header( "Delete Confirmation Panel" )]
-		[SerializeField]
-		private Color m_deletePanelBackgroundColor = Color.grey;
+		[Header( "Popup Panels" )]
+		[SerializeField, UnityEngine.Serialization.FormerlySerializedAs( "m_deletePanelBackgroundColor" )]
+		private Color m_popupPanelsBackgroundColor = Color.grey;
 		public Color DeletePanelBackgroundColor
 		{
-			get { return m_deletePanelBackgroundColor; }
-			set { if( m_deletePanelBackgroundColor != value ) { m_deletePanelBackgroundColor = value; m_version++; } }
+			get { return m_popupPanelsBackgroundColor; }
+			set { if( m_popupPanelsBackgroundColor != value ) { m_popupPanelsBackgroundColor = value; m_version++; } }
 		}
 
-		[SerializeField]
-		private Color m_deletePanelTextColor = Color.black;
+		[SerializeField, UnityEngine.Serialization.FormerlySerializedAs( "m_deletePanelTextColor" )]
+		private Color m_popupPanelsTextColor = Color.black;
 		public Color DeletePanelTextColor
 		{
-			get { return m_deletePanelTextColor; }
-			set { if( m_deletePanelTextColor != value ) { m_deletePanelTextColor = value; m_version++; } }
+			get { return m_popupPanelsTextColor; }
+			set { if( m_popupPanelsTextColor != value ) { m_popupPanelsTextColor = value; m_version++; } }
 		}
 
-		[SerializeField]
-		private Sprite m_deletePanelBackground;
+		[SerializeField, UnityEngine.Serialization.FormerlySerializedAs( "m_deletePanelBackground" )]
+		private Sprite m_popupPanelsBackground;
 		public Sprite DeletePanelBackground
 		{
-			get { return m_deletePanelBackground; }
-			set { if( m_deletePanelBackground != value ) { m_deletePanelBackground = value; m_version++; } }
+			get { return m_popupPanelsBackground; }
+			set { if( m_popupPanelsBackground != value ) { m_popupPanelsBackground = value; m_version++; } }
 		}
 #pragma warning restore 0649
 

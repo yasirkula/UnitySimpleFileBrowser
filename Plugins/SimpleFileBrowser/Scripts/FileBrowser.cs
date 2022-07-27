@@ -215,6 +215,13 @@ namespace SimpleFileBrowser
 			}
 		}
 
+		private static bool m_checkWriteAccessToDestinationDirectory = false;
+		public static bool CheckWriteAccessToDestinationDirectory
+		{
+			get { return m_checkWriteAccessToDestinationDirectory; }
+			set { m_checkWriteAccessToDestinationDirectory = value; }
+		}
+
 #if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS && !UNITY_WSA && !UNITY_WSA_10_0 )
 		private static float m_drivesRefreshInterval = 5f;
 #else
@@ -504,6 +511,9 @@ namespace SimpleFileBrowser
 		private FileBrowserDeleteConfirmationPanel deleteConfirmationPanel;
 
 		[SerializeField]
+		private FileBrowserAccessRestrictedPanel accessRestrictedPanel;
+
+		[SerializeField]
 		private FileBrowserCursorHandler resizeCursorHandler;
 #pragma warning restore 0649
 
@@ -517,7 +527,8 @@ namespace SimpleFileBrowser
 		private readonly List<int> selectedFileEntries = new List<int>( 4 );
 		private readonly List<string> pendingFileEntrySelection = new List<string>();
 
-		private readonly List<string> submittedFilePaths = new List<string>( 4 );
+		private readonly List<string> submittedFileEntryPaths = new List<string>( 4 );
+		private readonly List<string> submittedFolderPaths = new List<string>( 4 ); // Used to check if all destination folders have write access
 
 #pragma warning disable 0414 // Value is assigned but never used on Android & iOS
 		private int multiSelectionPivotFileEntry;
@@ -691,7 +702,7 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		private bool m_acceptNonExistingFilename = false;
+		private bool m_acceptNonExistingFilename = false; // Is set to true when showing save dialog for Files or FilesAndFolders, false otherwise
 		private bool AcceptNonExistingFilename
 		{
 			get { return m_acceptNonExistingFilename; }
@@ -1273,6 +1284,7 @@ namespace SimpleFileBrowser
 
 			contextMenu.RefreshSkin( m_skin );
 			deleteConfirmationPanel.RefreshSkin( m_skin );
+			accessRestrictedPanel.RefreshSkin( m_skin );
 
 			listView.OnSkinRefreshed();
 
@@ -1362,188 +1374,235 @@ namespace SimpleFileBrowser
 
 		public void OnSubmitButtonClicked()
 		{
+			string[] result = null;
 			string filenameInput = filenameInputField.text.Trim();
+
+			submittedFileEntryPaths.Clear();
+			submittedFolderPaths.Clear();
+
 			if( filenameInput.Length == 0 )
 			{
-				if( m_pickerMode != PickMode.Files )
-					OnOperationSuccessful( new string[1] { m_currentPath } );
-				else
-					filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-
-				return;
-			}
-
-			if( m_allowMultiSelection && selectedFileEntries.Count > 1 )
-			{
-				// When multiple files are selected via file browser UI, filenameInputField is not interactable and will show
-				// only the first FILENAME_INPUT_FIELD_MAX_FILE_COUNT entries for performance reasons. We should iterate over
-				// selectedFileEntries instead of filenameInputField
-
-				// Beforehand, check if a folder is selected in file selection mode. If so, open that directory
 				if( m_pickerMode == PickMode.Files )
 				{
+					filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
+					return;
+				}
+				else
+				{
+					result = new string[1] { m_currentPath };
+					submittedFolderPaths.Add( m_currentPath );
+				}
+			}
+
+			if( result == null )
+			{
+				if( m_allowMultiSelection && selectedFileEntries.Count > 1 )
+				{
+					// When multiple files are selected via file browser UI, filenameInputField is not interactable and will show
+					// only the first FILENAME_INPUT_FIELD_MAX_FILE_COUNT entries for performance reasons. We should iterate over
+					// selectedFileEntries instead of filenameInputField
+
+					// Beforehand, check if a folder is selected in file selection mode. If so, open that directory
+					if( m_pickerMode == PickMode.Files )
+					{
+						for( int i = 0; i < selectedFileEntries.Count; i++ )
+						{
+							if( validFileEntries[selectedFileEntries[i]].IsDirectory )
+							{
+								CurrentPath = validFileEntries[selectedFileEntries[i]].Path;
+								return;
+							}
+						}
+					}
+
+					result = new string[selectedFileEntries.Count];
 					for( int i = 0; i < selectedFileEntries.Count; i++ )
 					{
+						result[i] = validFileEntries[selectedFileEntries[i]].Path;
+
 						if( validFileEntries[selectedFileEntries[i]].IsDirectory )
+							submittedFolderPaths.Add( result[i] );
+						else if( m_acceptNonExistingFilename && !submittedFolderPaths.Contains( m_currentPath ) )
+							submittedFolderPaths.Add( m_currentPath );
+					}
+				}
+				else
+				{
+					// When multiple files aren't selected via file browser UI, we must consider the rare case where user manually enters
+					// multiple filenames to filenameInputField in format "file1" "file2" and so on. So, we must parse filenameInputField
+
+					for( int startIndex = 0, nextStartIndex = 0; startIndex < filenameInput.Length; startIndex = nextStartIndex )
+					{
+						int filenameLength = ExtractFilenameFromInput( filenameInput, ref startIndex, out nextStartIndex );
+						if( filenameLength == 0 )
+							continue;
+
+						string filename = filenameInput.Substring( startIndex, filenameLength ).Trim();
+						if( !VerifyFilename( filename ) )
 						{
-							CurrentPath = validFileEntries[selectedFileEntries[i]].Path;
+							// Check if user has entered a full path to input field instead of just a filename. Even if it's the case, don't immediately accept the full path,
+							// first verify that it doesn't point to a file/folder that is ignored by the file browser
+							try
+							{
+								if( FileBrowserHelpers.DirectoryExists( filename ) )
+								{
+									if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, FileBrowserHelpers.GetFilename( filename ), "", true ), AllExtensionsHaveSingleSuffix ) )
+									{
+										if( m_pickerMode == PickMode.Files )
+										{
+											CurrentPath = filename;
+											return;
+										}
+										else
+										{
+											submittedFileEntryPaths.Add( filename );
+											submittedFolderPaths.Add( filename );
+
+											continue;
+										}
+									}
+								}
+								else if( m_pickerMode != PickMode.Folders && FileBrowserHelpers.FileExists( filename ) )
+								{
+									string fullPathFilename = FileBrowserHelpers.GetFilename( filename );
+									if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, fullPathFilename, GetExtensionFromFilename( fullPathFilename, AllExtensionsHaveSingleSuffix ), false ), AllExtensionsHaveSingleSuffix ) )
+									{
+										submittedFileEntryPaths.Add( filename );
+										if( m_acceptNonExistingFilename )
+											submittedFolderPaths.Add( FileBrowserHelpers.GetDirectoryName( filename ) );
+
+										continue;
+									}
+								}
+							}
+							catch { }
+
+							// Filename contains invalid characters or is completely whitespace
+							filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
+							return;
+						}
+
+						try
+						{
+							int fileEntryIndex = FilenameToFileEntryIndex( filename );
+							if( fileEntryIndex < 0 )
+							{
+								if( m_pickerMode != PickMode.Folders )
+								{
+									bool isAllFilesFilterActive = filters[filtersDropdown.value].extensions == null;
+									if( !m_acceptNonExistingFilename || !isAllFilesFilterActive )
+									{
+										// File couldn't be found but perhaps filename is missing the extension, check if any of the files match the filename without extension
+										for( int i = 0; i < validFileEntries.Count; i++ )
+										{
+											if( !validFileEntries[i].IsDirectory && validFileEntries[i].Name.Length >= filename.Length + 2 && validFileEntries[i].Name[filename.Length] == '.' )
+											{
+												if( validFileEntries[i].Name.StartsWith( filename ) ) // Case-sensitive filename query
+												{
+													fileEntryIndex = i;
+													break;
+												}
+												else if( textComparer.IsPrefix( validFileEntries[i].Name, filename, textCompareOptions ) ) // Case-insensitive filename query
+												{
+													// Don't exit the loop immediately because case-sensitive query takes precedence, we need to check all files to see if there's a case-sensitive match
+													fileEntryIndex = i;
+												}
+											}
+										}
+									}
+
+									if( m_acceptNonExistingFilename && fileEntryIndex < 0 && !isAllFilesFilterActive )
+									{
+										// In file saving mode, make sure that nonexisting files' extensions match one of the required extensions
+										string fileExtension = GetExtensionFromFilename( filename, AllExtensionsHaveSingleSuffix );
+										if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].MatchesExtension( fileExtension, !AllExtensionsHaveSingleSuffix ) )
+										{
+											filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
+											fileEntryIndex = FilenameToFileEntryIndex( filename );
+										}
+									}
+								}
+							}
+
+							if( fileEntryIndex >= 0 ) // This is an existing file/folder
+							{
+								if( validFileEntries[fileEntryIndex].IsDirectory && m_pickerMode == PickMode.Files )
+								{
+									// Selected a directory in file selection mode, open that directory
+									CurrentPath = validFileEntries[fileEntryIndex].Path;
+									return;
+								}
+								else
+								{
+									submittedFileEntryPaths.Add( validFileEntries[fileEntryIndex].Path );
+
+									if( validFileEntries[fileEntryIndex].IsDirectory )
+										submittedFolderPaths.Add( validFileEntries[fileEntryIndex].Path );
+									else if( m_acceptNonExistingFilename && !submittedFolderPaths.Contains( m_currentPath ) )
+										submittedFolderPaths.Add( m_currentPath );
+								}
+							}
+							else // File/folder doesn't exist
+							{
+								if( !m_acceptNonExistingFilename )
+								{
+									filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
+									return;
+								}
+								else
+								{
+#if !UNITY_EDITOR && UNITY_ANDROID
+									if( FileBrowserHelpers.ShouldUseSAFForPath( m_currentPath ) )
+									{
+										if( m_pickerMode == PickMode.Folders )
+											submittedFileEntryPaths.Add( FileBrowserHelpers.CreateFolderInDirectory( m_currentPath, filename ) );
+										else
+											submittedFileEntryPaths.Add( FileBrowserHelpers.CreateFileInDirectory( m_currentPath, filename ) );
+									}
+									else
+#endif
+									{
+										submittedFileEntryPaths.Add( Path.Combine( m_currentPath, filename ) );
+
+										if( !submittedFolderPaths.Contains( m_currentPath ) )
+											submittedFolderPaths.Add( m_currentPath );
+									}
+								}
+							}
+						}
+						catch( ArgumentException e )
+						{
+							filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
+							Debug.LogException( e );
+							return;
+						}
+					}
+
+					if( submittedFileEntryPaths.Count == 0 )
+					{
+						filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
+						return;
+					}
+
+					result = submittedFileEntryPaths.ToArray();
+				}
+			}
+
+			if( result != null )
+			{
+				if( m_checkWriteAccessToDestinationDirectory )
+				{
+					for( int i = 0; i < submittedFolderPaths.Count; i++ )
+					{
+						if( !string.IsNullOrEmpty( submittedFolderPaths[i] ) && !CheckDirectoryWriteAccess( submittedFolderPaths[i] ) )
+						{
+							accessRestrictedPanel.Show();
 							return;
 						}
 					}
 				}
 
-				string[] result = new string[selectedFileEntries.Count];
-				for( int i = 0; i < selectedFileEntries.Count; i++ )
-					result[i] = validFileEntries[selectedFileEntries[i]].Path;
-
 				OnOperationSuccessful( result );
-			}
-			else
-			{
-				// When multiple files aren't selected via file browser UI, we must consider the rare case where user manually enters
-				// multiple filenames to filenameInputField in format "file1" "file2" and so on. So, we must parse filenameInputField
-
-				submittedFilePaths.Clear();
-
-				for( int startIndex = 0, nextStartIndex = 0; startIndex < filenameInput.Length; startIndex = nextStartIndex )
-				{
-					int filenameLength = ExtractFilenameFromInput( filenameInput, ref startIndex, out nextStartIndex );
-					if( filenameLength == 0 )
-						continue;
-
-					string filename = filenameInput.Substring( startIndex, filenameLength ).Trim();
-					if( !VerifyFilename( filename ) )
-					{
-						// Check if user has entered a full path to input field instead of just a filename. Even if it's the case, don't immediately accept the full path,
-						// first verify that it doesn't point to a file/folder that is ignored by the file browser
-						try
-						{
-							if( FileBrowserHelpers.DirectoryExists( filename ) )
-							{
-								if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, FileBrowserHelpers.GetFilename( filename ), "", true ), AllExtensionsHaveSingleSuffix ) )
-								{
-									if( m_pickerMode == PickMode.Files )
-									{
-										CurrentPath = filename;
-										return;
-									}
-									else
-									{
-										submittedFilePaths.Add( filename );
-										continue;
-									}
-								}
-							}
-							else if( m_pickerMode != PickMode.Folders && FileBrowserHelpers.FileExists( filename ) )
-							{
-								string fullPathFilename = FileBrowserHelpers.GetFilename( filename );
-								if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, fullPathFilename, GetExtensionFromFilename( fullPathFilename, AllExtensionsHaveSingleSuffix ), false ), AllExtensionsHaveSingleSuffix ) )
-								{
-									submittedFilePaths.Add( filename );
-									continue;
-								}
-							}
-						}
-						catch { }
-
-						// Filename contains invalid characters or is completely whitespace
-						filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-						return;
-					}
-
-					try
-					{
-						int fileEntryIndex = FilenameToFileEntryIndex( filename );
-						if( fileEntryIndex < 0 )
-						{
-							if( m_pickerMode != PickMode.Folders )
-							{
-								bool isAllFilesFilterActive = filters[filtersDropdown.value].extensions == null;
-								if( !m_acceptNonExistingFilename || !isAllFilesFilterActive )
-								{
-									// File couldn't be found but perhaps filename is missing the extension, check if any of the files match the filename without extension
-									for( int i = 0; i < validFileEntries.Count; i++ )
-									{
-										if( !validFileEntries[i].IsDirectory && validFileEntries[i].Name.Length >= filename.Length + 2 && validFileEntries[i].Name[filename.Length] == '.' )
-										{
-											if( validFileEntries[i].Name.StartsWith( filename ) ) // Case-sensitive filename query
-											{
-												fileEntryIndex = i;
-												break;
-											}
-											else if( textComparer.IsPrefix( validFileEntries[i].Name, filename, textCompareOptions ) ) // Case-insensitive filename query
-											{
-												// Don't exit the loop immediately because case-sensitive query takes precedence, we need to check all files to see if there's a case-sensitive match
-												fileEntryIndex = i;
-											}
-										}
-									}
-								}
-
-								if( m_acceptNonExistingFilename && fileEntryIndex < 0 && !isAllFilesFilterActive )
-								{
-									// In file saving mode, make sure that nonexisting files' extensions match one of the required extensions
-									string fileExtension = GetExtensionFromFilename( filename, AllExtensionsHaveSingleSuffix );
-									if( string.IsNullOrEmpty( fileExtension ) || !filters[filtersDropdown.value].MatchesExtension( fileExtension, !AllExtensionsHaveSingleSuffix ) )
-									{
-										filename = Path.ChangeExtension( filename, filters[filtersDropdown.value].defaultExtension );
-										fileEntryIndex = FilenameToFileEntryIndex( filename );
-									}
-								}
-							}
-						}
-
-						if( fileEntryIndex >= 0 ) // This is an existing file/folder
-						{
-							if( validFileEntries[fileEntryIndex].IsDirectory && m_pickerMode == PickMode.Files )
-							{
-								// Selected a directory in file selection mode, open that directory
-								CurrentPath = validFileEntries[fileEntryIndex].Path;
-								return;
-							}
-							else
-								submittedFilePaths.Add( validFileEntries[fileEntryIndex].Path );
-						}
-						else // File/folder doesn't exist
-						{
-							if( !m_acceptNonExistingFilename )
-							{
-								filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-								return;
-							}
-							else
-							{
-#if !UNITY_EDITOR && UNITY_ANDROID
-								if( FileBrowserHelpers.ShouldUseSAFForPath( m_currentPath ) )
-								{
-									if( m_pickerMode == PickMode.Folders )
-										submittedFilePaths.Add( FileBrowserHelpers.CreateFolderInDirectory( m_currentPath, filename ) );
-									else
-										submittedFilePaths.Add( FileBrowserHelpers.CreateFileInDirectory( m_currentPath, filename ) );
-								}
-								else
-#endif
-								{
-									submittedFilePaths.Add( Path.Combine( m_currentPath, filename ) );
-								}
-							}
-						}
-					}
-					catch( ArgumentException e )
-					{
-						filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-						Debug.LogException( e );
-						return;
-					}
-				}
-
-				if( submittedFilePaths.Count == 0 )
-				{
-					filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-					return;
-				}
-
-				OnOperationSuccessful( submittedFilePaths.ToArray() );
 			}
 		}
 
@@ -2718,6 +2777,34 @@ namespace SimpleFileBrowser
 			return directoryExists;
 		}
 #endif
+
+		private bool CheckDirectoryWriteAccess( string path )
+		{
+#if !UNITY_EDITOR && UNITY_ANDROID
+			if( FileBrowserHelpers.ShouldUseSAFForPath( path ) )
+				return true;
+#endif
+			string tempFilePath = Path.Combine( path, "__fsWrite.tmp" );
+			try
+			{
+				File.Create( tempFilePath ).Close();
+				File.Delete( tempFilePath );
+
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+			finally
+			{
+				try
+				{
+					File.Delete( tempFilePath );
+				}
+				catch { }
+			}
+		}
 		#endregion
 
 		#region File Browser Functions (static)

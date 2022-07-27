@@ -152,6 +152,8 @@ To open files or directories in the file browser with a single click (instead of
 
 File browser refreshes the list of drives at a regular interval to detect the insertion/removal of USB drives. This interval can be changed via **FileBrowser.DrivesRefreshInterval**. If its value is less than 0, list of drives won't be refreshed. By default, this value is 5 seconds on standalone platforms and -1 on mobile platforms.
 
+While saving files/folders or loading folders, file browser can check if the user has write access to the destination folder(s) to ensure that any file operations inside those folder(s) will work without any issues. To do that, file browser attempts to create dummy files inside those folder(s) and if it fails, an error dialog is displayed to the user. This feature is disabled by default because some folders may have write access but not delete access, in which case the created dummy file will remain in the destination folder(s). To enable this feature, you can set **FileBrowser.CheckWriteAccessToDestinationDirectory** to *true*.
+
 File browser comes bundled with two premade skins in the *Skins* directory: *LightSkin* and *DarkSkin*. New **UISkin**s can be created via `Assets-Create-yasirkula-SimpleFileBrowser-UI Skin`. A UISkin can be assigned to the file browser in two ways:
 
 - By changing *SimpleFileBrowserCanvas* prefab's *Skin* field

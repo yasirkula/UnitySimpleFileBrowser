@@ -144,7 +144,7 @@ MonoBehaviour:
   m_contextMenuBackgroundColor: {r: 0.11372549, g: 0.11372549, b: 0.11372549, a: 1}
   m_contextMenuTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_contextMenuSeparatorColor: {r: 0.6392157, g: 0.6392157, b: 0.6392157, a: 1}
-  m_deletePanelBackgroundColor: {r: 0.11372549, g: 0.11372549, b: 0.11372549, a: 1}
-  m_deletePanelTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
-  m_deletePanelBackground: {fileID: 21300000, guid: b9c5fedc997f125448c4d8be2fc43bcd,
+  m_popupPanelsBackgroundColor: {r: 0.19607842, g: 0.19607842, b: 0.19607842, a: 1}
+  m_popupPanelsTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
+  m_popupPanelsBackground: {fileID: 21300000, guid: b9c5fedc997f125448c4d8be2fc43bcd,
     type: 3}

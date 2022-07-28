@@ -512,7 +512,7 @@ namespace SimpleFileBrowser
 		[Header( "Popup Panels" )]
 		[SerializeField, UnityEngine.Serialization.FormerlySerializedAs( "m_deletePanelBackgroundColor" )]
 		private Color m_popupPanelsBackgroundColor = Color.grey;
-		public Color DeletePanelBackgroundColor
+		public Color PopupPanelsBackgroundColor
 		{
 			get { return m_popupPanelsBackgroundColor; }
 			set { if( m_popupPanelsBackgroundColor != value ) { m_popupPanelsBackgroundColor = value; m_version++; } }
@@ -520,7 +520,7 @@ namespace SimpleFileBrowser
 
 		[SerializeField, UnityEngine.Serialization.FormerlySerializedAs( "m_deletePanelTextColor" )]
 		private Color m_popupPanelsTextColor = Color.black;
-		public Color DeletePanelTextColor
+		public Color PopupPanelsTextColor
 		{
 			get { return m_popupPanelsTextColor; }
 			set { if( m_popupPanelsTextColor != value ) { m_popupPanelsTextColor = value; m_version++; } }
@@ -528,7 +528,7 @@ namespace SimpleFileBrowser
 
 		[SerializeField, UnityEngine.Serialization.FormerlySerializedAs( "m_deletePanelBackground" )]
 		private Sprite m_popupPanelsBackground;
-		public Sprite DeletePanelBackground
+		public Sprite PopupPanelsBackground
 		{
 			get { return m_popupPanelsBackground; }
 			set { if( m_popupPanelsBackground != value ) { m_popupPanelsBackground = value; m_version++; } }

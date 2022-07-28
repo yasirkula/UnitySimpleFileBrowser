@@ -215,6 +215,13 @@ namespace SimpleFileBrowser
 			}
 		}
 
+		private static bool m_showFileOverwriteDialog = true;
+		public static bool ShowFileOverwriteDialog
+		{
+			get { return m_showFileOverwriteDialog; }
+			set { m_showFileOverwriteDialog = value; }
+		}
+
 		private static bool m_checkWriteAccessToDestinationDirectory = false;
 		public static bool CheckWriteAccessToDestinationDirectory
 		{
@@ -508,7 +515,7 @@ namespace SimpleFileBrowser
 		private FileBrowserContextMenu contextMenu;
 
 		[SerializeField]
-		private FileBrowserDeleteConfirmationPanel deleteConfirmationPanel;
+		private FileBrowserFileOperationConfirmationPanel fileOperationConfirmationPanel;
 
 		[SerializeField]
 		private FileBrowserAccessRestrictedPanel accessRestrictedPanel;
@@ -529,6 +536,7 @@ namespace SimpleFileBrowser
 
 		private readonly List<string> submittedFileEntryPaths = new List<string>( 4 );
 		private readonly List<string> submittedFolderPaths = new List<string>( 4 ); // Used to check if all destination folders have write access
+		private readonly List<FileSystemEntry> submittedFileEntriesToOverwrite = new List<FileSystemEntry>( 4 ); // Existing files selected by the user in save mode
 
 #pragma warning disable 0414 // Value is assigned but never used on Android & iOS
 		private int multiSelectionPivotFileEntry;
@@ -903,7 +911,7 @@ namespace SimpleFileBrowser
 				if( windowTR.sizeDelta != windowSize )
 					OnWindowDimensionsChanged( windowTR.sizeDelta );
 
-				deleteConfirmationPanel.OnCanvasDimensionsChanged( rectTransform.sizeDelta );
+				fileOperationConfirmationPanel.OnCanvasDimensionsChanged( rectTransform.sizeDelta );
 
 				if( contextMenu.gameObject.activeSelf )
 					contextMenu.Hide();
@@ -1283,7 +1291,7 @@ namespace SimpleFileBrowser
 			renameItem.TransformComponent.sizeDelta = new Vector2( renameItem.TransformComponent.sizeDelta.x, m_skin.FileHeight );
 
 			contextMenu.RefreshSkin( m_skin );
-			deleteConfirmationPanel.RefreshSkin( m_skin );
+			fileOperationConfirmationPanel.RefreshSkin( m_skin );
 			accessRestrictedPanel.RefreshSkin( m_skin );
 
 			listView.OnSkinRefreshed();
@@ -1379,6 +1387,7 @@ namespace SimpleFileBrowser
 
 			submittedFileEntryPaths.Clear();
 			submittedFolderPaths.Clear();
+			submittedFileEntriesToOverwrite.Clear();
 
 			if( filenameInput.Length == 0 )
 			{
@@ -1422,8 +1431,13 @@ namespace SimpleFileBrowser
 
 						if( validFileEntries[selectedFileEntries[i]].IsDirectory )
 							submittedFolderPaths.Add( result[i] );
-						else if( m_acceptNonExistingFilename && !submittedFolderPaths.Contains( m_currentPath ) )
-							submittedFolderPaths.Add( m_currentPath );
+						else if( m_acceptNonExistingFilename )
+						{
+							submittedFileEntriesToOverwrite.Add( validFileEntries[selectedFileEntries[i]] );
+
+							if( !submittedFolderPaths.Contains( m_currentPath ) )
+								submittedFolderPaths.Add( m_currentPath );
+						}
 					}
 				}
 				else
@@ -1446,7 +1460,8 @@ namespace SimpleFileBrowser
 							{
 								if( FileBrowserHelpers.DirectoryExists( filename ) )
 								{
-									if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, FileBrowserHelpers.GetFilename( filename ), "", true ), AllExtensionsHaveSingleSuffix ) )
+									FileSystemEntry fileEntry = new FileSystemEntry( filename, FileBrowserHelpers.GetFilename( filename ), "", true );
+									if( FileSystemEntryMatchesFilters( fileEntry, AllExtensionsHaveSingleSuffix ) )
 									{
 										if( m_pickerMode == PickMode.Files )
 										{
@@ -1465,9 +1480,12 @@ namespace SimpleFileBrowser
 								else if( m_pickerMode != PickMode.Folders && FileBrowserHelpers.FileExists( filename ) )
 								{
 									string fullPathFilename = FileBrowserHelpers.GetFilename( filename );
-									if( FileSystemEntryMatchesFilters( new FileSystemEntry( filename, fullPathFilename, GetExtensionFromFilename( fullPathFilename, AllExtensionsHaveSingleSuffix ), false ), AllExtensionsHaveSingleSuffix ) )
+									FileSystemEntry fileEntry = new FileSystemEntry( filename, fullPathFilename, GetExtensionFromFilename( fullPathFilename, AllExtensionsHaveSingleSuffix ), false );
+									if( FileSystemEntryMatchesFilters( fileEntry, AllExtensionsHaveSingleSuffix ) )
 									{
 										submittedFileEntryPaths.Add( filename );
+										submittedFileEntriesToOverwrite.Add( fileEntry );
+
 										if( m_acceptNonExistingFilename )
 											submittedFolderPaths.Add( FileBrowserHelpers.GetDirectoryName( filename ) );
 
@@ -1538,8 +1556,13 @@ namespace SimpleFileBrowser
 
 									if( validFileEntries[fileEntryIndex].IsDirectory )
 										submittedFolderPaths.Add( validFileEntries[fileEntryIndex].Path );
-									else if( m_acceptNonExistingFilename && !submittedFolderPaths.Contains( m_currentPath ) )
-										submittedFolderPaths.Add( m_currentPath );
+									else if( m_acceptNonExistingFilename )
+									{
+										submittedFileEntriesToOverwrite.Add( validFileEntries[fileEntryIndex] );
+
+										if( !submittedFolderPaths.Contains( m_currentPath ) )
+											submittedFolderPaths.Add( m_currentPath );
+									}
 								}
 							}
 							else // File/folder doesn't exist
@@ -1600,6 +1623,12 @@ namespace SimpleFileBrowser
 							return;
 						}
 					}
+				}
+
+				if( m_showFileOverwriteDialog && submittedFileEntriesToOverwrite.Count > 0 )
+				{
+					fileOperationConfirmationPanel.Show( this, submittedFileEntriesToOverwrite, FileBrowserFileOperationConfirmationPanel.OperationType.Overwrite, () => OnOperationSuccessful( result ) );
+					return;
 				}
 
 				OnOperationSuccessful( result );
@@ -2292,7 +2321,7 @@ namespace SimpleFileBrowser
 
 			selectedFileEntries.Sort();
 
-			deleteConfirmationPanel.Show( this, validFileEntries, selectedFileEntries, () =>
+			fileOperationConfirmationPanel.Show( this, validFileEntries, selectedFileEntries, FileBrowserFileOperationConfirmationPanel.OperationType.Delete, () =>
 			{
 				for( int i = selectedFileEntries.Count - 1; i >= 0; i-- )
 				{

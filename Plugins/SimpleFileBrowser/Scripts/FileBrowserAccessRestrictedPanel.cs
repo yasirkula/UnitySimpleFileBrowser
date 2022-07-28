@@ -43,11 +43,11 @@ namespace SimpleFileBrowser
 		internal void RefreshSkin( UISkin skin )
 		{
 			Image background = GetComponentInChildren<Image>();
-			background.color = skin.DeletePanelBackgroundColor;
-			background.sprite = skin.DeletePanelBackground;
+			background.color = skin.PopupPanelsBackgroundColor;
+			background.sprite = skin.PopupPanelsBackground;
 
 			skin.ApplyTo( okButton );
-			skin.ApplyTo( messageLabel, skin.DeletePanelTextColor );
+			skin.ApplyTo( messageLabel, skin.PopupPanelsTextColor );
 		}
 
 		public void OKButtonClicked()

@@ -48,13 +48,9 @@ This plugin supports Unity's new Input System but it requires some manual modifi
 
 ## FAQ
 
-- **Android build fails, it says "error: attribute android:requestLegacyExternalStorage not found" in Console**
+- **File browser doesn't show any files on Mac when sandboxing is enabled**
 
-`android:requestLegacyExternalStorage` attribute in _AndroidManifest.xml_ grants full access to device's storage on Android 10 but requires you to update your Android SDK to at least **SDK 29**. If this isn't possible for you, you should open *SimpleFileBrowser.aar* with WinRAR or 7-Zip and then remove the `<application ... />` tag from _AndroidManifest.xml_.
-
-- **Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat**
-
-If you are sure that your plugin is up-to-date, then enable **Custom Proguard File** option from *Player Settings* and add the following line to that file: `-keep class com.yasirkula.unity.* { *; }`
+This is a known issue but I can't give an ETA for a solution at the moment: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/66
 
 - **File browser doesn't show any files on Android 10+**
 
@@ -63,6 +59,14 @@ File browser uses *Storage Access Framework* on these Android versions and users
 - **File browser doesn't show any files on Unity 2021.3.x**
 
 Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/70
+
+- **Android build fails, it says "error: attribute android:requestLegacyExternalStorage not found" in Console**
+
+`android:requestLegacyExternalStorage` attribute in _AndroidManifest.xml_ grants full access to device's storage on Android 10 but requires you to update your Android SDK to at least **SDK 29**. If this isn't possible for you, you should open *SimpleFileBrowser.aar* with WinRAR or 7-Zip and then remove the `<application ... />` tag from _AndroidManifest.xml_.
+
+- **Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat**
+
+If you are sure that your plugin is up-to-date, then enable **Custom Proguard File** option from *Player Settings* and add the following line to that file: `-keep class com.yasirkula.unity.* { *; }`
 
 - **RequestPermission returns Permission.Denied on Android**
 

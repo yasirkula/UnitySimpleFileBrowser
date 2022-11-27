@@ -2864,6 +2864,15 @@ namespace SimpleFileBrowser
 			//	return false;
 			//}
 
+			//When overriding visible dialog lets notify, if we have onCancel callback
+            		if( Instance.gameObject.activeSelf)
+			{
+				var onCancelInstance = Instance.onCancel;
+				Instance.onCancel = null;
+				if (onCancelInstance != null)
+					onCancelInstance();
+			}
+			
 			Instance.onSuccess = onSuccess;
 			Instance.onCancel = onCancel;
 

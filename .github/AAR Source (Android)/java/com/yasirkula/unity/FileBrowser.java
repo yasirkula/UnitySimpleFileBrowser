@@ -152,7 +152,7 @@ public class FileBrowser
 		if( Build.VERSION.SDK_INT < Build.VERSION_CODES.M )
 			return 1;
 
-		if( context.checkSelfPermission( Manifest.permission.READ_EXTERNAL_STORAGE ) != PackageManager.PERMISSION_GRANTED )
+		if( ( Build.VERSION.SDK_INT < 33 || context.getApplicationInfo().targetSdkVersion < 33 ) && context.checkSelfPermission( Manifest.permission.READ_EXTERNAL_STORAGE ) != PackageManager.PERMISSION_GRANTED )
 			return 0;
 
 		if( Build.VERSION.SDK_INT < 30 && context.checkSelfPermission( Manifest.permission.WRITE_EXTERNAL_STORAGE ) != PackageManager.PERMISSION_GRANTED )
@@ -580,6 +580,20 @@ public class FileBrowser
 		}
 
 		return "";
+	}
+
+	@TargetApi( Build.VERSION_CODES.Q )
+	public static boolean IsSAFEntryChildOfAnother( Context context, String rawUri, String parentRawUri )
+	{
+		try
+		{
+			return DocumentsContract.isChildDocument( context.getContentResolver(), Uri.parse( parentRawUri ), Uri.parse( rawUri ) );
+		}
+		catch( Exception e )
+		{
+			Log.e( "Unity", "Exception:", e );
+			return false;
+		}
 	}
 
 	//// BEGIN UTILITY FUNCTIONS

@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
+import android.util.Log;
 import android.widget.Toast;
 
 @TargetApi( Build.VERSION_CODES.Q )
@@ -34,7 +35,7 @@ public class FileBrowserDirectoryPickerFragment extends Fragment
 		super.onCreate( savedInstanceState );
 
 		if( directoryReceiver == null )
-			getFragmentManager().beginTransaction().remove( this ).commit();
+			onActivityResult( DIRECTORY_PICK_REQUEST_CODE, Activity.RESULT_CANCELED, null );
 		else
 		{
 			Intent intent = new Intent( Intent.ACTION_OPEN_DOCUMENT_TREE );

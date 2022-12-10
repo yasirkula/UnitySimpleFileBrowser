@@ -191,6 +191,7 @@ The following file manipulation functions work on all platforms (including *Stor
 public static bool FileBrowserHelpers.FileExists( string path );
 public static bool FileBrowserHelpers.DirectoryExists( string path );
 public static bool FileBrowserHelpers.IsDirectory( string path );
+public static bool FileBrowserHelpers.IsPathDescendantOfAnother( string path, string parentFolderPath );
 public static string FileBrowserHelpers.GetDirectoryName( string path );
 public static FileSystemEntry[] FileBrowserHelpers.GetEntriesInDirectory( string path, bool extractOnlyLastSuffixFromExtensions ); // Returns all files and folders in a directory. If you want "File.tar.gz"s extension to be extracted as ".tar.gz" instead of ".gz", set 'extractOnlyLastSuffixFromExtensions' to false
 public static string FileBrowserHelpers.CreateFileInDirectory( string directoryPath, string filename ); // Returns the created file's path

@@ -52,13 +52,15 @@ public class FileBrowserPermissionFragment extends Fragment
 	{
 		super.onCreate( savedInstanceState );
 		if( permissionReceiver == null )
-			getFragmentManager().beginTransaction().remove( this ).commit();
+			onRequestPermissionsResult( PERMISSIONS_REQUEST_CODE, new String[0], new int[0] );
 		else
 		{
 			if( Build.VERSION.SDK_INT < 30 )
 				requestPermissions( new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE }, PERMISSIONS_REQUEST_CODE );
-			else
+			else if( Build.VERSION.SDK_INT < 33 || getActivity().getApplicationInfo().targetSdkVersion < 33 )
 				requestPermissions( new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, PERMISSIONS_REQUEST_CODE );
+			else
+				onRequestPermissionsResult( PERMISSIONS_REQUEST_CODE, new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, new int[] { PackageManager.PERMISSION_GRANTED } );
 		}
 	}
 

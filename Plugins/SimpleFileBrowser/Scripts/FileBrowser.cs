@@ -1,4 +1,4 @@
-﻿//#define WIN_DIR_CHECK_WITHOUT_TIMEOUT // When uncommented, Directory.Exists won't be wrapped inside a Task/Thread on Windows but we won't be able to set a timeout for unreachable directories/drives
+//#define WIN_DIR_CHECK_WITHOUT_TIMEOUT // When uncommented, Directory.Exists won't be wrapped inside a Task/Thread on Windows but we won't be able to set a timeout for unreachable directories/drives
 
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -1771,12 +1771,11 @@ namespace SimpleFileBrowser
 						multiSelectionPivotFileEntry = Mathf.Clamp( multiSelectionPivotFileEntry, 0, validFileEntries.Count - 1 );
 
 						selectedFileEntries.Clear();
-						selectedFileEntries.Add( item.Position );
 
-						for( int i = multiSelectionPivotFileEntry; i < item.Position; i++ )
+						for( int i = multiSelectionPivotFileEntry; i <= item.Position; i++ )
 							selectedFileEntries.Add( i );
 
-						for( int i = multiSelectionPivotFileEntry; i > item.Position; i-- )
+						for( int i = multiSelectionPivotFileEntry; i >= item.Position; i-- )
 							selectedFileEntries.Add( i );
 					}
 					else

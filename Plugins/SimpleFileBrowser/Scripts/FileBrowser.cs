@@ -940,7 +940,13 @@ namespace SimpleFileBrowser
 						RenameSelectedFile();
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-					if( Keyboard.current[Key.A].wasPressedThisFrame && Keyboard.current.actionKey.isPressed )
+					if( Keyboard.current[Key.A].wasPressedThisFrame &&
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
+							(Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed)
+#else
+							Keyboard.current.ctrlKey.isPressed
+#endif
+					)
 #else
 					if( Input.GetKeyDown( KeyCode.A ) &&
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
@@ -1789,10 +1795,16 @@ namespace SimpleFileBrowser
 					{
 						multiSelectionPivotFileEntry = item.Position;
 
-						// When in toggle selection mode or Control key (Command on macOS, thus actionKey) is held, individual items can be multi-selected
+						// When in toggle selection mode or Control key (Command on macOS) is held, individual items can be multi-selected
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-						if( m_multiSelectionToggleSelectionMode || ( Keyboard.current != null && Keyboard.current.actionKey.isPressed ) )
+						if( m_multiSelectionToggleSelectionMode || ( Keyboard.current != null &&
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
+							(Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed)
+#else
+							Keyboard.current.ctrlKey.isPressed
+#endif
+						) )
 #else
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
 						if( m_multiSelectionToggleSelectionMode || Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand ) )

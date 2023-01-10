@@ -1784,11 +1784,13 @@ namespace SimpleFileBrowser
 
 						selectedFileEntries.Clear();
 
-						for( int i = multiSelectionPivotFileEntry; i <= item.Position; i++ )
+						for( int i = multiSelectionPivotFileEntry; i < item.Position; i++ )
 							selectedFileEntries.Add( i );
 
-						for( int i = multiSelectionPivotFileEntry; i >= item.Position; i-- )
+						for( int i = multiSelectionPivotFileEntry; i > item.Position; i-- )
 							selectedFileEntries.Add( i );
+
+						selectedFileEntries.Add( item.Position );
 					}
 					else
 #endif

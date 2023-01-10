@@ -788,6 +788,24 @@ namespace SimpleFileBrowser
 			get { return PlayerPrefs.GetString( "FBLastPath", null ); }
 			set { PlayerPrefs.SetString( "FBLastPath", value ); }
 		}
+
+		// If Command Key on Apple Devices OR Ctrl/Control key on others is pressed.
+		private bool IsCtrlKeyHeld()
+		{
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
+			return Keyboard.current != null && (Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed);
+#else
+			return Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
+#endif
+#else // not (ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER)
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
+			return Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand);
+#else
+            return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+#endif
+#endif
+		}
 		#endregion
 
 		#region Delegates
@@ -940,21 +958,9 @@ namespace SimpleFileBrowser
 						RenameSelectedFile();
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-					if( Keyboard.current[Key.A].wasPressedThisFrame &&
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
-							(Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed)
+					if( Keyboard.current[Key.A].wasPressedThisFrame && IsCtrlKeyHeld())
 #else
-							Keyboard.current.ctrlKey.isPressed
-#endif
-					)
-#else
-					if( Input.GetKeyDown( KeyCode.A ) &&
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
-						Input.GetKey( KeyCode.LeftCommand )
-#else
-						Input.GetKey( KeyCode.LeftControl )
-#endif
-					)
+					if( Input.GetKeyDown( KeyCode.A ) && IsCtrlKeyHeld())
 #endif
 						SelectAllFiles();
 				}
@@ -1799,21 +1805,7 @@ namespace SimpleFileBrowser
 
 						// When in toggle selection mode or Control key (Command on macOS) is held, individual items can be multi-selected
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-						if( m_multiSelectionToggleSelectionMode || ( Keyboard.current != null &&
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
-							(Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed)
-#else
-							Keyboard.current.ctrlKey.isPressed
-#endif
-						) )
-#else
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
-						if( m_multiSelectionToggleSelectionMode || Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand ) )
-#else
-						if( m_multiSelectionToggleSelectionMode || Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.RightControl ) )
-#endif
-#endif
+						if( m_multiSelectionToggleSelectionMode || IsCtrlKeyHeld() )
 #else
 						if( m_multiSelectionToggleSelectionMode )
 #endif

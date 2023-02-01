@@ -1,4 +1,4 @@
-﻿//#define WIN_DIR_CHECK_WITHOUT_TIMEOUT // When uncommented, Directory.Exists won't be wrapped inside a Task/Thread on Windows but we won't be able to set a timeout for unreachable directories/drives
+//#define WIN_DIR_CHECK_WITHOUT_TIMEOUT // When uncommented, Directory.Exists won't be wrapped inside a Task/Thread on Windows but we won't be able to set a timeout for unreachable directories/drives
 
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -940,9 +940,9 @@ namespace SimpleFileBrowser
 						RenameSelectedFile();
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-					if( Keyboard.current[Key.A].wasPressedThisFrame && Keyboard.current.ctrlKey.isPressed )
+					if( Keyboard.current[Key.A].wasPressedThisFrame && IsCtrlKeyHeld() )
 #else
-					if( Input.GetKeyDown( KeyCode.A ) && ( Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.LeftCommand ) ) )
+					if( Input.GetKeyDown( KeyCode.A ) && IsCtrlKeyHeld() )
 #endif
 						SelectAllFiles();
 				}
@@ -1771,26 +1771,23 @@ namespace SimpleFileBrowser
 						multiSelectionPivotFileEntry = Mathf.Clamp( multiSelectionPivotFileEntry, 0, validFileEntries.Count - 1 );
 
 						selectedFileEntries.Clear();
-						selectedFileEntries.Add( item.Position );
 
 						for( int i = multiSelectionPivotFileEntry; i < item.Position; i++ )
 							selectedFileEntries.Add( i );
 
 						for( int i = multiSelectionPivotFileEntry; i > item.Position; i-- )
 							selectedFileEntries.Add( i );
+
+						selectedFileEntries.Add( item.Position );
 					}
 					else
 #endif
 					{
 						multiSelectionPivotFileEntry = item.Position;
 
-						// When in toggle selection mode or Control key is held, individual items can be multi-selected
+						// When in toggle selection mode or Control/Command key is held, individual items can be multi-selected
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-						if( m_multiSelectionToggleSelectionMode || ( Keyboard.current != null && Keyboard.current.ctrlKey.isPressed ) )
-#else
-						if( m_multiSelectionToggleSelectionMode || Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.RightControl ) )
-#endif
+						if( m_multiSelectionToggleSelectionMode || IsCtrlKeyHeld() )
 #else
 						if( m_multiSelectionToggleSelectionMode )
 #endif
@@ -2164,7 +2161,7 @@ namespace SimpleFileBrowser
 				// Don't select folders in file picking mode if MultiSelectionToggleSelectionMode is enabled or about to be enabled
 				for( int i = 0; i < validFileEntries.Count; i++ )
 				{
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 					if( !m_multiSelectionToggleSelectionMode || !validFileEntries[i].IsDirectory )
 #else
 					if( !validFileEntries[i].IsDirectory )
@@ -2833,6 +2830,24 @@ namespace SimpleFileBrowser
 				}
 				catch { }
 			}
+		}
+
+		// Check if Control/Command key is held
+		private bool IsCtrlKeyHeld()
+		{
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+#if UNITY_EDITOR_OSX || ( !UNITY_EDITOR && UNITY_STANDALONE_OSX )
+			return Keyboard.current != null && ( Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed );
+#else
+			return Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
+#endif
+#else
+#if UNITY_EDITOR_OSX || ( !UNITY_EDITOR && UNITY_STANDALONE_OSX )
+			return Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand );
+#else
+			return Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.RightControl );
+#endif
+#endif
 		}
 		#endregion
 

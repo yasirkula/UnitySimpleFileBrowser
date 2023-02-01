@@ -788,24 +788,6 @@ namespace SimpleFileBrowser
 			get { return PlayerPrefs.GetString( "FBLastPath", null ); }
 			set { PlayerPrefs.SetString( "FBLastPath", value ); }
 		}
-
-		// If Command Key on Apple Devices OR Ctrl/Control key on others is pressed.
-		private bool IsCtrlKeyHeld()
-		{
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
-			return Keyboard.current != null && (Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed);
-#else
-			return Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
-#endif
-#else // not (ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER)
-#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_IOS
-			return Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand);
-#else
-            return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
-#endif
-#endif
-		}
 		#endregion
 
 		#region Delegates
@@ -958,9 +940,9 @@ namespace SimpleFileBrowser
 						RenameSelectedFile();
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-					if( Keyboard.current[Key.A].wasPressedThisFrame && IsCtrlKeyHeld())
+					if( Keyboard.current[Key.A].wasPressedThisFrame && IsCtrlKeyHeld() )
 #else
-					if( Input.GetKeyDown( KeyCode.A ) && IsCtrlKeyHeld())
+					if( Input.GetKeyDown( KeyCode.A ) && IsCtrlKeyHeld() )
 #endif
 						SelectAllFiles();
 				}
@@ -1803,7 +1785,7 @@ namespace SimpleFileBrowser
 					{
 						multiSelectionPivotFileEntry = item.Position;
 
-						// When in toggle selection mode or Control key (Command on macOS) is held, individual items can be multi-selected
+						// When in toggle selection mode or Control/Command key is held, individual items can be multi-selected
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 						if( m_multiSelectionToggleSelectionMode || IsCtrlKeyHeld() )
 #else
@@ -2179,7 +2161,7 @@ namespace SimpleFileBrowser
 				// Don't select folders in file picking mode if MultiSelectionToggleSelectionMode is enabled or about to be enabled
 				for( int i = 0; i < validFileEntries.Count; i++ )
 				{
-#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL || UNITY_WSA || UNITY_WSA_10_0
 					if( !m_multiSelectionToggleSelectionMode || !validFileEntries[i].IsDirectory )
 #else
 					if( !validFileEntries[i].IsDirectory )
@@ -2848,6 +2830,24 @@ namespace SimpleFileBrowser
 				}
 				catch { }
 			}
+		}
+
+		// Check if Control/Command key is held
+		private bool IsCtrlKeyHeld()
+		{
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+#if UNITY_EDITOR_OSX || ( !UNITY_EDITOR && UNITY_STANDALONE_OSX )
+			return Keyboard.current != null && ( Keyboard.current.leftCommandKey.isPressed || Keyboard.current.rightCommandKey.isPressed );
+#else
+			return Keyboard.current != null && Keyboard.current.ctrlKey.isPressed;
+#endif
+#else
+#if UNITY_EDITOR_OSX || ( !UNITY_EDITOR && UNITY_STANDALONE_OSX )
+			return Input.GetKey( KeyCode.LeftCommand ) || Input.GetKey( KeyCode.RightCommand );
+#else
+			return Input.GetKey( KeyCode.LeftControl ) || Input.GetKey( KeyCode.RightControl );
+#endif
+#endif
 		}
 		#endregion
 

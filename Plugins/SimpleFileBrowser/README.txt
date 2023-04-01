@@ -1,4 +1,4 @@
-= Simple File Browser (v1.5.9) =
+= Simple File Browser (v1.6.0) =
 
 Online documentation & example code available at: https://github.com/yasirkula/UnitySimpleFileBrowser
 E-mail: yasirkula@gmail.com

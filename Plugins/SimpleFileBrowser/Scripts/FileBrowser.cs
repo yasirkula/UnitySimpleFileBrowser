@@ -1245,9 +1245,12 @@ namespace SimpleFileBrowser
 			upButton.image.sprite = m_skin.HeaderUpButton;
 			moreOptionsButton.image.sprite = m_skin.HeaderContextMenuButton;
 
-			Image windowResizeGizmo = resizeCursorHandler.GetComponent<Image>();
-			windowResizeGizmo.color = m_skin.WindowResizeGizmoColor;
-			windowResizeGizmo.sprite = m_skin.WindowResizeGizmo;
+			if( resizeCursorHandler )
+			{
+				Image windowResizeGizmo = resizeCursorHandler.GetComponent<Image>();
+				windowResizeGizmo.color = m_skin.WindowResizeGizmoColor;
+				windowResizeGizmo.sprite = m_skin.WindowResizeGizmo;
+			}
 
 			m_skin.ApplyTo( filenameInputField );
 			m_skin.ApplyTo( pathInputField );

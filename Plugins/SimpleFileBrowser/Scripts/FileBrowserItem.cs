@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
@@ -29,7 +29,7 @@ namespace SimpleFileBrowser
 		private Image multiSelectionToggle;
 
 		[SerializeField]
-		private Text nameText;
+		private TMPro.TMP_Text nameText;
 #pragma warning restore 0649
 
 #pragma warning disable 0414

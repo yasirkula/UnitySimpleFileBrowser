@@ -1,4 +1,4 @@
-﻿//#define WIN_DIR_CHECK_WITHOUT_TIMEOUT // When uncommented, Directory.Exists won't be wrapped inside a Task/Thread on Windows but we won't be able to set a timeout for unreachable directories/drives
+//#define WIN_DIR_CHECK_WITHOUT_TIMEOUT // When uncommented, Directory.Exists won't be wrapped inside a Task/Thread on Windows but we won't be able to set a timeout for unreachable directories/drives
 
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using TMPro;
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
 using UnityEngine.InputSystem;
 #endif
@@ -437,7 +438,7 @@ namespace SimpleFileBrowser
 		private readonly List<FileBrowserQuickLink> allQuickLinks = new List<FileBrowserQuickLink>( 8 );
 
 		[SerializeField]
-		private Text titleText;
+		private TMPro.TMP_Text titleText;
 
 		[SerializeField]
 		private Button backButton;
@@ -452,7 +453,7 @@ namespace SimpleFileBrowser
 		private Button moreOptionsButton;
 
 		[SerializeField]
-		private InputField pathInputField;
+		private TMPro.TMP_InputField pathInputField;
 
 		[SerializeField]
 		private RectTransform pathInputFieldSlotTop;
@@ -461,7 +462,7 @@ namespace SimpleFileBrowser
 		private RectTransform pathInputFieldSlotBottom;
 
 		[SerializeField]
-		private InputField searchInputField;
+		private TMPro.TMP_InputField searchInputField;
 
 		[SerializeField]
 		private RectTransform quickLinksContainer;
@@ -479,28 +480,28 @@ namespace SimpleFileBrowser
 		private RecycledListView listView;
 
 		[SerializeField]
-		private InputField filenameInputField;
+		private TMPro.TMP_InputField filenameInputField;
 
 		[SerializeField]
-		private Text filenameInputFieldOverlayText;
+		private TMPro.TMP_Text filenameInputFieldOverlayText;
 
 		[SerializeField]
 		private Image filenameImage;
 
 		[SerializeField]
-		private Dropdown filtersDropdown;
+		private TMPro.TMP_Dropdown filtersDropdown;
 
 		[SerializeField]
 		private RectTransform filtersDropdownContainer;
 
 		[SerializeField]
-		private Text filterItemTemplate;
+		private TMPro.TMP_Text filterItemTemplate;
 
 		[SerializeField]
 		private Toggle showHiddenFilesToggle;
 
 		[SerializeField]
-		private Text submitButtonText;
+		private TMPro.TMP_Text submitButtonText;
 
 		[SerializeField]
 		private Button[] allButtons;
@@ -739,7 +740,7 @@ namespace SimpleFileBrowser
 
 				filtersDropdown.RefreshShownValue();
 
-				Text placeholder = filenameInputField.placeholder as Text;
+				TMPro.TMP_Text placeholder = filenameInputField.placeholder as TMPro.TMP_Text;
 				if( placeholder )
 					placeholder.gameObject.SetActive( m_pickerMode != PickMode.Folders );
 			}
@@ -2725,23 +2726,29 @@ namespace SimpleFileBrowser
 			return !isWhitespace;
 		}
 
-		// Credit: http://answers.unity3d.com/questions/898770/how-to-get-the-width-of-ui-text-with-horizontal-ov.html
-		private int CalculateLengthOfDropdownText( string str )
+		// Unity.UI.Text Credit: http://answers.unity3d.com/questions/898770/how-to-get-the-width-of-ui-text-with-horizontal-ov.html
+		// TMPro.Text Credit: https://forum.unity.com/threads/calculate-width-of-a-text-before-without-assigning-it-to-a-tmp-object.758867/#post-5057900
+		private int CalculateLengthOfDropdownText(string str)
 		{
-			Font font = filterItemTemplate.font;
-			font.RequestCharactersInTexture( str, filterItemTemplate.fontSize, filterItemTemplate.fontStyle );
+			float totalLength = 0;
 
-			int totalLength = 0;
-			for( int i = 0; i < str.Length; i++ )
+			TMPro.TMP_FontAsset myFont = filterItemTemplate.font;
+
+			float pointSizeScale = filterItemTemplate.fontSize / (myFont.faceInfo.pointSize * myFont.faceInfo.scale);
+			float emScale = filterItemTemplate.fontSize * 0.01f;
+
+			float styleSpacingAdjustment = (filterItemTemplate.fontStyle & TMPro.FontStyles.Bold) == TMPro.FontStyles.Bold ? myFont.boldSpacing : 0;
+			float normalSpacingAdjustment = myFont.normalSpacingOffset;
+
+			for (int i = 0; i < str.Length; i++)
 			{
-				CharacterInfo characterInfo;
-				if( !font.GetCharacterInfo( str[i], out characterInfo, filterItemTemplate.fontSize ) )
+				if (filterItemTemplate.font.characterLookupTable.TryGetValue(str[i], out var character))
+					totalLength += character.glyph.metrics.horizontalAdvance * pointSizeScale + (styleSpacingAdjustment + normalSpacingAdjustment) * emScale;
+				else
 					totalLength += 5;
-
-				totalLength += characterInfo.advance;
 			}
 
-			return totalLength;
+			return (int)totalLength + 10;
 		}
 
 		private string GetInitialPath( string initialPath )

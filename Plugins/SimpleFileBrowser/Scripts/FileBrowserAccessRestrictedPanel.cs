@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
@@ -11,7 +11,7 @@ namespace SimpleFileBrowser
 	{
 #pragma warning disable 0649
 		[SerializeField]
-		private Text messageLabel;
+		private TMPro.TMP_Text messageLabel;
 
 		[SerializeField]
 		private Button okButton;

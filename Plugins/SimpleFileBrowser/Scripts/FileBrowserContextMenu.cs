@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace SimpleFileBrowser
@@ -27,7 +27,7 @@ namespace SimpleFileBrowser
 		private GameObject selectAllButtonSeparator;
 
 		[SerializeField]
-		private Text[] allButtonTexts;
+		private TMPro.TMP_Text[] allButtonTexts;
 		[SerializeField]
 		private Image[] allButtonSeparators;
 

@@ -108,13 +108,21 @@ public class FileBrowser
 		}
 
 		// This is the only working method on some Android 11+ devices (when Storage Access Framework isn't used)
-		if( android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N )
+		if( android.os.Build.VERSION.SDK_INT >= 30 )
+		{
+			for( StorageVolume volume : ( (StorageManager) context.getSystemService( Context.STORAGE_SERVICE ) ).getStorageVolumes() )
+			{
+				File volumeDirectory = volume.getDirectory();
+				if( volumeDirectory != null )
+					potentialDrives.add( volumeDirectory.toString() );
+			}
+		}
+		else if( android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N )
 		{
 			try
 			{
 				Method getPath = StorageVolume.class.getMethod( "getPath" );
-				StorageManager storageManager = (StorageManager) context.getSystemService( Context.STORAGE_SERVICE );
-				for( StorageVolume volume : storageManager.getStorageVolumes() )
+				for( StorageVolume volume : ( (StorageManager) context.getSystemService( Context.STORAGE_SERVICE ) ).getStorageVolumes() )
 					potentialDrives.add( (String) getPath.invoke( volume ) );
 			}
 			catch( Exception e )

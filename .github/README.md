@@ -56,6 +56,10 @@ This is a known issue but I can't give an ETA for a solution at the moment: http
 
 File browser uses *Storage Access Framework* on these Android versions and users must first click the *Browse...* button in the quick links section
 
+- **File browser doesn't show any files on Oculus Quest**
+
+Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/87
+
 - **File browser doesn't show any files on Unity 2021.3.x**
 
 Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/70

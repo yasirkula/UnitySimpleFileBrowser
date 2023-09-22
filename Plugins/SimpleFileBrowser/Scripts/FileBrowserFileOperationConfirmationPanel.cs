@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
@@ -15,7 +15,7 @@ namespace SimpleFileBrowser
 
 #pragma warning disable 0649
 		[SerializeField]
-		private Text[] titleLabels;
+		private TMPro.TMP_Text[] titleLabels;
 
 		[SerializeField]
 		private GameObject[] targetItems;
@@ -24,13 +24,13 @@ namespace SimpleFileBrowser
 		private Image[] targetItemIcons;
 
 		[SerializeField]
-		private Text[] targetItemNames;
+		private TMPro.TMP_Text[] targetItemNames;
 
 		[SerializeField]
 		private GameObject targetItemsRest;
 
 		[SerializeField]
-		private Text targetItemsRestLabel;
+		private TMPro.TMP_Text targetItemsRestLabel;
 
 		[SerializeField]
 		private RectTransform yesButtonTransform;

@@ -3,15 +3,16 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66bc3ce4885990c40a88f80fe0ad0101, type: 3}
   m_Name: DarkSkin
   m_EditorClassIdentifier: 
-  m_font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
+  m_font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_fontSize: 14
   m_windowColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_filesListColor: {r: 0.15686275, g: 0.15686275, b: 0.15686275, a: 1}
@@ -20,24 +21,18 @@ MonoBehaviour:
   m_titleTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_windowResizeGizmoColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_headerButtonsColor: {r: 1, g: 1, b: 1, a: 1}
-  m_windowResizeGizmo: {fileID: 21300000, guid: 285f1e681b119ce48ae469448241360b,
-    type: 3}
+  m_windowResizeGizmo: {fileID: 21300000, guid: 285f1e681b119ce48ae469448241360b, type: 3}
   m_headerBackButton: {fileID: 21300000, guid: 130f660889a70c947bff4c8ba8a2c73e, type: 3}
-  m_headerForwardButton: {fileID: 21300000, guid: 130f660889a70c947bff4c8ba8a2c73e,
-    type: 3}
+  m_headerForwardButton: {fileID: 21300000, guid: 130f660889a70c947bff4c8ba8a2c73e, type: 3}
   m_headerUpButton: {fileID: 21300000, guid: 130f660889a70c947bff4c8ba8a2c73e, type: 3}
-  m_headerContextMenuButton: {fileID: 21300000, guid: 3eb0ab0fddc930a498bef8ce7e149ea0,
-    type: 3}
-  m_inputFieldNormalBackgroundColor: {r: 0.18039216, g: 0.18039216, b: 0.18039216,
-    a: 1}
-  m_inputFieldInvalidBackgroundColor: {r: 0.4392157, g: 0.12156863, b: 0.12156863,
-    a: 1}
+  m_headerContextMenuButton: {fileID: 21300000, guid: 3eb0ab0fddc930a498bef8ce7e149ea0, type: 3}
+  m_inputFieldNormalBackgroundColor: {r: 0.18039216, g: 0.18039216, b: 0.18039216, a: 1}
+  m_inputFieldInvalidBackgroundColor: {r: 0.4392157, g: 0.12156863, b: 0.12156863, a: 1}
   m_inputFieldTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_inputFieldPlaceholderTextColor: {r: 1, g: 1, b: 1, a: 0.6509804}
   m_inputFieldSelectedTextColor: {r: 0.13725491, g: 0.46666667, b: 0.69411767, a: 0.5019608}
   m_inputFieldCaretColor: {r: 1, g: 1, b: 1, a: 1}
-  m_inputFieldBackground: {fileID: 21300000, guid: f668f62689b67d242ad33ff665594344,
-    type: 3}
+  m_inputFieldBackground: {fileID: 21300000, guid: f668f62689b67d242ad33ff665594344, type: 3}
   m_buttonColor: {r: 0.18039216, g: 0.18039216, b: 0.18039216, a: 1}
   m_buttonTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_buttonBackground: {fileID: 21300000, guid: 2c46fa192de46b04e8281f225bee0230, type: 3}
@@ -45,11 +40,9 @@ MonoBehaviour:
   m_dropdownTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_dropdownArrowColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_dropdownCheckmarkColor: {r: 1, g: 1, b: 1, a: 0.87058824}
-  m_dropdownBackground: {fileID: 21300000, guid: 2c46fa192de46b04e8281f225bee0230,
-    type: 3}
+  m_dropdownBackground: {fileID: 21300000, guid: 2c46fa192de46b04e8281f225bee0230, type: 3}
   m_dropdownArrow: {fileID: 21300000, guid: f73f38102c749484bbd884d4d8d87440, type: 3}
-  m_dropdownCheckmark: {fileID: 21300000, guid: 4924b77159e651e4aaa9a22286725d94,
-    type: 3}
+  m_dropdownCheckmark: {fileID: 21300000, guid: 4924b77159e651e4aaa9a22286725d94, type: 3}
   m_toggleColor: {r: 0.18039216, g: 0.18039216, b: 0.18039216, a: 1}
   m_toggleTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_toggleCheckmarkColor: {r: 1, g: 1, b: 1, a: 0.87058824}
@@ -137,14 +130,11 @@ MonoBehaviour:
     icon: {fileID: 21300000, guid: 3b2a773e413d3e84f8c7c757734af584, type: 3}
   - extension: .exe
     icon: {fileID: 21300000, guid: c1e1f7ef76f59f54bbde5162f2709794, type: 3}
-  m_fileMultiSelectionToggleOffIcon: {fileID: 21300000, guid: d6beaeac8de2af749a48581db778df3e,
-    type: 3}
-  m_fileMultiSelectionToggleOnIcon: {fileID: 21300000, guid: 30a2566f94f937b4998542121050e68b,
-    type: 3}
+  m_fileMultiSelectionToggleOffIcon: {fileID: 21300000, guid: d6beaeac8de2af749a48581db778df3e, type: 3}
+  m_fileMultiSelectionToggleOnIcon: {fileID: 21300000, guid: 30a2566f94f937b4998542121050e68b, type: 3}
   m_contextMenuBackgroundColor: {r: 0.11372549, g: 0.11372549, b: 0.11372549, a: 1}
   m_contextMenuTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
   m_contextMenuSeparatorColor: {r: 0.6392157, g: 0.6392157, b: 0.6392157, a: 1}
   m_popupPanelsBackgroundColor: {r: 0.18039216, g: 0.18039216, b: 0.18039216, a: 1}
   m_popupPanelsTextColor: {r: 1, g: 1, b: 1, a: 0.87058824}
-  m_popupPanelsBackground: {fileID: 21300000, guid: b9c5fedc997f125448c4d8be2fc43bcd,
-    type: 3}
+  m_popupPanelsBackground: {fileID: 21300000, guid: b9c5fedc997f125448c4d8be2fc43bcd, type: 3}

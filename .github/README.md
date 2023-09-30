@@ -37,15 +37,6 @@ There are 5 ways to install this plugin:
 - *(via [OpenUPM](https://openupm.com))* after installing [openupm-cli](https://github.com/openupm/openupm-cli), run the following command:
   - `openupm add com.yasirkula.simplefilebrowser`
 
-### NEW INPUT SYSTEM SUPPORT
-
-This plugin supports Unity's new Input System but it requires some manual modifications (if both the legacy and the new input systems are active at the same time, no changes are needed):
-
-- the plugin mustn't be installed as a package, i.e. it must reside inside the *Assets* folder and not the *Packages* folder (it can reside inside a subfolder of Assets like *Assets/Plugins*)
-- if Unity 2019.2.5 or earlier is used, add `ENABLE_INPUT_SYSTEM` compiler directive to **Player Settings/Scripting Define Symbols** (these symbols are platform specific, so if you change the active platform later, you'll have to add the compiler directive again)
-- add `Unity.InputSystem` assembly to **SimpleFileBrowser.Runtime** Assembly Definition File's *Assembly Definition References* list
-- open *SimpleFileBrowserCanvas* prefab, select *EventSystem* child object and replace *StandaloneInputModule* component with *InputSystemUIInputModule* component (or, if your scene(s) already have EventSystem objects, you can delete SimpleFileBrowserCanvas prefab's EventSystem child object)
-
 ## FAQ
 
 - **File browser doesn't show any files on Mac when sandboxing is enabled**
@@ -54,7 +45,7 @@ This is a known issue but I can't give an ETA for a solution at the moment: http
 
 - **File browser doesn't show any files on Android 10+**
 
-File browser uses *Storage Access Framework* on these Android versions and users must first click the *Browse...* button in the quick links section
+File browser uses *Storage Access Framework* on these Android versions and users must first click the *Browse...* button in the quick links section.
 
 - **File browser doesn't show any files on Oculus Quest**
 
@@ -63,6 +54,14 @@ Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/87
 - **File browser doesn't show any files on Unity 2021.3.x**
 
 Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/70
+
+- **New Input System isn't supported on Unity 2019.2.5 or earlier**
+
+Add `ENABLE_INPUT_SYSTEM` compiler directive to **Player Settings/Scripting Define Symbols** (these symbols are platform specific, so if you change the active platform later, you'll have to add the compiler directive again).
+
+- **"Unity.InputSystem" assembly can't be resolved on Unity 2018.4 or earlier**
+
+Remove `Unity.InputSystem` assembly from **SimpleFileBrowser.Runtime** Assembly Definition File's *Assembly Definition References* list.
 
 - **Android build fails, it says "error: attribute android:requestLegacyExternalStorage not found" in Console**
 

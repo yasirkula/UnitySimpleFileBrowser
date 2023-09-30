@@ -13,6 +13,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
   m_fontSize: 14
+  m_rowHeight: 30
+  m_rowSpacing: 8
   m_windowColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_filesListColor: {r: 0.15686275, g: 0.15686275, b: 0.15686275, a: 1}
   m_filesVerticalSeparatorColor: {r: 0.334, g: 0.334, b: 0.334, a: 1}

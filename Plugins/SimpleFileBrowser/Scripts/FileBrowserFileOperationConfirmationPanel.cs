@@ -15,6 +15,9 @@ namespace SimpleFileBrowser
 
 #pragma warning disable 0649
 		[SerializeField]
+		private VerticalLayoutGroup contentLayoutGroup;
+
+		[SerializeField]
 		private Text[] titleLabels;
 
 		[SerializeField]
@@ -123,9 +126,15 @@ namespace SimpleFileBrowser
 
 		internal void RefreshSkin( UISkin skin )
 		{
+			contentLayoutGroup.spacing = skin.RowSpacing;
+			contentLayoutGroup.padding.bottom = 22 + (int) ( skin.RowSpacing + skin.RowHeight );
+
 			Image background = GetComponentInChildren<Image>();
 			background.color = skin.PopupPanelsBackgroundColor;
 			background.sprite = skin.PopupPanelsBackground;
+
+			RectTransform buttonsParent = (RectTransform) yesButtonTransform.parent;
+			buttonsParent.sizeDelta = new Vector2( buttonsParent.sizeDelta.x, skin.RowHeight );
 
 			skin.ApplyTo( yesButtonTransform.GetComponent<Button>() );
 			skin.ApplyTo( noButtonTransform.GetComponent<Button>() );

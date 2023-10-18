@@ -49,7 +49,7 @@ File browser uses *Storage Access Framework* on these Android versions and users
 
 - **File browser doesn't show any files on Oculus Quest**
 
-Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/87
+Please see: https://github.com/yasirkula/UnitySimpleFileBrowser/issues/87 and https://github.com/yasirkula/UnitySimpleFileBrowser/issues/89
 
 - **File browser doesn't show any files on Unity 2021.3.x**
 

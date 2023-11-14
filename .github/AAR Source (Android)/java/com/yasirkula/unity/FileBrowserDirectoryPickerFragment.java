@@ -86,6 +86,6 @@ public class FileBrowserDirectoryPickerFragment extends Fragment
 		if( directoryReceiver != null )
 			directoryReceiver.OnDirectoryPicked( rawUri, name );
 
-		getFragmentManager().beginTransaction().remove( this ).commit();
+		getFragmentManager().beginTransaction().remove( this ).commitAllowingStateLoss();
 	}
 }

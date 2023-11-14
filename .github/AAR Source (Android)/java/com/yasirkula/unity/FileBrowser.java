@@ -185,7 +185,7 @@ public class FileBrowser
 		}
 
 		final Fragment request = new FileBrowserPermissionFragment( permissionReceiver );
-		( (Activity) context ).getFragmentManager().beginTransaction().add( 0, request ).commit();
+		( (Activity) context ).getFragmentManager().beginTransaction().add( 0, request ).commitAllowingStateLoss();
 	}
 
 	// Returns whether or not Storage Access Framework (SAF) should be used
@@ -199,7 +199,7 @@ public class FileBrowser
 	public static void PickSAFFolder( Context context, final FileBrowserDirectoryReceiver directoryReceiver )
 	{
 		final Fragment request = new FileBrowserDirectoryPickerFragment( directoryReceiver );
-		( (Activity) context ).getFragmentManager().beginTransaction().add( 0, request ).commit();
+		( (Activity) context ).getFragmentManager().beginTransaction().add( 0, request ).commitAllowingStateLoss();
 	}
 
 	// Retrieves the previously picked Storage Access Framework (SAF) folder uris

@@ -20,6 +20,11 @@ namespace SimpleFileBrowser
 		private Button okButton;
 #pragma warning restore 0649
 
+		private void Awake()
+		{
+			okButton.onClick.AddListener( OKButtonClicked );
+		}
+
 		internal void Show()
 		{
 			gameObject.SetActive( true );
@@ -58,7 +63,7 @@ namespace SimpleFileBrowser
 			skin.ApplyTo( messageLabel, skin.PopupPanelsTextColor );
 		}
 
-		public void OKButtonClicked()
+		private void OKButtonClicked()
 		{
 			gameObject.SetActive( false );
 		}

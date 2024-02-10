@@ -37,6 +37,11 @@ namespace SimpleFileBrowser
 			}
 		}
 
+		private void Awake()
+		{
+			nameInputField.onEndEdit.AddListener( OnInputFieldEndEdit );
+		}
+
 		public void Show( string initialFilename, Color backgroundColor, Sprite icon, OnRenameCompleted onRenameCompleted )
 		{
 			background.color = backgroundColor;
@@ -63,7 +68,7 @@ namespace SimpleFileBrowser
 		}
 #endif
 
-		public void OnInputFieldEndEdit( string filename )
+		private void OnInputFieldEndEdit( string filename )
 		{
 			gameObject.SetActive( false );
 

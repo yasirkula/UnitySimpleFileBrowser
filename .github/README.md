@@ -254,8 +254,10 @@ public class FileBrowserTest : MonoBehaviour
 		// Path: C:\Users
 		// Icon: default (folder icon)
 		FileBrowser.AddQuickLink( "Users", "C:\\Users", null );
+		
+		// !!! Uncomment any of the examples below to show the file browser !!!
 
-		// Show a save file dialog 
+		// Example 1: Show a save file dialog using callback approach
 		// onSuccess event: not registered (which means this dialog is pretty useless)
 		// onCancel event: not registered
 		// Save file/folder: file, Allow multiple selection: false
@@ -263,7 +265,7 @@ public class FileBrowserTest : MonoBehaviour
 		// Title: "Save As", Submit button text: "Save"
 		// FileBrowser.ShowSaveDialog( null, null, FileBrowser.PickMode.Files, false, "C:\\", "Screenshot.png", "Save As", "Save" );
 
-		// Show a select folder dialog 
+		// Example 2: Show a select folder dialog using callback approach
 		// onSuccess event: print the selected folder's path
 		// onCancel event: print "Canceled"
 		// Load file/folder: folder, Allow multiple selection: false
@@ -273,36 +275,42 @@ public class FileBrowserTest : MonoBehaviour
 		//						   () => { Debug.Log( "Canceled" ); },
 		//						   FileBrowser.PickMode.Folders, false, null, null, "Select Folder", "Select" );
 
-		// Coroutine example
-		StartCoroutine( ShowLoadDialogCoroutine() );
+		// Example 3: Show a select file dialog using coroutine approach
+		// StartCoroutine( ShowLoadDialogCoroutine() );
 	}
 
 	IEnumerator ShowLoadDialogCoroutine()
 	{
 		// Show a load file dialog and wait for a response from user
-		// Load file/folder: both, Allow multiple selection: true
+		// Load file/folder: file, Allow multiple selection: true
 		// Initial path: default (Documents), Initial filename: empty
 		// Title: "Load File", Submit button text: "Load"
-		yield return FileBrowser.WaitForLoadDialog( FileBrowser.PickMode.FilesAndFolders, true, null, null, "Load Files and Folders", "Load" );
+		yield return FileBrowser.WaitForLoadDialog( FileBrowser.PickMode.Files, true, null, null, "Select Files", "Load" );
 
 		// Dialog is closed
-		// Print whether the user has selected some files/folders or cancelled the operation (FileBrowser.Success)
+		// Print whether the user has selected some files or cancelled the operation (FileBrowser.Success)
 		Debug.Log( FileBrowser.Success );
 
 		if( FileBrowser.Success )
-		{
-			// Print paths of the selected files (FileBrowser.Result) (null, if FileBrowser.Success is false)
-			for( int i = 0; i < FileBrowser.Result.Length; i++ )
-				Debug.Log( FileBrowser.Result[i] );
+			OnFilesSelected( FileBrowser.Result ); // FileBrowser.Result is null, if FileBrowser.Success is false
+	}
+	
+	void OnFilesSelected( string[] filePaths )
+	{
+		// Print paths of the selected files
+		for( int i = 0; i < filePaths.Length; i++ )
+			Debug.Log( filePaths[i] );
 
-			// Read the bytes of the first file via FileBrowserHelpers
-			// Contrary to File.ReadAllBytes, this function works on Android 10+, as well
-			byte[] bytes = FileBrowserHelpers.ReadBytesFromFile( FileBrowser.Result[0] );
+		// Get the file path of the first selected file
+		string filePath = filePaths[0];
 
-			// Or, copy the first file to persistentDataPath
-			string destinationPath = Path.Combine( Application.persistentDataPath, FileBrowserHelpers.GetFilename( FileBrowser.Result[0] ) );
-			FileBrowserHelpers.CopyFile( FileBrowser.Result[0], destinationPath );
-		}
+		// Read the bytes of the first file via FileBrowserHelpers
+		// Contrary to File.ReadAllBytes, this function works on Android 10+, as well
+		byte[] bytes = FileBrowserHelpers.ReadBytesFromFile( filePath );
+
+		// Or, copy the first file to persistentDataPath
+		string destinationPath = Path.Combine( Application.persistentDataPath, FileBrowserHelpers.GetFilename( filePath ) );
+		FileBrowserHelpers.CopyFile( filePath, destinationPath );
 	}
 }
 ```

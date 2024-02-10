@@ -36,16 +36,22 @@ namespace SimpleFileBrowser
 		private Text targetItemsRestLabel;
 
 		[SerializeField]
-		private RectTransform yesButtonTransform;
+		private Button yesButton;
 
 		[SerializeField]
-		private RectTransform noButtonTransform;
+		private Button noButton;
 
 		[SerializeField]
 		private float narrowScreenWidth = 380f;
 #pragma warning restore 0649
 
 		private OnOperationConfirmed onOperationConfirmed;
+
+		private void Awake()
+		{
+			yesButton.onClick.AddListener( OnYesButtonClicked );
+			noButton.onClick.AddListener( OnNoButtonClicked );
+		}
 
 		internal void Show( FileBrowser fileBrowser, List<FileSystemEntry> items, OperationType operationType, OnOperationConfirmed onOperationConfirmed )
 		{
@@ -87,15 +93,15 @@ namespace SimpleFileBrowser
 		{
 			if( size.x >= narrowScreenWidth )
 			{
-				yesButtonTransform.anchorMin = new Vector2( 0.5f, 0f );
-				yesButtonTransform.anchorMax = new Vector2( 0.75f, 1f );
-				noButtonTransform.anchorMin = new Vector2( 0.75f, 0f );
+				( yesButton.transform as RectTransform ).anchorMin = new Vector2( 0.5f, 0f );
+				( yesButton.transform as RectTransform ).anchorMax = new Vector2( 0.75f, 1f );
+				( noButton.transform as RectTransform ).anchorMin = new Vector2( 0.75f, 0f );
 			}
 			else
 			{
-				yesButtonTransform.anchorMin = Vector2.zero;
-				yesButtonTransform.anchorMax = new Vector2( 0.5f, 1f );
-				noButtonTransform.anchorMin = new Vector2( 0.5f, 0f );
+				( yesButton.transform as RectTransform ).anchorMin = Vector2.zero;
+				( yesButton.transform as RectTransform ).anchorMax = new Vector2( 0.5f, 1f );
+				( noButton.transform as RectTransform ).anchorMin = new Vector2( 0.5f, 0f );
 			}
 		}
 
@@ -112,14 +118,14 @@ namespace SimpleFileBrowser
 #else
 				if( Input.GetKeyDown( KeyCode.Return ) || Input.GetKeyDown( KeyCode.KeypadEnter ) )
 #endif
-					YesButtonClicked();
+					OnYesButtonClicked();
 
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
 				if( Keyboard.current[Key.Escape].wasPressedThisFrame )
 #else
 				if( Input.GetKeyDown( KeyCode.Escape ) )
 #endif
-					NoButtonClicked();
+					OnNoButtonClicked();
 			}
 		}
 #endif
@@ -133,11 +139,11 @@ namespace SimpleFileBrowser
 			background.color = skin.PopupPanelsBackgroundColor;
 			background.sprite = skin.PopupPanelsBackground;
 
-			RectTransform buttonsParent = (RectTransform) yesButtonTransform.parent;
+			RectTransform buttonsParent = yesButton.transform.parent as RectTransform;
 			buttonsParent.sizeDelta = new Vector2( buttonsParent.sizeDelta.x, skin.RowHeight );
 
-			skin.ApplyTo( yesButtonTransform.GetComponent<Button>() );
-			skin.ApplyTo( noButtonTransform.GetComponent<Button>() );
+			skin.ApplyTo( yesButton );
+			skin.ApplyTo( noButton );
 
 			for( int i = 0; i < titleLabels.Length; i++ )
 				skin.ApplyTo( titleLabels[i], skin.PopupPanelsTextColor );
@@ -151,7 +157,7 @@ namespace SimpleFileBrowser
 				targetItems[i].GetComponent<LayoutElement>().preferredHeight = skin.FileHeight;
 		}
 
-		public void YesButtonClicked()
+		private void OnYesButtonClicked()
 		{
 			gameObject.SetActive( false );
 
@@ -159,7 +165,7 @@ namespace SimpleFileBrowser
 				onOperationConfirmed();
 		}
 
-		public void NoButtonClicked()
+		private void OnNoButtonClicked()
 		{
 			gameObject.SetActive( false );
 			onOperationConfirmed = null;

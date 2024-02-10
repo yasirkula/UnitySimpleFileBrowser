@@ -502,7 +502,13 @@ namespace SimpleFileBrowser
 		private Toggle showHiddenFilesToggle;
 
 		[SerializeField]
+		private Button submitButton;
+
+		[SerializeField]
 		private Text submitButtonText;
+
+		[SerializeField]
+		private Button cancelButton;
 
 		[SerializeField]
 		private Button[] allButtons;
@@ -842,8 +848,18 @@ namespace SimpleFileBrowser
 			forwardButton.interactable = false;
 			upButton.interactable = false;
 
+			backButton.onClick.AddListener( OnBackButtonClicked );
+			forwardButton.onClick.AddListener( OnForwardButtonClicked );
+			upButton.onClick.AddListener( OnUpButtonClicked );
+			moreOptionsButton.onClick.AddListener( OnMoreOptionsButtonClicked );
+			submitButton.onClick.AddListener( OnSubmitButtonClicked );
+			cancelButton.onClick.AddListener( OnCancelButtonClicked );
+			pathInputField.onEndEdit.AddListener( OnPathChanged );
+			searchInputField.onValueChanged.AddListener( OnSearchStringChanged );
 			filenameInputField.onValidateInput += OnValidateFilenameInput;
 			filenameInputField.onValueChanged.AddListener( OnFilenameInputChanged );
+			filtersDropdown.onValueChanged.AddListener( OnFilterChanged );
+			showHiddenFilesToggle.onValueChanged.AddListener( OnShowHiddenFilesToggleChanged );
 
 			allFilesFilter = new Filter( AllFilesFilterText );
 			filters.Add( allFilesFilter );
@@ -1321,19 +1337,19 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Button Events
-		public void OnBackButtonPressed()
+		private void OnBackButtonClicked()
 		{
 			if( currentPathIndex > 0 )
 				CurrentPath = pathsFollowed[--currentPathIndex];
 		}
 
-		public void OnForwardButtonPressed()
+		private void OnForwardButtonClicked()
 		{
 			if( currentPathIndex < pathsFollowed.Count - 1 )
 				CurrentPath = pathsFollowed[++currentPathIndex];
 		}
 
-		public void OnUpButtonPressed()
+		private void OnUpButtonClicked()
 		{
 #if !UNITY_EDITOR && UNITY_ANDROID
 			if( FileBrowserHelpers.ShouldUseSAF )
@@ -1357,7 +1373,7 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		public void OnMoreOptionsButtonClicked()
+		private void OnMoreOptionsButtonClicked()
 		{
 			ShowContextMenuAt( rectTransform.InverseTransformPoint( moreOptionsContextMenuPosition.position ), true );
 		}
@@ -1399,7 +1415,7 @@ namespace SimpleFileBrowser
 			contextMenu.Show( selectAllButtonVisible, deselectAllButtonVisible, deleteButtonVisible, renameButtonVisible, position, isMoreOptionsMenu );
 		}
 
-		public void OnSubmitButtonClicked()
+		private void OnSubmitButtonClicked()
 		{
 			string[] result = null;
 			string filenameInput = filenameInputField.text.Trim();
@@ -1654,7 +1670,7 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		public void OnCancelButtonClicked()
+		private void OnCancelButtonClicked()
 		{
 			OnOperationCanceled( true );
 		}
@@ -1697,7 +1713,7 @@ namespace SimpleFileBrowser
 				_onCancel();
 		}
 
-		public void OnPathChanged( string newPath )
+		private void OnPathChanged( string newPath )
 		{
 			// Fixes harmless NullReferenceException that occurs when Play button is clicked while SimpleFileBrowserCanvas prefab is open in prefab mode
 			// https://github.com/yasirkula/UnitySimpleFileBrowser/issues/30
@@ -1707,7 +1723,7 @@ namespace SimpleFileBrowser
 			CurrentPath = newPath;
 		}
 
-		public void OnSearchStringChanged( string newSearchString )
+		private void OnSearchStringChanged( string newSearchString )
 		{
 			if( !canvas ) // Same as OnPathChanged
 				return;
@@ -1716,17 +1732,17 @@ namespace SimpleFileBrowser
 			SearchString = newSearchString;
 		}
 
-		public void OnFilterChanged()
+		private void OnFilterChanged( int value )
 		{
 			if( !canvas ) // Same as OnPathChanged
 				return;
 
 			bool extensionsSingleSuffixModeChanged = false;
 
-			if( filters != null && filtersDropdown.value < filters.Count )
+			if( filters != null && value < filters.Count )
 			{
 				bool allExtensionsHadSingleSuffix = AllExtensionsHaveSingleSuffix;
-				allFiltersHaveSingleSuffix = filters[filtersDropdown.value].allExtensionsHaveSingleSuffix;
+				allFiltersHaveSingleSuffix = filters[value].allExtensionsHaveSingleSuffix;
 				extensionsSingleSuffixModeChanged = ( AllExtensionsHaveSingleSuffix != allExtensionsHadSingleSuffix );
 			}
 
@@ -1734,7 +1750,7 @@ namespace SimpleFileBrowser
 			RefreshFiles( extensionsSingleSuffixModeChanged );
 		}
 
-		public void OnShowHiddenFilesToggleChanged()
+		private void OnShowHiddenFilesToggleChanged( bool value )
 		{
 			if( !canvas ) // Same as OnPathChanged
 				return;

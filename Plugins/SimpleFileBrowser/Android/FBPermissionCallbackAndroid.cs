@@ -15,6 +15,7 @@ namespace SimpleFileBrowser
 			this.threadLock = threadLock;
 		}
 
+		[UnityEngine.Scripting.Preserve]
 		public void OnPermissionResult( int result )
 		{
 			Result = result;

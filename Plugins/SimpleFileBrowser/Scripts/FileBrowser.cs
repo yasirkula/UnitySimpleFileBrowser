@@ -1070,7 +1070,7 @@ namespace SimpleFileBrowser
 				AddQuickLink( m_skin.DriveIcon, "Files", Application.persistentDataPath );
 #endif
 
-#if UNITY_STANDALONE_OSX
+#if UNITY_EDITOR_OSX || ( !UNITY_EDITOR && UNITY_STANDALONE_OSX )
 				// Add a quick link for user directory on Mac OS
 				string userDirectory = Environment.GetFolderPath( Environment.SpecialFolder.MyDocuments );
 				if( !string.IsNullOrEmpty( userDirectory ) )
@@ -1083,7 +1083,7 @@ namespace SimpleFileBrowser
 			{
 				QuickLink quickLink = quickLinks[i];
 				string quickLinkPath = Environment.GetFolderPath( quickLink.target );
-#if UNITY_STANDALONE_OSX
+#if UNITY_EDITOR_OSX || ( !UNITY_EDITOR && UNITY_STANDALONE_OSX )
 				// Documents folder must be appended manually on Mac OS
 				if( quickLink.target == Environment.SpecialFolder.MyDocuments && !string.IsNullOrEmpty( quickLinkPath ) )
 					quickLinkPath = Path.Combine( quickLinkPath, "Documents" );
@@ -1198,7 +1198,7 @@ namespace SimpleFileBrowser
 				if( string.IsNullOrEmpty( drives[i] ) )
 					continue;
 
-#if UNITY_STANDALONE_OSX
+#if UNITY_EDITOR_OSX || ( !UNITY_EDITOR && UNITY_STANDALONE_OSX )
 				// There are a number of useless drives listed on Mac OS, filter them
 				if( drives[i] == "/" )
 				{

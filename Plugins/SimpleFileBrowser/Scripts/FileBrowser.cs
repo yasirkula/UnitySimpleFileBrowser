@@ -2030,7 +2030,7 @@ namespace SimpleFileBrowser
 			var maxRenderOrder =  FindObjectsOfType<Canvas>()
 				.Where(canvas=>this.canvas!=canvas)
 				.Max(c => c.sortingOrder);
-            		canvas.sortingOrder = maxRenderOrder + 1;
+            		canvas.sortingOrder = maxRenderOrder + 2016;
 
 			CurrentPath = GetInitialPath( initialPath );
 

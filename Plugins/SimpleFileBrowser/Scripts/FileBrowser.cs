@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Linq;
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
 using UnityEngine.InputSystem;
 #endif
@@ -2025,6 +2026,11 @@ namespace SimpleFileBrowser
 			Result = null;
 
 			gameObject.SetActive( true );
+			// Canvas Renderorder fix
+			var maxRenderOrder =  FindObjectsOfType<Canvas>()
+				.Where(canvas=>this.canvas!=canvas)
+				.Max(c => c.sortingOrder);
+            		canvas.sortingOrder = maxRenderOrder + 1;
 
 			CurrentPath = GetInitialPath( initialPath );
 

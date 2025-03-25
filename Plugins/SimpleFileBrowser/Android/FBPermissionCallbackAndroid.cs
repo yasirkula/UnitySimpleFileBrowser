@@ -1,29 +1,23 @@
 ﻿#if UNITY_EDITOR || UNITY_ANDROID
-using System.Threading;
 using UnityEngine;
 
 namespace SimpleFileBrowser
 {
 	public class FBPermissionCallbackAndroid : AndroidJavaProxy
 	{
-		private object threadLock;
-		public int Result { get; private set; }
+		private readonly FileBrowser.PermissionCallback callback;
+		private readonly FBCallbackHelper callbackHelper;
 
-		public FBPermissionCallbackAndroid( object threadLock ) : base( "com.yasirkula.unity.FileBrowserPermissionReceiver" )
+		public FBPermissionCallbackAndroid( FileBrowser.PermissionCallback callback ) : base( "com.yasirkula.unity.FileBrowserPermissionReceiver" )
 		{
-			Result = -1;
-			this.threadLock = threadLock;
+			this.callback = callback;
+			callbackHelper = FBCallbackHelper.Create( true );
 		}
 
 		[UnityEngine.Scripting.Preserve]
 		public void OnPermissionResult( int result )
 		{
-			Result = result;
-
-			lock( threadLock )
-			{
-				Monitor.Pulse( threadLock );
-			}
+			callbackHelper.CallOnMainThread( () => callback( (FileBrowser.Permission) result ) );
 		}
 	}
 }

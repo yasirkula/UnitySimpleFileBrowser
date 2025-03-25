@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using TMPro;
+using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
@@ -19,8 +20,8 @@ namespace SimpleFileBrowser
 		private Image icon;
 
 		[SerializeField]
-		private InputField nameInputField;
-		public InputField InputField { get { return nameInputField; } }
+		private TMP_InputField nameInputField;
+		public TMP_InputField InputField { get { return nameInputField; } }
 #pragma warning restore 0649
 
 		private OnRenameCompleted onRenameCompleted;

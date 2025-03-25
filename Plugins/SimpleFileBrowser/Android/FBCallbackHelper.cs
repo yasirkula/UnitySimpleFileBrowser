@@ -1,30 +1,49 @@
 ﻿#if UNITY_EDITOR || UNITY_ANDROID
+using System;
 using UnityEngine;
 
 namespace SimpleFileBrowser
 {
 	public class FBCallbackHelper : MonoBehaviour
 	{
-		private System.Action mainThreadAction = null;
+		private bool autoDestroyWithCallback;
+		private Action mainThreadAction = null;
 
-		private void Awake()
+		public static FBCallbackHelper Create( bool autoDestroyWithCallback )
 		{
-			DontDestroyOnLoad( gameObject );
+			FBCallbackHelper result = new GameObject( "FBCallbackHelper" ).AddComponent<FBCallbackHelper>();
+			result.autoDestroyWithCallback = autoDestroyWithCallback;
+			DontDestroyOnLoad( result.gameObject );
+			return result;
+		}
+
+		public void CallOnMainThread( Action function )
+		{
+			lock( this )
+			{
+				mainThreadAction += function;
+			}
 		}
 
 		private void Update()
 		{
 			if( mainThreadAction != null )
 			{
-				System.Action temp = mainThreadAction;
-				mainThreadAction = null;
-				temp();
+				try
+				{
+					lock( this )
+					{
+						Action temp = mainThreadAction;
+						mainThreadAction = null;
+						temp();
+					}
+				}
+				finally
+				{
+					if( autoDestroyWithCallback )
+						Destroy( gameObject );
+				}
 			}
-		}
-
-		public void CallOnMainThread( System.Action function )
-		{
-			mainThreadAction = function;
 		}
 	}
 }

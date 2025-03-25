@@ -1,6 +1,15 @@
-﻿{
+{
     "name": "SimpleFileBrowser.Runtime",
     "references": [
-        "Unity.InputSystem"
-    ]
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "autoReferenced": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "defineConstraints": [],
+    "optionalUnityReferences": []
 }

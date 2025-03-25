@@ -168,25 +168,22 @@ File browser comes bundled with two premade skins in the *Skins* directory: *Lig
 - By changing *SimpleFileBrowserCanvas* prefab's *Skin* field
 - By changing the value of `FileBrowser.Skin` property from a C# script
 
-On Android, file browser requires external storage access to function properly. You can use the following function to check if we have runtime permission to access the external storage:
+On Android, file browser requires external storage access to function properly. You can use the following functions to handle runtime permissions:
 
 ```csharp
-public static FileBrowser.Permission CheckPermission();
+public delegate void PermissionCallback( Permission permission );
+
+public static bool CheckPermission();
+public static void RequestPermissionAsync( PermissionCallback callback );
 ```
 
 **FileBrowser.Permission** is an enum that can take 3 values:
 
 - **Granted**: we have the permission to access the external storage
-- **ShouldAsk**: we don't have permission yet, but we can ask the user for permission via *RequestPermission* function (see below). As long as the user doesn't select "Don't ask again" while denying the permission, ShouldAsk is returned
+- **ShouldAsk**: we don't have permission yet but we can continue asking the user for permission. As long as the user doesn't select "Don't ask again" while denying the permission, ShouldAsk is returned
 - **Denied**: we don't have permission and we can't ask the user for permission. In this case, user has to give the permission from Settings. This happens when user selects "Don't ask again" while denying the permission or when user is not allowed to give that permission (parental controls etc.)
 
-To request permission to access the external storage, use the following function:
-
-```csharp
-public static FileBrowser.Permission RequestPermission();
-```
-
-Note that FileBrowser automatically calls RequestPermission before opening a dialog. If you want, you can turn this feature off by setting **FileBrowser.AskPermissions** to *false*.
+Note that FileBrowser automatically calls RequestPermissionAsync before opening a dialog. If you want, you can turn this feature off by setting **FileBrowser.AskPermissions** to *false*.
 
 The following file manipulation functions work on all platforms (including *Storage Access Framework (SAF)* on *Android 10+*). These functions should be called with the paths returned by the FileBrowser functions only:
 

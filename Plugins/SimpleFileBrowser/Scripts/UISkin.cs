@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -36,8 +37,8 @@ namespace SimpleFileBrowser
 #pragma warning disable 0649
 		[Header( "General" )]
 		[SerializeField]
-		private Font m_font;
-		public Font Font
+		private TMP_FontAsset m_font;
+		public TMP_FontAsset Font
 		{
 			get { return m_font; }
 			set { if( m_font != value ) { m_font = value; m_version++; } }
@@ -551,14 +552,14 @@ namespace SimpleFileBrowser
 		}
 #pragma warning restore 0649
 
-		public void ApplyTo( Text text, Color textColor )
+		public void ApplyTo( TMP_Text text, Color textColor )
 		{
 			text.color = textColor;
 			text.font = m_font;
 			text.fontSize = m_fontSize;
 		}
 
-		public void ApplyTo( InputField inputField )
+		public void ApplyTo( TMP_InputField inputField )
 		{
 			inputField.image.color = m_inputFieldNormalBackgroundColor;
 			inputField.image.sprite = m_inputFieldBackground;
@@ -566,8 +567,8 @@ namespace SimpleFileBrowser
 			inputField.caretColor = m_inputFieldCaretColor;
 
 			ApplyTo( inputField.textComponent, m_inputFieldTextColor );
-			if( inputField.placeholder as Text )
-				ApplyTo( (Text) inputField.placeholder, m_inputFieldPlaceholderTextColor );
+			if( inputField.placeholder as TMP_Text )
+				ApplyTo( (TMP_Text) inputField.placeholder, m_inputFieldPlaceholderTextColor );
 		}
 
 		public void ApplyTo( Button button )
@@ -575,10 +576,10 @@ namespace SimpleFileBrowser
 			button.image.color = m_buttonColor;
 			button.image.sprite = m_buttonBackground;
 
-			ApplyTo( button.GetComponentInChildren<Text>(), m_buttonTextColor );
+			ApplyTo( button.GetComponentInChildren<TMP_Text>(), m_buttonTextColor );
 		}
 
-		public void ApplyTo( Dropdown dropdown )
+		public void ApplyTo( TMP_Dropdown dropdown )
 		{
 			dropdown.image.color = m_dropdownColor;
 			dropdown.image.sprite = m_dropdownBackground;
@@ -610,7 +611,7 @@ namespace SimpleFileBrowser
 			toggle.graphic.color = m_toggleCheckmarkColor;
 			( (Image) toggle.graphic ).sprite = m_toggleCheckmark;
 
-			ApplyTo( toggle.GetComponentInChildren<Text>(), m_toggleTextColor );
+			ApplyTo( toggle.GetComponentInChildren<TMP_Text>(), m_toggleTextColor );
 		}
 
 		public void ApplyTo( Scrollbar scrollbar )

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace SimpleFileBrowser
@@ -29,7 +30,7 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private LayoutElement[] allButtonLayoutElements;
 		[SerializeField]
-		private Text[] allButtonTexts;
+		private TextMeshProUGUI[] allButtonTexts;
 		[SerializeField]
 		private Image[] allButtonSeparators;
 

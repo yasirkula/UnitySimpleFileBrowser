@@ -2732,7 +2732,7 @@ RectTransform:
   m_GameObject: {fileID: 1000011817404238}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.4691666, y: 1.4691666, z: 1.4691666}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 224000012589068232}
@@ -2747,7 +2747,7 @@ RectTransform:
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!223 &223000012645506472
 Canvas:
   m_ObjectHideFlags: 0
@@ -2840,8 +2840,6 @@ MonoBehaviour:
     name: Desktop
     icon: {fileID: 0}
   generateQuickLinksForDrives: 1
-  contextMenuShowDeleteButton: 1
-  contextMenuShowRenameButton: 1
   showResizeCursor: 1
   window: {fileID: 114000011184475620}
   windowResponsiveRows:

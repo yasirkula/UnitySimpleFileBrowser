@@ -222,6 +222,9 @@ namespace SimpleFileBrowser
 			set { m_checkWriteAccessToDestinationDirectory = value; }
 		}
 
+		public static bool CanDeleteFiles = true;
+		public static bool CanRenameFiles = true;
+
 #if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS && !UNITY_WSA && !UNITY_WSA_10_0 )
 		private static float m_drivesRefreshInterval = 5f;
 #else
@@ -378,12 +381,6 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private bool generateQuickLinksForDrives = true;
-
-		[SerializeField]
-		private bool contextMenuShowDeleteButton = true;
-
-		[SerializeField]
-		private bool contextMenuShowRenameButton = true;
 
 		[SerializeField]
 		private bool showResizeCursor = true;
@@ -1363,8 +1360,8 @@ namespace SimpleFileBrowser
 
 			bool selectAllButtonVisible = isMoreOptionsMenu && m_allowMultiSelection && validFileEntries.Count > 0;
 			bool deselectAllButtonVisible = isMoreOptionsMenu && selectedFileEntries.Count > 1;
-			bool deleteButtonVisible = contextMenuShowDeleteButton && selectedFileEntries.Count > 0;
-			bool renameButtonVisible = contextMenuShowRenameButton && selectedFileEntries.Count == 1;
+			bool deleteButtonVisible = CanDeleteFiles && selectedFileEntries.Count > 0;
+			bool renameButtonVisible = CanRenameFiles && selectedFileEntries.Count == 1;
 
 			if( selectAllButtonVisible && m_pickerMode == PickMode.Files )
 			{
@@ -2259,7 +2256,7 @@ namespace SimpleFileBrowser
 		// Prompts user to rename the selected file/folder
 		public void RenameSelectedFile()
 		{
-			if( selectedFileEntries.Count != 1 )
+			if( !CanRenameFiles || selectedFileEntries.Count != 1 )
 				return;
 
 			MultiSelectionToggleSelectionMode = false;
@@ -2320,7 +2317,7 @@ namespace SimpleFileBrowser
 		// Prompts user to delete the selected files & folders
 		public void DeleteSelectedFiles()
 		{
-			if( selectedFileEntries.Count == 0 )
+			if( !CanDeleteFiles || selectedFileEntries.Count == 0 )
 				return;
 
 			selectedFileEntries.Sort();

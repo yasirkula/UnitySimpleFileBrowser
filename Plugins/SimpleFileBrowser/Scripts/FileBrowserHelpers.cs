@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace SimpleFileBrowser
 {
-	public struct FileSystemEntry
+	public readonly struct FileSystemEntry
 	{
 		public readonly string Path;
 		public readonly string Name;
@@ -25,7 +25,15 @@ namespace SimpleFileBrowser
 			Path = fileInfo.FullName;
 			Name = fileInfo.Name;
 			Extension = extension;
-			Attributes = fileInfo.Attributes;
+			try
+			{
+				Attributes = fileInfo.Attributes;
+			}
+			catch
+			{
+				/// I've encountered UnauthorizedAccessException while accessing <see cref="FileSystemInfo.Attributes"/> on iOS.
+				Attributes = ( fileInfo is DirectoryInfo ) ? FileAttributes.Directory : 0;
+			}
 		}
 	}
 

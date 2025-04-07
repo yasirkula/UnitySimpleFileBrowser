@@ -2102,14 +2102,14 @@ namespace SimpleFileBrowser
 		}
 
 		// Returns whether or not the FileSystemEntry passes the file browser's filters and should be displayed in the files list
-		private bool FileSystemEntryMatchesFilters( FileSystemEntry item, bool allExtensionsHaveSingleSuffix )
+		private bool FileSystemEntryMatchesFilters( in FileSystemEntry item, bool allExtensionsHaveSingleSuffix )
 		{
+			if( ( item.Attributes & ignoredFileAttributes ) != 0 )
+				return false;
+
 			if( !item.IsDirectory )
 			{
 				if( m_pickerMode == PickMode.Folders )
-					return false;
-
-				if( ( item.Attributes & ignoredFileAttributes ) != 0 )
 					return false;
 
 				string extension = item.Extension;
@@ -2128,11 +2128,6 @@ namespace SimpleFileBrowser
 				}
 
 				if( !filters[filtersDropdown.value].MatchesExtension( extension, !allExtensionsHaveSingleSuffix ) )
-					return false;
-			}
-			else
-			{
-				if( ( item.Attributes & ignoredFileAttributes ) != 0 )
 					return false;
 			}
 
@@ -2511,7 +2506,7 @@ namespace SimpleFileBrowser
 			}
 		}
 
-		internal Sprite GetIconForFileEntry( FileSystemEntry fileInfo )
+		internal Sprite GetIconForFileEntry( in FileSystemEntry fileInfo )
 		{
 			return m_skin.GetIconForFileEntry( fileInfo, !AllExtensionsHaveSingleSuffix );
 		}

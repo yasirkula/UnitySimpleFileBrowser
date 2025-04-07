@@ -31,12 +31,14 @@ namespace SimpleFileBrowser
 			{
 				try
 				{
+					Action temp;
 					lock( this )
 					{
-						Action temp = mainThreadAction;
+						temp = mainThreadAction;
 						mainThreadAction = null;
-						temp();
 					}
+
+					temp();
 				}
 				finally
 				{

@@ -620,7 +620,7 @@ namespace SimpleFileBrowser
 			scrollbar.image.color = m_scrollbarColor;
 		}
 
-		public Sprite GetIconForFileEntry( FileSystemEntry fileInfo, bool extensionMayHaveMultipleSuffixes )
+		public Sprite GetIconForFileEntry( in FileSystemEntry fileInfo, bool extensionMayHaveMultipleSuffixes )
 		{
 			if( !initializedFiletypeIcons )
 				InitializeFiletypeIcons();

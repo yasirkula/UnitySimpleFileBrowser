@@ -1,4 +1,4 @@
-= Simple File Browser (v1.7.1) =
+= Simple File Browser (v1.7.2) =
 
 Documentation: https://github.com/yasirkula/UnitySimpleFileBrowser
 FAQ: https://github.com/yasirkula/UnitySimpleFileBrowser#faq

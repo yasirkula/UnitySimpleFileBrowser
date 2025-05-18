@@ -9,8 +9,7 @@ namespace SimpleFileBrowser
 		public readonly string Name;
 		public readonly string Extension;
 		public readonly FileAttributes Attributes;
-
-		public bool IsDirectory { get { return ( Attributes & FileAttributes.Directory ) == FileAttributes.Directory; } }
+		public readonly bool IsDirectory { get { return ( Attributes & FileAttributes.Directory ) == FileAttributes.Directory; } }
 
 		public FileSystemEntry( string path, string name, string extension, bool isDirectory )
 		{

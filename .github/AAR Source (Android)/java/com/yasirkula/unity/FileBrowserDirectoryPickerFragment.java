@@ -17,6 +17,8 @@ public class FileBrowserDirectoryPickerFragment extends Fragment
 {
 	private static final int DIRECTORY_PICK_REQUEST_CODE = 74425;
 
+	public static String initialDirectoryUri;
+
 	private final FileBrowserDirectoryReceiver directoryReceiver;
 
 	public FileBrowserDirectoryPickerFragment()
@@ -41,7 +43,10 @@ public class FileBrowserDirectoryPickerFragment extends Fragment
 			Intent intent = new Intent( Intent.ACTION_OPEN_DOCUMENT_TREE );
 			intent.addFlags( Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION );
 
-			// Try to set the initial folder of the picker as sdcard root
+			// Try to set the initial folder of the picker (read first: https://issuetracker.google.com/issues/291241154)
+			if( initialDirectoryUri != null && initialDirectoryUri.length() > 0 && Build.VERSION.SDK_INT >= 26 )
+				intent.putExtra( DocumentsContract.EXTRA_INITIAL_URI, Uri.parse( initialDirectoryUri ) );
+
 			intent.putExtra( "android.content.extra.SHOW_ADVANCED", true );
 			intent.putExtra( "android.content.extra.FANCY", true );
 			intent.putExtra( "android.content.extra.SHOW_FILESIZE", true );

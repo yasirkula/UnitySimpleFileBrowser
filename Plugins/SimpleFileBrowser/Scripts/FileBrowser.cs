@@ -2895,10 +2895,11 @@ namespace SimpleFileBrowser
 													 string initialPath = null, string initialFilename = null,
 													 string title = "Save", string saveButtonText = "Save" )
 		{
-			if( !ShowSaveDialog( null, null, pickMode, allowMultiSelection, initialPath, initialFilename, title, saveButtonText ) )
+			bool? result = null;
+			if( !ShowSaveDialog( ( paths ) => result = true, () => result = false, pickMode, allowMultiSelection, initialPath, initialFilename, title, saveButtonText ) )
 				yield break;
 
-			while( Instance.gameObject.activeSelf )
+			while( !result.HasValue )
 				yield return null;
 		}
 
@@ -2906,10 +2907,11 @@ namespace SimpleFileBrowser
 													 string initialPath = null, string initialFilename = null,
 													 string title = "Load", string loadButtonText = "Select" )
 		{
-			if( !ShowLoadDialog( null, null, pickMode, allowMultiSelection, initialPath, initialFilename, title, loadButtonText ) )
+			bool? result = null;
+			if( !ShowLoadDialog( ( paths ) => result = true, () => result = false, pickMode, allowMultiSelection, initialPath, initialFilename, title, loadButtonText ) )
 				yield break;
 
-			while( Instance.gameObject.activeSelf )
+			while( !result.HasValue )
 				yield return null;
 		}
 

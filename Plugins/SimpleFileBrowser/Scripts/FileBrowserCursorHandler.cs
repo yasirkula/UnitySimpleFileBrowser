@@ -9,10 +9,8 @@ namespace SimpleFileBrowser
 #endif
 	{
 #if UNITY_EDITOR || ( !UNITY_ANDROID && !UNITY_IOS )
-#pragma warning disable 0649
 		[SerializeField]
 		private Texture2D resizeCursor;
-#pragma warning restore 0649
 
 		private bool isHovering;
 		private bool isResizing;

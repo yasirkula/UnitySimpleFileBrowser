@@ -14,7 +14,6 @@ namespace SimpleFileBrowser
 
 		public delegate void OnOperationConfirmed();
 
-#pragma warning disable 0649
 		[SerializeField]
 		private VerticalLayoutGroup contentLayoutGroup;
 
@@ -44,7 +43,6 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private float narrowScreenWidth = 380f;
-#pragma warning restore 0649
 
 		private OnOperationConfirmed onOperationConfirmed;
 

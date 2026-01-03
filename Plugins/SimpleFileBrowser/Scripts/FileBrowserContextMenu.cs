@@ -6,7 +6,6 @@ namespace SimpleFileBrowser
 {
 	public class FileBrowserContextMenu : MonoBehaviour
 	{
-#pragma warning disable 0649
 		[SerializeField]
 		private FileBrowser fileBrowser;
 
@@ -36,7 +35,6 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private float minDistanceToEdges = 10f;
-#pragma warning restore 0649
 
 		private void Awake()
 		{

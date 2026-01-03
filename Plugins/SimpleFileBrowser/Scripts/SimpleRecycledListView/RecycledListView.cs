@@ -11,7 +11,6 @@ namespace SimpleFileBrowser
 		, IPointerClickHandler
 #endif
 	{
-#pragma warning disable 0649
 #if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA || UNITY_WSA_10_0
 		[SerializeField]
 		private FileBrowser fileBrowser;
@@ -22,7 +21,6 @@ namespace SimpleFileBrowser
 		private RectTransform viewportTransform;
 		[SerializeField]
 		private RectTransform contentTransform;
-#pragma warning restore 0649
 
 		private float itemHeight, _1OverItemHeight;
 		private float viewportHeight;

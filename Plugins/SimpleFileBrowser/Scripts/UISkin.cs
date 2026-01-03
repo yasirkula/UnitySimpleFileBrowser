@@ -34,7 +34,6 @@ namespace SimpleFileBrowser
 		}
 #endif
 
-#pragma warning disable 0649
 		[Header( "General" )]
 		[SerializeField]
 		private TMP_FontAsset m_font;
@@ -550,7 +549,6 @@ namespace SimpleFileBrowser
 			get { return m_popupPanelsBackground; }
 			set { if( m_popupPanelsBackground != value ) { m_popupPanelsBackground = value; m_version++; } }
 		}
-#pragma warning restore 0649
 
 		public void ApplyTo( TMP_Text text, Color textColor )
 		{

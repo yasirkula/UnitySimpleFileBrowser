@@ -18,7 +18,6 @@ namespace SimpleFileBrowser
 		#region Variables
 		protected FileBrowser fileBrowser;
 
-#pragma warning disable 0649
 		[SerializeField]
 		private Image background;
 
@@ -31,7 +30,6 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private TextMeshProUGUI nameText;
-#pragma warning restore 0649
 
 #pragma warning disable 0414
 		private bool isSelected, isHidden;

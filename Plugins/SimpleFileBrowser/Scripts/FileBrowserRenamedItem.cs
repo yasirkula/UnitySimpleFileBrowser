@@ -12,7 +12,6 @@ namespace SimpleFileBrowser
 	{
 		public delegate void OnRenameCompleted( string filename );
 
-#pragma warning disable 0649
 		[SerializeField]
 		private Image background;
 
@@ -22,7 +21,6 @@ namespace SimpleFileBrowser
 		[SerializeField]
 		private TMP_InputField nameInputField;
 		public TMP_InputField InputField { get { return nameInputField; } }
-#pragma warning restore 0649
 
 		private OnRenameCompleted onRenameCompleted;
 

@@ -197,13 +197,11 @@ namespace SimpleFileBrowser
 			add
 			{
 				Instance.m_displayedEntriesFilter += value;
-				m_instance.PersistFileEntrySelection();
 				m_instance.RefreshFiles( false );
 			}
 			remove
 			{
 				Instance.m_displayedEntriesFilter -= value;
-				m_instance.PersistFileEntrySelection();
 				m_instance.RefreshFiles( false );
 			}
 		}
@@ -352,7 +350,6 @@ namespace SimpleFileBrowser
 		#endregion
 
 		#region Variables
-#pragma warning disable 0649
 		[Header( "Settings" )]
 		[SerializeField]
 		internal int minWidth = 380;
@@ -507,7 +504,6 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private FileBrowserCursorHandler resizeCursorHandler;
-#pragma warning restore 0649
 
 		internal RectTransform rectTransform;
 		private Canvas canvas;
@@ -676,7 +672,7 @@ namespace SimpleFileBrowser
 				}
 
 				m_multiSelectionToggleSelectionMode = false;
-				RefreshFiles( true );
+                RefreshFiles(true, false);
 			}
 		}
 
@@ -780,6 +776,7 @@ namespace SimpleFileBrowser
 		public delegate void OnSuccess( string[] paths );
 		public delegate void OnCancel();
 		public delegate bool FileSystemEntryFilter( FileSystemEntry entry );
+        public delegate bool SearchPredicate(FileSystemEntry entry, string searchTerm);
 		public delegate void PermissionCallback( Permission permission );
 #if UNITY_EDITOR || UNITY_ANDROID
 		public delegate void AndroidSAFDirectoryPickCallback( string rawUri, string name );
@@ -962,13 +959,11 @@ namespace SimpleFileBrowser
 #endif
 		}
 
-		private void OnApplicationFocus( bool focus )
-		{
-			if( !focus )
-				PersistFileEntrySelection();
-			else
-				RefreshFiles( true );
-		}
+        private void OnApplicationFocus(bool focus)
+        {
+            if (focus)
+                RefreshFiles(true);
+        }
 		#endregion
 
 		#region Interface Methods
@@ -1694,7 +1689,6 @@ namespace SimpleFileBrowser
 			if( !canvas ) // Same as OnPathChanged
 				return;
 
-			PersistFileEntrySelection();
 			SearchString = newSearchString;
 		}
 
@@ -1712,7 +1706,6 @@ namespace SimpleFileBrowser
 				extensionsSingleSuffixModeChanged = ( AllExtensionsHaveSingleSuffix != allExtensionsHadSingleSuffix );
 			}
 
-			PersistFileEntrySelection();
 			RefreshFiles( extensionsSingleSuffixModeChanged );
 		}
 
@@ -1721,7 +1714,6 @@ namespace SimpleFileBrowser
 			if( !canvas ) // Same as OnPathChanged
 				return;
 
-			PersistFileEntrySelection();
 			RefreshFiles( false );
 		}
 
@@ -2016,9 +2008,16 @@ namespace SimpleFileBrowser
 			gameObject.SetActive( false );
 		}
 
-		public void RefreshFiles( bool pathChanged )
-		{
+        public void RefreshFiles(bool pathChanged, bool preserveSelection = true)
+        {
 			bool allExtensionsHaveSingleSuffix = AllExtensionsHaveSingleSuffix;
+
+            if (preserveSelection)
+            {
+                pendingFileEntrySelection.Clear();
+                for (int i = 0; i < selectedFileEntries.Count; i++)
+                    pendingFileEntrySelection.Add(validFileEntries[selectedFileEntries[i]].Name);
+            }
 
 			if( pathChanged )
 			{
@@ -2099,7 +2098,7 @@ namespace SimpleFileBrowser
 
 			// Prevent the case where all the content stays offscreen after changing the search string
 			EnsureScrollViewIsWithinBounds();
-		}
+        }
 
 		// Returns whether or not the FileSystemEntry passes the file browser's filters and should be displayed in the files list
 		private bool FileSystemEntryMatchesFilters( in FileSystemEntry item, bool allExtensionsHaveSingleSuffix )
@@ -2237,7 +2236,7 @@ namespace SimpleFileBrowser
 				pendingFileEntrySelection.Clear();
 				pendingFileEntrySelection.Add( folderName );
 
-				RefreshFiles( true );
+                RefreshFiles(true, false);
 
 				if( m_pickerMode != PickMode.Files )
 					filenameInputField.text = folderName;
@@ -2302,7 +2301,7 @@ namespace SimpleFileBrowser
 				pendingFileEntrySelection.Clear();
 				pendingFileEntrySelection.Add( newName );
 
-				RefreshFiles( true );
+                RefreshFiles(true, false);
 
 				if( ( fileInfo.IsDirectory && m_pickerMode != PickMode.Files ) || ( !fileInfo.IsDirectory && m_pickerMode != PickMode.Folders ) )
 					filenameInputField.text = newName;
@@ -2331,16 +2330,8 @@ namespace SimpleFileBrowser
 				selectedFileEntries.Clear();
 
 				MultiSelectionToggleSelectionMode = false;
-				RefreshFiles( true );
+                RefreshFiles(true, false);
 			} );
-		}
-
-		// Makes sure that the selection persists after Refreshing the file entries
-		private void PersistFileEntrySelection()
-		{
-			pendingFileEntrySelection.Clear();
-			for( int i = 0; i < selectedFileEntries.Count; i++ )
-				pendingFileEntrySelection.Add( validFileEntries[selectedFileEntries[i]].Name );
 		}
 
 		private bool AddQuickLink( Sprite icon, string name, string path )

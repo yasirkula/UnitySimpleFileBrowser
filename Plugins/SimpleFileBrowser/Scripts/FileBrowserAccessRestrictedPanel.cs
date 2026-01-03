@@ -10,7 +10,6 @@ namespace SimpleFileBrowser
 {
 	public class FileBrowserAccessRestrictedPanel : MonoBehaviour
 	{
-#pragma warning disable 0649
 		[SerializeField]
 		private HorizontalLayoutGroup contentLayoutGroup;
 
@@ -19,7 +18,6 @@ namespace SimpleFileBrowser
 
 		[SerializeField]
 		private Button okButton;
-#pragma warning restore 0649
 
 		private void Awake()
 		{

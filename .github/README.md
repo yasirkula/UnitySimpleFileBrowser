@@ -153,6 +153,15 @@ FileBrowser.DisplayedEntriesFilter += ( entry ) =>
 };
 ```
 
+You can override the search behaviour (e.g. use regex) via the **CustomSearchHandler** event:
+
+```csharp
+FileBrowser.CustomSearchHandler += (entry, searchTerm) =>
+{
+    return entry.Name.Contains(searchTerm);
+};
+```
+
 You can set whether or not hidden files should be shown in the file browser via **FileBrowser.ShowHiddenFiles** (has no effect when Storage Access Framework is used on Android 10+). This value can also be changed from the "*Show hidden files*" toggle in the user interface. To change the visibility of that toggle, you can use **FileBrowser.DisplayHiddenFilesToggle**. Note that this toggle is always hidden on Android 10+ when Storage Access Framework is used or on mobile devices when device is held in portrait orientation.
 
 To open files or directories in the file browser with a single click (instead of double clicking), you can set **FileBrowser.SingleClickMode** to *true*.

@@ -692,6 +692,21 @@ namespace SimpleFileBrowser
 			}
 		}
 
+        private SearchPredicate m_customSearchHandler;
+        public static event SearchPredicate CustomSearchHandler
+        {
+            add
+            {
+                Instance.m_customSearchHandler += value;
+                m_instance.RefreshFiles(false);
+            }
+            remove
+            {
+                Instance.m_customSearchHandler -= value;
+                m_instance.RefreshFiles(false);
+            }
+        }
+
 		private bool m_acceptNonExistingFilename = false; // Is set to true when showing save dialog for Files or FilesAndFolders, false otherwise
 		private bool AcceptNonExistingFilename
 		{
@@ -2130,8 +2145,16 @@ namespace SimpleFileBrowser
 					return false;
 			}
 
-			if( m_searchString.Length > 0 && textComparer.IndexOf( item.Name, m_searchString, textCompareOptions ) < 0 )
-				return false;
+            if (m_searchString.Length > 0)
+            {
+                if (m_customSearchHandler != null)
+                {
+                    if (!m_customSearchHandler(item, m_searchString))
+                        return false;
+                }
+                else if (textComparer.IndexOf(item.Name, m_searchString, textCompareOptions) < 0)
+                    return false;
+            }
 
 			if( m_displayedEntriesFilter != null && !m_displayedEntriesFilter( item ) )
 				return false;

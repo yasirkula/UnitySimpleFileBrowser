@@ -2351,7 +2351,7 @@ namespace SimpleFileBrowser
 						else
 							FileBrowserHelpers.DeleteFile( fileInfo.Path );
 					}
-					catch( System.IO.IOException e )
+					catch( IOException e )
 					{
 						Debug.LogWarning( "Could not delete file: " + e.Message );
 					}

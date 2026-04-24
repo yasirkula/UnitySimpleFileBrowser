@@ -2343,9 +2343,9 @@ namespace SimpleFileBrowser
 			{
 				for( int i = selectedFileEntries.Count - 1; i >= 0; i-- )
 				{
+					FileSystemEntry fileInfo = validFileEntries[selectedFileEntries[i]];
 					try
 					{
-						FileSystemEntry fileInfo = validFileEntries[selectedFileEntries[i]];
 						if( fileInfo.IsDirectory )
 							FileBrowserHelpers.DeleteDirectory( fileInfo.Path );
 						else

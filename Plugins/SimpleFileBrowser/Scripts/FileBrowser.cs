@@ -2353,7 +2353,7 @@ namespace SimpleFileBrowser
 					}
 					catch( IOException e )
 					{
-						Debug.LogError( $"Could not delete '{fileInfo.Path}': " + e.Message );
+						Debug.LogError( $"Could not delete '{fileInfo.Path}': {e.Message}" );
 					}
 				}
 

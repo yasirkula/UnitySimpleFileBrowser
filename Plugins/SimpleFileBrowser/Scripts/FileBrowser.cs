@@ -2343,11 +2343,18 @@ namespace SimpleFileBrowser
 			{
 				for( int i = selectedFileEntries.Count - 1; i >= 0; i-- )
 				{
-					FileSystemEntry fileInfo = validFileEntries[selectedFileEntries[i]];
-					if( fileInfo.IsDirectory )
-						FileBrowserHelpers.DeleteDirectory( fileInfo.Path );
-					else
-						FileBrowserHelpers.DeleteFile( fileInfo.Path );
+					try
+					{
+						FileSystemEntry fileInfo = validFileEntries[selectedFileEntries[i]];
+						if( fileInfo.IsDirectory )
+							FileBrowserHelpers.DeleteDirectory( fileInfo.Path );
+						else
+							FileBrowserHelpers.DeleteFile( fileInfo.Path );
+					}
+					catch( IOException e )
+					{
+						Debug.LogError( $"Could not delete '{fileInfo.Path}': {e.Message}" );
+					}
 				}
 
 				selectedFileEntries.Clear();

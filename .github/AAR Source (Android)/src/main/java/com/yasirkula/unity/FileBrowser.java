@@ -108,7 +108,7 @@ public class FileBrowser
 		}
 
 		// This is the only working method on some Android 11+ devices (when Storage Access Framework isn't used)
-		if( android.os.Build.VERSION.SDK_INT >= 30 )
+		if( Build.VERSION.SDK_INT >= 30 )
 		{
 			for( StorageVolume volume : ( (StorageManager) context.getSystemService( Context.STORAGE_SERVICE ) ).getStorageVolumes() )
 			{
@@ -117,7 +117,7 @@ public class FileBrowser
 					potentialDrives.add( volumeDirectory.toString() );
 			}
 		}
-		else if( android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N )
+		else if( Build.VERSION.SDK_INT >= Build.VERSION_CODES.N )
 		{
 			try
 			{
@@ -185,7 +185,7 @@ public class FileBrowser
 	// Returns whether or not Storage Access Framework (SAF) should be used
 	public static boolean CheckSAF()
 	{
-		return android.os.Build.VERSION.SDK_INT >= 29 && !Environment.isExternalStorageLegacy();
+		return Build.VERSION.SDK_INT >= 29 && !Environment.isExternalStorageLegacy();
 	}
 
 	// Prompts the user to pick a Storage Access Framework (SAF) folder

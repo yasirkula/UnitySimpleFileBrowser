@@ -67,6 +67,10 @@ Remove `Unity.InputSystem` assembly from **SimpleFileBrowser.Runtime** Assembly 
 
 `android:requestLegacyExternalStorage` attribute in _AndroidManifest.xml_ grants full access to device's storage on Android 10 but requires you to update your Android SDK to at least **SDK 29**. If this isn't possible for you, you should open *SimpleFileBrowser.aar* with WinRAR or 7-Zip and then remove the `<application ... />` tag from _AndroidManifest.xml_.
 
+- **Android build fails with error message "D8: java.lang.NullPointerException Failed to transform SimpleFileBrowser-.aar"**
+
+The plugin is using "Gradle version" `7.5.1` and "Android Gradle plug-in version" `7.4.2`. Make sure your Unity version is compatible: https://docs.unity3d.com/2021.3/Documentation/Manual/android-gradle-overview.html
+
 - **Can't show the file browser on Android, it says "java.lang.ClassNotFoundException: com.yasirkula.unity.FileBrowserPermissionReceiver" in Logcat**
 
 If you are sure that your plugin is up-to-date, then enable **Custom Proguard File** option from *Player Settings* and add the following line to that file: `-keep class com.yasirkula.unity.* { *; }`

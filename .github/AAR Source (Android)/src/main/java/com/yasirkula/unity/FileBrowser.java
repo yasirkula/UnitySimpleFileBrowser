@@ -50,6 +50,7 @@ public class FileBrowser
 		}
 	}
 
+	public static int IOBufferSize = 262144; // 256 KB by default
 	private static final StringBuilder stringBuilder = new StringBuilder();
 
 	public static String GetExternalDrives( Context context )
@@ -343,7 +344,7 @@ public class FileBrowser
 
 				try
 				{
-					byte[] buf = new byte[4096];
+					byte[] buf = new byte[IOBufferSize];
 					int len;
 					while( ( len = input.read( buf ) ) > 0 )
 						output.write( buf, 0, len );
@@ -378,7 +379,7 @@ public class FileBrowser
 				OutputStream output = new FileOutputStream( new File( destinationFile ), false );
 				try
 				{
-					byte[] buf = new byte[4096];
+					byte[] buf = new byte[IOBufferSize];
 					int len;
 					while( ( len = input.read( buf ) ) > 0 )
 						output.write( buf, 0, len );
@@ -416,7 +417,7 @@ public class FileBrowser
 
 				try
 				{
-					byte[] buf = new byte[4096];
+					byte[] buf = new byte[IOBufferSize];
 					int len;
 					while( ( len = input.read( buf ) ) > 0 )
 						output.write( buf, 0, len );
@@ -610,7 +611,7 @@ public class FileBrowser
 				OutputStream output = new FileOutputStream( new File( destinationPath ), false );
 				try
 				{
-					byte[] buf = new byte[4096];
+					byte[] buf = new byte[IOBufferSize];
 					int len;
 					while( ( len = input.read( buf ) ) > 0 )
 						output.write( buf, 0, len );
